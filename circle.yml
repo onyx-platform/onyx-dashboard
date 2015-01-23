@@ -1,0 +1,22 @@
+machine:
+        java:
+                version: oraclejdk8
+        services:
+                - docker
+
+dependencies:
+        override:
+                - echo Y | lein upgrade 2.5.1:
+                    timeout: 900
+                - lein version-spec
+                - lein deps
+
+        post:
+                - lein cljx once
+                - lein cljsbuild once
+                - lein with-profile production uberjar
+test:
+        override: 
+                - docker build -t lbradstreet/onyx-dashboard:$CIRCLE_SHA1 . | tee docker-build.log
+                - lein test:
+                    timeout: 1800
