@@ -16,6 +16,7 @@
                  [com.taoensso/sente "1.3.0"]
                  [prismatic/schema "0.3.3" :exclusions [potemkin]]
                  ;[org.danielsz/system "0.1.4"]
+                 [cljs-uuid "0.0.4"]
                  [ring "1.3.2"]
                  [com.mdrogalis/onyx "0.5.0" :exclusions [prismatic/schema]]
                  [ring/ring-defaults "0.1.3"]
@@ -43,6 +44,15 @@
                                         :optimizations :none
                                         :pretty-print  true}}}}
 
+  :cljx {:builds [{:source-paths ["src/cljx"]
+                   :output-path "target/generated/clj"
+                   :rules :clj}
+                  {:source-paths ["src/cljx"]
+                   :output-path "target/generated/cljs"
+                   :rules :cljs}]}
+
+  :prep-tasks [["cljx" "once"]]
+
   :profiles {:dev {:source-paths ["env/dev/clj"]
 
                    :dependencies [[figwheel "0.2.2-SNAPSHOT"]
@@ -66,19 +76,10 @@
 
                    :cljsbuild {:builds
                                {:app
-                                {:source-paths ["env/dev/cljs"]}}}
-
-                   :prep-tasks [["cljx" "once"] "javac" "compile"]
-
-                   :cljx {:builds [{:source-paths ["src/cljx"]
-                                    :output-path "target/generated/clj"
-                                    :rules :clj}
-                                   {:source-paths ["src/cljx"]
-                                    :output-path "target/generated/cljs"
-                                    :rules :cljs}]}}
+                                {:source-paths ["env/dev/cljs"]}}}}
 
              :uberjar {:source-paths ["env/prod/clj"]
-                       :hooks [leiningen.cljsbuild cljx.hooks]
+                       :hooks [leiningen.cljsbuild]
                        :env {:production true}
                        :omit-source true
                        :aot :all
