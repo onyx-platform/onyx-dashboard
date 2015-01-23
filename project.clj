@@ -14,6 +14,7 @@
                  [racehub/om-bootstrap "0.3.3"]
                  [com.stuartsierra/component "0.2.2"]
                  [com.taoensso/sente "1.3.0"]
+                 [com.taoensso/timbre "3.3.1" :exclusions [com.taoensso/encore]]
                  [prismatic/schema "0.3.3" :exclusions [potemkin]]
                  ;[org.danielsz/system "0.1.4"]
                  [cljs-uuid "0.0.4"]

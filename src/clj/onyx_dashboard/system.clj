@@ -31,9 +31,10 @@
    :onyx.peer/job-scheduler :onyx.job-scheduler/round-robin
    :onyx/id id})
 
+
 (defn get-system []
   (component/system-map
-    :onyx-env (onyx-client env-config)
+    ;:onyx-env (onyx-client env-config)
     :sente (component/using (sente) [])
     :http (component/using (new-http-server env-config) [:sente])))
 
