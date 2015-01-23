@@ -1,4 +1,5 @@
 (defproject onyx-dashboard "0.1.0-SNAPSHOT"
+  :version-spec "0.1.~{:env/circle_build_num}"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
@@ -9,17 +10,24 @@
   :test-paths ["spec/clj"]
 
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/clojurescript "0.0-2644" :scope "provided"]
+                 [org.clojure/clojurescript "0.0-2665" :scope "provided"]
+                 [racehub/om-bootstrap "0.3.3"]
+                 [com.stuartsierra/component "0.2.2"]
+                 [com.taoensso/sente "1.3.0"]
+                 [prismatic/schema "0.3.3" :exclusions [potemkin]]
+                 ;[org.danielsz/system "0.1.4"]
                  [ring "1.3.2"]
-                 [ring/ring-defaults "0.1.2"]
+                 [com.mdrogalis/onyx "0.5.0" :exclusions [prismatic/schema]]
+                 [ring/ring-defaults "0.1.3"]
                  [compojure "1.3.1"]
                  [enlive "1.1.5"]
                  [org.om/om "0.8.1"]
                  [environ "1.0.0"]
                  [http-kit "2.1.19"]
-                 [prismatic/om-tools "0.3.9" :exclusions [potemkin om]]]
+                 [prismatic/om-tools "0.3.10" :exclusions [potemkin om]]]
 
-  :plugins [[lein-cljsbuild "1.0.3"]
+  :plugins [[lein-cljsbuild "1.0.4"]
+            [lein-version-spec "0.0.4"]
             [lein-environ "1.0.0"]]
 
   :min-lein-version "2.5.0"
@@ -37,17 +45,17 @@
 
   :profiles {:dev {:source-paths ["env/dev/clj"]
 
-                   :dependencies [[figwheel "0.1.6-SNAPSHOT"]
-                                  [com.cemerick/piggieback "0.1.3"]
-                                  [weasel "0.4.2"]
-                                  [leiningen "2.5.0"]]
+                   :dependencies [[figwheel "0.2.2-SNAPSHOT"]
+                                  [com.cemerick/piggieback "0.1.5"]
+                                  [weasel "0.5.0"]
+                                  [leiningen "2.5.1"]]
 
-                   :repl-options {:init-ns onyx-dashboard.server
+                   :repl-options {:init-ns onyx-dashboard.system
                                   :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl
                                                      ;cljx.repl-middleware/wrap-cljx
                                                      ]}
 
-                   :plugins [[lein-figwheel "0.1.6-SNAPSHOT"]
+                   :plugins [[lein-figwheel "0.2.2-SNAPSHOT"]
                              [com.keminglabs/cljx "0.5.0" :exclusions [org.clojure/clojure]]]
 
                    :figwheel {:http-server-root "public"
