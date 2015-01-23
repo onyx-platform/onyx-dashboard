@@ -1,5 +1,5 @@
 (ns onyx-dashboard.dev
-  (:require [onyx-dashboard.core :as core]
+ (:require [onyx-dashboard.core :as core]
             [figwheel.client :as figwheel :include-macros true]
             [cljs.core.async :refer [put!]]
             [weasel.repl :as weasel]))
