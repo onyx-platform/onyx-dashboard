@@ -9,15 +9,15 @@
             [om-bootstrap.random :as r]
             [om-bootstrap.input :as i]
             [om-bootstrap.table :refer [table]]
-            [cljs.core.async :as async :refer (<! >! put! chan)]
+            [cljs.core.async :as async :refer [<! >! put! chan]]
             [cljs-uuid.core :as uuid]
-            [taoensso.sente  :as sente :refer (cb-success?)])
-  (:require-macros [cljs.core.async.macros :as asyncm :refer (go go-loop)]))
+            [taoensso.sente  :as sente :refer [cb-success?]])
+  (:require-macros [cljs.core.async.macros :as asyncm :refer [go go-loop]]))
 
 (enable-console-print!)
 
 (defonce app-state (atom {:text "Hello Chestnut!"
-                          :replica {}}))
+                          :tracking {}}))
 
 (let [{:keys [chsk ch-recv send-fn state]}
       (sente/make-channel-socket! "/chsk" {:type :auto})]
@@ -32,21 +32,15 @@
   (let [[msg-type msg] event]
     (case msg-type 
       :chsk/recv
-      (println "Recv event " event)
+      (let [[recv-type recv-msg] msg]
+        (println "Recv event " event)
+        (case recv-type
+          :cluster/replica
+          (swap! app-state assoc :tracking recv-msg)
+          (println "Unhandled recv-type: " recv-type)))
       :chsk/state (when (:first-open? msg)
                     (chsk-send! [:cluster/track cluster-id])
                     (println "First opened: " event)))))
-
-; (defn- event-handler [{:keys [event]}]
-;   (match event
-;          [:chsk/state new-state] 
-;          (match [new-state]
-;                 [{:first-open? true}] 
-;                 (chsk-send! [:onyx.job/list])
-;                 :else 
-;                 (println "Unmatched state change: " new-state))
-;          [:chsk/recv payload] (handle-payload payload)
-;          :else (print "Unmatched event: %s" event)))
 
 (sente/start-chsk-router! ch-chsk event-handler)
 
