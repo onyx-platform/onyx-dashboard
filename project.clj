@@ -19,7 +19,7 @@
                  ;[org.danielsz/system "0.1.4"]
                  [cljs-uuid "0.0.4"]
                  [ring "1.3.2"]
-                 [com.mdrogalis/onyx "0.5.0" :exclusions [prismatic/schema]]
+                 [com.mdrogalis/onyx "0.5.1-SNAPSHOT" :exclusions [prismatic/schema]]
                  [ring/ring-defaults "0.1.3"]
                  [compojure "1.3.1"]
                  [enlive "1.1.5"]

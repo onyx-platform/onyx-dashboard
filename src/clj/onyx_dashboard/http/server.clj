@@ -27,26 +27,29 @@
             [:security :anti-forgery]
             {:read-token (fn [req] (-> req :params :csrf-token))}))
 
-(def replica-state (atom {:replica nil :diff nil}))
-
-(defn track-deployment [send-fn! peer-config uid]
-  (let [ch (chan 100)
-        client (component/start (system/onyx-client peer-config))]
+(defn track-deployment [send-fn! client peer-config uid]
+  (let [ch (chan 100)]
     (loop [replica (extensions/subscribe-to-log (:log client) ch)]
       (let [position (<!! ch)
             entry (extensions/read-log-entry (:log client) position)
             new-replica (extensions/apply-log-entry entry replica)
-            diff (extensions/replica-diff entry replica new-replica)]
-        (send-fn! uid [:deployment/replica {:replica new-replica :diff diff}])
+            job-id (:job (:args entry))
+            diff (extensions/replica-diff entry replica new-replica)
+            tasks (get (:tasks new-replica) job-id)
+            complete-tasks (get (:completions new-replica) job-id)]
+        (case (:fn entry)
+          :submit-job (let [job-id (:id (:args entry))
+                            catalog (extensions/read-chunk (:log client) :catalog job-id)]
+                        (send-fn! uid [:job/submitted-job {:id job-id
+                                                           :catalog catalog
+                                                           :stat (:stat entry)}]))
+          :complete-task (let [task (extensions/read-chunk (:log client) :task (:task (:args entry)))
+                               task-name (:name task)]
+                           (send-fn! uid [:job/completed-task {:name task-name}]))
+          (info "Unable to custom handle entry"))
+        (send-fn! uid [:job/entry entry])
+        ;(send-fn! uid [:deployment/replica {:replica new-replica :diff diff}])
         (recur new-replica)))))
-
-(def env-conf
-  {:hornetq/mode :standalone, 
-   :hornetq.standalone/host "54.169.41.99", 
-   :hornetq.standalone/port 5445, 
-   :zookeeper/address "54.169.229.123:2181,54.169.240.52:2181", 
-   :onyx.peer/job-scheduler :onyx.job-scheduler/round-robin 
-   :onyx/id :SUPPLY_ME})
 
 (defn zk-deployment-entry-stat [client entry]
   (:stat (zk/data client (zk-onyx/prefix-path entry))))
@@ -72,6 +75,25 @@
 (defn event->uid [event]
   (get-in event [:ring-req :cookies "ring-session" :value]))
 
+; TODO: should be passing tracking around
+(defn stop-tracking! [user-id]
+  (when-let [current (@tracking user-id)]
+    (component/stop (:client current))
+    (future-cancel (:tracking-fut current))))
+
+(defn start-tracking! [send-fn! deployment-id peer-config user-id]
+  (stop-tracking! user-id)
+  (let [client (component/start (system/onyx-client peer-config))] 
+    (swap! tracking 
+           assoc 
+           user-id
+           {:client client
+            :tracking-fut (future 
+                            (track-deployment send-fn!
+                                              client
+                                              (assoc peer-config :onyx/id deployment-id)
+                                              user-id))})))
+
 (defn launch-event-handler [sente peer-config]
   (thread
     (loop []
@@ -83,18 +105,15 @@
         ;; then stop the future.
         (let [user-id (event->uid event)] 
           (case (:id event) 
-            :deployment/track (do (when-let [fut (@tracking user-id)]
-                                    (future-cancel fut))
-                                  (swap! tracking 
-                                         assoc 
-                                         user-id
-                                         (future (track-deployment (:chsk-send! sente)
-                                                                   (assoc env-conf :onyx/id (:?data event)) 
-                                                                   user-id))))
+            :deployment/track (start-tracking! (:chsk-send! sente)
+                                               (:?data event)
+                                               peer-config
+                                               user-id)
             :deployment/get-listing ((:chsk-send! sente) user-id [:deployment/listing @deployments])
             :chsk/uidport-close (do
                                   (future-cancel (@tracking user-id))
                                   (swap! tracking dissoc user-id)) 
+            :chsk/ws-ping nil
             (println "Dunno what to do with: " event)))
         (recur)))))
 
@@ -102,7 +121,6 @@
   (doseq [uid (:any @connected-uids)]
     (send-fn! uid msg)))
 
-; no need for env-config and peer-config
 (defrecord HttpServer [peer-config]
   component/Lifecycle
   (start [{:keys [sente] :as component}]
@@ -121,7 +139,7 @@
     (refresh-deployments-watch (partial send-mult-fn 
                                         (:chsk-send! sente) 
                                         (:connected-uids sente)) 
-                               (zk/connect (:zookeeper/address env-conf)))
+                               (zk/connect (:zookeeper/address peer-config)))
 
     (let [my-ring-handler (ring.middleware.defaults/wrap-defaults my-routes ring-defaults-config)
           server (http-kit-server/run-server my-ring-handler {:port 3000})

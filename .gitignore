@@ -11,3 +11,4 @@ pom.xml.asc
 /out
 /.repl
 *.log
+*.log.*
