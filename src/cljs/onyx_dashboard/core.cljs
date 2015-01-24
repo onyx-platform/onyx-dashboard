@@ -16,8 +16,10 @@
 
 (enable-console-print!)
 
-(defonce app-state (atom {:text "Hello Chestnut!"
-                          :tracking {}}))
+(defonce app-state 
+  (atom {:ready? false
+         :deployments {}
+         :deployment {:id nil :replica nil}}))
 
 (let [{:keys [chsk ch-recv send-fn state]}
       (sente/make-channel-socket! "/chsk" {:type :auto})]
@@ -26,7 +28,30 @@
   (def chsk-send! send-fn)
   (def chsk-state state))
 
-(def cluster-id "WHATEV")
+;; SETUP A CONTROLLER HERE SOMEWHERE FOR ALL THE SWAPS
+
+; (defn stop-tracking! [deployment-id]
+;   (chsk-send! [:deployment/track-cancel deployment-id]))
+
+(defn start-tracking! [deployment-id]
+  (swap! app-state assoc-in [:deployment :id] deployment-id)
+  (chsk-send! [:deployment/track deployment-id])
+  false)
+
+(defcomponent select-deployment [{:keys [deployments deployment]} owner]
+  (render [_] 
+          (dom/div 
+            "Some deployment: "
+            (b/toolbar {}
+                       (apply (partial b/dropdown {:bs-style "primary" 
+                                                   :title (or (:id deployment) 
+                                                              "Deployments")})
+                              (for [[id info] deployments]
+                                (b/menu-item {:key id
+                                              :on-select (fn [_] 
+                                                           ;(stop-tracking! id)
+                                                           (start-tracking! id))} 
+                                             id)))))))
 
 (defn event-handler [{:keys [event]}]
   (let [[msg-type msg] event]
@@ -35,11 +60,14 @@
       (let [[recv-type recv-msg] msg]
         (println "Recv event " event)
         (case recv-type
-          :cluster/replica
-          (swap! app-state assoc :tracking recv-msg)
+          :deployment/replica
+          (swap! app-state assoc-in [:deployment :replica] recv-msg)
+          :deployment/listing
+          (swap! app-state assoc :deployments recv-msg)
           (println "Unhandled recv-type: " recv-type)))
       :chsk/state (when (:first-open? msg)
-                    (chsk-send! [:cluster/track cluster-id])
+                    (chsk-send! [:deployment/get-listing])
+                    (swap! app-state assoc :ready? true)
                     (println "First opened: " event)))))
 
 (sente/start-chsk-router! ch-chsk event-handler)
@@ -50,6 +78,7 @@
       (reify
         om/IRender
         (render [_]
-          (dom/h1 (:text app)))))
+          (dom/h1 "Select a deployment")
+          (om/build select-deployment app {}))))
     app-state
     {:target (. js/document (getElementById "app"))}))
