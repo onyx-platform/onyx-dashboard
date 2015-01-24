@@ -65,10 +65,10 @@
                      (dom/th "Time")
                      (dom/th "fn")))
                  (dom/tbody ;{:height "500px" :position "absolute" :overflow-y "scroll"}
-                   (for [entry (reverse (sort-by (comp :ctime :stat) entries))] 
+                   (for [entry (reverse (sort-by :created entries))] 
                      (dom/tr {:title (str (om/value entry))}
                        (dom/td (str (:id (:args entry))))
-                       (dom/td (str (js/Date. (:ctime (:stat entry)))))
+                       (dom/td (str (js/Date. (:created entry))))
                        (dom/td (str (:fn entry)))))))))
 
 (defn select-job [id]
@@ -83,7 +83,7 @@
                      (dom/th "ID")
                      (dom/th "Time")))
                  (dom/tbody
-                   (for [job (reverse (sort-by (comp :ctime :stat) (vals jobs)))] 
+                   (for [job (reverse (sort-by :created (vals jobs)))] 
                      (let [job-id (:id job)] 
                        (dom/tr {; make this a class
                                 :style {:background-color (if (= job-id selected-job)
@@ -91,7 +91,7 @@
                          (dom/td {:on-click (fn [_] (select-job job-id))} 
                                  (str job-id))
                          (dom/td {}
-                                 (str (js/Date. (:ctime (:stat job))))))))))))
+                                 (str (js/Date. (:created job)))))))))))
 
 (defcomponent catalog-view [catalog owner]
   (render [_]

@@ -42,7 +42,7 @@
                             catalog (extensions/read-chunk (:log client) :catalog job-id)]
                         (send-fn! uid [:job/submitted-job {:id job-id
                                                            :catalog catalog
-                                                           :stat (:stat entry)}]))
+                                                           :created (:created entry)}]))
           :complete-task (let [task (extensions/read-chunk (:log client) :task (:task (:args entry)))
                                task-name (:name task)]
                            (send-fn! uid [:job/completed-task {:name task-name}]))
