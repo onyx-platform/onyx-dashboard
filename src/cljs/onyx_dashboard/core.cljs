@@ -56,20 +56,28 @@
                                                            (start-tracking! id))} 
                                              id)))))))
 
-(defcomponent deployment-entries [entries owner]
+(defn entry-for-job? [job-id entry]
+  (if-let [entry-job-id (if (= (:fn entry) :submit-job)
+                          (:id entry)
+                          (:job-id entry))]
+    (= entry-job-id job-id)))
+
+(defcomponent deployment-entries [{:keys [selected-job entries]} owner]
   (render [_]
-          (table {:striped? true :bordered? true :condensed? true :hover? true}
-                 (dom/thead
-                   (dom/tr
-                     (dom/th "ID")
-                     (dom/th "Time")
-                     (dom/th "fn")))
-                 (dom/tbody ;{:height "500px" :position "absolute" :overflow-y "scroll"}
-                   (for [entry (reverse (sort-by :created-at entries))] 
-                     (dom/tr {:title (str (om/value entry))}
-                       (dom/td (str (:id (:args entry))))
-                       (dom/td (str (js/Date. (:created-at entry))))
-                       (dom/td (str (:fn entry)))))))))
+          (let [filtered-entries (filter (partial entry-for-job? selected-job) 
+                                         entries)] 
+            (table {:striped? true :bordered? true :condensed? true :hover? true}
+                   (dom/thead
+                     (dom/tr
+                       (dom/th "ID")
+                       (dom/th "Time")
+                       (dom/th "fn")))
+                   (dom/tbody ;{:height "500px" :position "absolute" :overflow-y "scroll"}
+                              (for [entry (reverse (sort-by :created-at entries))] 
+                                (dom/tr {:title (str (om/value entry))}
+                                        (dom/td (str (:id (:args entry))))
+                                        (dom/td (str (js/Date. (:created-at entry))))
+                                        (dom/td (str (:fn entry))))))))))
 
 (defn select-job [id]
   (println "Selecting job " id)
@@ -99,9 +107,12 @@
 
 (defcomponent job-info [{:keys [selected-job jobs]} owner]
   (render [_]
-          (dom/div 
-            (if-let [catalog (:catalog (jobs selected-job))]
-              (om/build catalog-view catalog {})))))
+          ; Maybe only pass in job
+          (let [job (jobs selected-job)] 
+            (dom/div 
+              (dom/div (str (om/value job)))
+              (if-let [catalog (:catalog job)]
+                (om/build catalog-view catalog {}))))))
 
 (defn event-handler [{:keys [event]}]
   (let [[msg-type msg] event]
@@ -143,6 +154,6 @@
             (dom/aside {}
                        (dom/nav (om/build job-selector (:deployment app) {}))
                        (dom/nav (om/build job-info (:deployment app) {}))
-                       (dom/nav (om/build deployment-entries (:entries (:deployment app)) {})))))))
+                       (dom/nav (om/build deployment-entries (:deployment app) {})))))))
     app-state
     {:target (. js/document (getElementById "app"))}))

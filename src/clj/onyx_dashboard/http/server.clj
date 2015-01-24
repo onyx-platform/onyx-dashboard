@@ -27,22 +27,57 @@
             [:security :anti-forgery]
             {:read-token (fn [req] (-> req :params :csrf-token))}))
 
+; Improve fn name
+(defn job-peer-allocated-task [job-allocations job-id peer-id]
+  (ffirst 
+    (filter (fn [[task-id peer-ids]]
+              (not-empty (filter #{peer-id} peer-ids))) 
+            job-allocations)))
+
+; Improve fn name
+(defn task-allocated-to-peer [allocations peer-id]
+  (some identity 
+        (map (fn [job-id] 
+               (if-let [task (job-peer-allocated-task (allocations job-id)
+                                                      job-id
+                                                      peer-id)]
+                 {:job job-id :task task}))
+             (keys allocations))))
+
+; May want to track events in a deployment atom
+; including chunks that are read e.g. catalog. Then if we end up
+; with multiple clients viewing the same deployment we can only subscribe once.
+; Probably not worth the complexity!
 (defn track-deployment [send-fn! client peer-config uid]
+  ; TODO: do we need to close this channel properly when
+  ; cancelling the future so the subscribe-to-log thread doesn't
+  ; keep going?
   (let [ch (chan 100)]
     (loop [replica (extensions/subscribe-to-log (:log client) ch)]
       (let [position (<!! ch)
             entry (extensions/read-log-entry (:log client) position)
             new-replica (extensions/apply-log-entry entry replica)
-            job-id (:job (:args entry))
             diff (extensions/replica-diff entry replica new-replica)
+            job-id (:job (:args entry))
             tasks (get (:tasks new-replica) job-id)
-            complete-tasks (get (:completions new-replica) job-id)]
+            ;complete-tasks (get (:completions new-replica) job-id)
+            ]
         (case (:fn entry)
           :submit-job (let [job-id (:id (:args entry))
                             catalog (extensions/read-chunk (:log client) :catalog job-id)]
                         (send-fn! uid [:job/submitted-job {:id job-id
+                                                           :entry entry
                                                            :catalog catalog
                                                            :created-at (:created-at entry)}]))
+          ; TODO: check if newly submitted jobs will result in peer assigned messages being sent.
+          :volunteer-for-task (let [peer-id (:id (:args entry))
+                                    task (task-allocated-to-peer (:allocations new-replica) peer-id)]  
+                                (if task 
+                                  (send-fn! uid 
+                                            [:job/peer-assigned {:job (:job task)
+                                                                 :task (:task task)
+                                                                 :peer peer-id}])))
+
           :complete-task (let [task (extensions/read-chunk (:log client) :task (:task (:args entry)))
                                task-name (:name task)]
                            (send-fn! uid [:job/completed-task {:name task-name}]))
@@ -94,7 +129,7 @@
                                               (assoc peer-config :onyx/id deployment-id)
                                               user-id))})))
 
-(defn launch-event-handler [sente peer-config]
+(defn start-event-handler [sente peer-config]
   (thread
     (loop []
       (when-let [event (<!! (:ch-chsk sente))]
@@ -135,7 +170,7 @@
       (resources "/")
       (resources "/react" {:root "react"})
       (route/not-found "Page not found"))
-    (launch-event-handler sente peer-config)
+    (start-event-handler sente peer-config)
     (refresh-deployments-watch (partial send-mult-fn 
                                         (:chsk-send! sente) 
                                         (:connected-uids sente)) 
