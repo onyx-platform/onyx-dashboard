@@ -28,19 +28,18 @@
             [:security :anti-forgery]
             {:read-token (fn [req] (-> req :params :csrf-token))}))
 
+; TODO: Move into component
 (def deployments (atom {}))
 (def tracking (atom {}))
 
-;(deref tracking)
-
-; Improve fn name
+; TODO:  Improve fn name
 (defn job-peer-allocated-task [job-allocations job-id peer-id]
   (ffirst 
     (filter (fn [[task-id peer-ids]]
               (not-empty (filter #{peer-id} peer-ids))) 
             job-allocations)))
 
-; Improve fn name
+; TODO:  Improve fn name
 (defn task-allocated-to-peer [allocations peer-id]
   (some identity 
         (map (fn [job-id] 
@@ -214,7 +213,7 @@
       (resources "/")
       (resources "/react" {:root "react"})
       (route/not-found "Page not found"))
-    
+
     (let [event-handler-fut (start-event-handler sente peer-config)
           ; TODO: no way to currently stop this watch
           _ (refresh-deployments-watch (partial send-mult-fn 
