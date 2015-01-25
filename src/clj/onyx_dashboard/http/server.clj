@@ -54,7 +54,7 @@
 ; including chunks that are read e.g. catalog. Then if we end up
 ; with multiple clients viewing the same deployment we can only subscribe once.
 ; Probably not worth the complexity!
-(defn track-deployment [send-fn! subscription ch uid]
+(defn track-deployment [send-fn! subscription ch tracking-id uid]
   (let [log (:log (:env subscription))]
     (loop [replica (:replica subscription)]
       (when-let [position (<!! ch)]
@@ -67,24 +67,27 @@
           (case (:fn entry)
             :submit-job (let [job-id (:id (:args entry))
                               catalog (extensions/read-chunk log :catalog job-id)]
-                          (send-fn! uid [:job/submitted-job {:id job-id
+                          (send-fn! uid [:job/submitted-job {:tracking-id tracking-id
+                                                             :id job-id
                                                              :entry entry
                                                              :catalog catalog
                                                              :created-at (:created-at entry)}]))
             ; TODO: check if newly submitted jobs will result in peer assigned messages being sent.
             :volunteer-for-task (let [peer-id (:id (:args entry))
                                       task (task-allocated-to-peer (:allocations new-replica) peer-id)]  
-                                  (if task 
+                                  (when task 
                                     (send-fn! uid 
-                                              [:job/peer-assigned {:job (:job task)
+                                              [:job/peer-assigned {:tracking-id tracking-id
+                                                                   :job (:job task)
                                                                    :task (:task task)
                                                                    :peer peer-id}])))
 
             :complete-task (let [task (extensions/read-chunk log :task (:task (:args entry)))
                                  task-name (:name task)]
-                             (send-fn! uid [:job/completed-task {:name task-name}]))
+                             (send-fn! uid [:job/completed-task {:tracking-id tracking-id
+                                                                 :name task-name}]))
             (info "Unable to custom handle entry"))
-          (send-fn! uid [:job/entry entry])
+          (send-fn! uid [:job/entry (assoc entry :tracking-id tracking-id)])
           ;(send-fn! uid [:deployment/replica {:replica new-replica :diff diff}])
           (recur new-replica))))))
 
@@ -92,7 +95,6 @@
 (defrecord LogSubscription [peer-config]
   component/Lifecycle
   (start [component]
-    ; Maybe don't need a whole component for this since it already pretty much is one?
     (info "Start log subscription")
     (let [sub-ch (chan 100)
           subscription (onyx.api/subscribe-to-log peer-config sub-ch)] 
@@ -102,8 +104,7 @@
     (onyx.api/shutdown-env (:env (:subscription component)))
     (assoc component :subscription nil :channel nil)))
 
-
-(defrecord TrackDeploymentManager [send-fn! peer-config user-id]
+(defrecord TrackDeploymentManager [send-fn! peer-config tracking-id user-id]
   component/Lifecycle
   (start [component]
     ; Convert to a system?
@@ -115,6 +116,7 @@
                              (track-deployment send-fn!
                                                (:subscription subscription)
                                                (:subscription-ch subscription)
+                                               tracking-id
                                                user-id)))))
   (stop [component]
     (info "Stopping Track Deployment manager.")
@@ -122,24 +124,27 @@
            :subscription (component/stop (:subscription component))
            :tracking-fut (future-cancel (:tracking-fut component)))))
 
-(defn new-track-deployment-manager [send-fn! peer-config user-id]
+(defn new-track-deployment-manager [send-fn! peer-config user-id tracking-id]
   (map->TrackDeploymentManager {:send-fn! send-fn! 
                                 :peer-config peer-config 
-                                :user-id user-id}))
+                                :user-id user-id
+                                :tracking-id tracking-id}))
 
 (defn stop-tracking! [user-id]
   (when-let [tracking-manager (@tracking user-id)]
     (component/stop tracking-manager)
     (swap! tracking dissoc user-id)))
 
-(defn start-tracking! [send-fn! peer-config deployment-id user-id]
+(defn start-tracking! [send-fn! peer-config {:keys [deployment-id tracking-id]} user-id]
+  (println deployment-id " tracking id " tracking-id peer-config)
   (stop-tracking! user-id)
   (swap! tracking 
          assoc 
          user-id
          (component/start (new-track-deployment-manager send-fn! 
                                                         (assoc peer-config :onyx/id deployment-id)
-                                                        user-id))))
+                                                        user-id
+                                                        tracking-id))))
 
 (defn stop-all-tracking! []
   (map stop-tracking! (keys @tracking)))
