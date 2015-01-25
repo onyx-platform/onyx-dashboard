@@ -136,7 +136,11 @@
             (dom/div
              (dom/pre
               (dom/h4 "Catalog")
-              (om/build clojure-block {:input (:pretty-catalog job)}))))))
+              (om/build clojure-block {:input (:pretty-catalog job)}))
+
+             (dom/pre
+              (dom/h4 "Workflow")
+              (om/build clojure-block {:input (:pretty-workflow job)}))))))
 
 (defn msg-controller [type msg]
   (swap! app-state 

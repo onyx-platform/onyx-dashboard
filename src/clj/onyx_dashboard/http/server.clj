@@ -66,12 +66,14 @@
               tasks (get (:tasks new-replica) job-id)]
           (case (:fn entry)
             :submit-job (let [job-id (:id (:args entry))
-                              catalog (extensions/read-chunk log :catalog job-id)]
+                              catalog (extensions/read-chunk log :catalog job-id)
+                              workflow (extensions/read-chunk log :workflow job-id)]
                           (send-fn! uid [:job/submitted-job {:tracking-id tracking-id
                                                              :id job-id
                                                              :entry entry
                                                              :catalog catalog
                                                              :pretty-catalog (with-out-str (fipp (into [] catalog)))
+                                                             :pretty-workflow (with-out-str (fipp (into [] workflow)))
                                                              :created-at (:created-at entry)}]))
             ; TODO: check if newly submitted jobs will result in peer assigned messages being sent.
             :volunteer-for-task (let [peer-id (:id (:args entry))
