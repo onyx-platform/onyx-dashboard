@@ -20,9 +20,11 @@
 (defonce app-state 
   (atom {:ready? false
          :deployments {}
-         :deployment {:jobs []
+         :deployment {:tracking-id nil
+                      :jobs []
                       :selected-job nil
-                      :entries []}}))
+                      :message-id-max nil
+                      :entries {}}}))
 
 (let [{:keys [chsk ch-recv send-fn state]}
       (sente/make-channel-socket! "/chsk" {:type :auto})]
@@ -31,15 +33,17 @@
   (def chsk-send! send-fn)
   (def chsk-state state))
 
-;; SETUP A CONTROLLER HERE SOMEWHERE FOR ALL THE SWAPS
 ; (defn stop-tracking! [deployment-id]
 ;   (chsk-send! [:deployment/track-cancel deployment-id]))
 
 (defn start-tracking! [deployment-id]
-  (swap! app-state assoc :deployment {:id deployment-id
-                                      :entries []})
-  (chsk-send! [:deployment/track deployment-id])
-  false)
+  (let [tracking-id (uuid/make-random)] 
+    (swap! app-state assoc :deployment {:tracking-id tracking-id
+                                        :id deployment-id
+                                        :entries {}})
+    (chsk-send! [:deployment/track {:deployment-id deployment-id
+                                    :tracking-id tracking-id}])
+    false))
 
 (defcomponent select-deployment [{:keys [deployments deployment]} owner]
   (render [_] 
@@ -49,23 +53,25 @@
                        (apply (partial b/dropdown {:bs-style "primary" 
                                                    :title (or (:id deployment) 
                                                               "Deployments")})
-                              (for [[id info] deployments]
+                              (for [[id info] (reverse (sort-by (comp :created-at val) 
+                                                                deployments))]
                                 (b/menu-item {:key id
                                               :on-select (fn [_] 
                                                            ;(stop-tracking! id)
                                                            (start-tracking! id))} 
                                              id)))))))
 
-(defn entry-for-job? [job-id entry]
+(defn is-job-entry? [job-id entry]
   (if-let [entry-job-id (if (= (:fn entry) :submit-job)
                           (:id entry)
                           (:job-id entry))]
     (= entry-job-id job-id)))
 
-(defcomponent deployment-entries [{:keys [selected-job entries]} owner]
+(defcomponent deployment-entries [{:keys [selected-job entries message-id-max]} owner]
   (render [_]
-          ;(println "ENTRY INFO:" (count (map :message-id entries))  (count (set (map :message-id entries))))
-          (let [filtered-entries nil #_(filter (partial entry-for-job? selected-job) entries)] 
+          (let [num-displayed 100
+                start-id (max 0 (- (inc message-id-max) num-displayed))
+                displayed-msg-ids (range start-id (inc message-id-max))] 
             (table {:striped? true :bordered? true :condensed? true :hover? true}
                    (dom/thead
                      (dom/tr
@@ -73,7 +79,9 @@
                        (dom/th "Time")
                        (dom/th "fn")))
                    (dom/tbody ;{:height "500px" :position "absolute" :overflow-y "scroll"}
-                              (for [entry (take 100 (reverse (sort-by :message-id entries)))] 
+                              ; Entries may not exist if they have come in out of order from sente, 
+                              ; thus we only keep the not nil entries
+                              (for [entry (keep entries (reverse displayed-msg-ids))] 
                                 (dom/tr {:key (str "entry-" (:message-id entry))
                                          :title (str (om/value entry))}
                                         (dom/td (str (:id (:args entry))))
@@ -92,7 +100,7 @@
                      (dom/th "ID")
                      (dom/th "Time")))
                  (dom/tbody
-                   (for [job (reverse (time (sort-by :created-at (vals jobs))))] 
+                   (for [job (reverse (sort-by :created-at (vals jobs)))] 
                      (let [job-id (:id job)] 
                        (dom/tr {; make this a class
                                 :style {:background-color (if (= job-id selected-job)
@@ -108,12 +116,36 @@
 
 (defcomponent job-info [{:keys [selected-job jobs]} owner]
   (render [_]
-          (if (and selected-job jobs)
-            (let [job (jobs selected-job)] 
-              (dom/div 
-                (dom/div (str (om/value job)))
-                (if-let [catalog (:catalog job)]
-                  (om/build catalog-view catalog {})))))))
+          (if-let [job (and selected-job jobs (jobs selected-job))]
+            (dom/div 
+              (dom/div (str (om/value job)))
+              (if-let [catalog (:catalog job)]
+                (om/build catalog-view catalog {}))))))
+
+(defn msg-controller [type msg]
+  (swap! app-state 
+         (fn [state]
+           (if-let [tracking-id (:tracking-id msg)] 
+             (cond (= tracking-id (get-in state [:deployment :tracking-id]))
+                   (case type
+                     ;:deployment/replica
+                     ;(assoc-in state [:deployment :replica] recv-msg)
+                     :job/completed-task
+                     (do (println "Task completed: " msg)
+                         state)
+                     :job/submitted-job 
+                     (assoc-in state [:deployment :jobs (:id msg)] msg)
+                     :job/entry
+                     (update-in state [:deployment] (fn [deployment]
+                                                      (-> deployment
+                                                          (assoc :message-id-max (max (:message-id msg)
+                                                                                      (:message-id-max deployment)))
+                                                          (assoc-in [:entries (:message-id msg)] msg))))
+                     state)
+                   :else state)
+             (if (= :deployment/listing type)
+               (assoc-in state [:deployments] msg)
+               state)))))
 
 (defn event-handler [{:keys [event]}]
   (let [[msg-type msg] event]
@@ -121,18 +153,7 @@
       :chsk/recv
       (let [[recv-type recv-msg] msg]
         (println "Recv event " event)
-        (case recv-type
-          :deployment/replica
-          (swap! app-state assoc-in [:deployment :replica] recv-msg)
-          :deployment/listing
-          (swap! app-state assoc :deployments recv-msg)
-          :job/completed-task
-          (println "Task completed: " recv-msg)
-          :job/submitted-job 
-          (swap! app-state assoc-in [:deployment :jobs (:id recv-msg)] recv-msg)
-          :job/entry
-          (swap! app-state update-in [:deployment :entries] conj recv-msg)
-          (println "Unhandled recv-type: " recv-type recv-msg)))
+        (msg-controller recv-type recv-msg))
       :chsk/state (when (:first-open? msg)
                     (chsk-send! [:deployment/get-listing])
                     (swap! app-state assoc :ready? true)
@@ -141,7 +162,7 @@
 (sente/start-chsk-router! ch-chsk event-handler)
 
 (defn main []
-  #_(om/root
+  (om/root
     ankha/inspector
     app-state
     {:target (js/document.getElementById "ankha")})
