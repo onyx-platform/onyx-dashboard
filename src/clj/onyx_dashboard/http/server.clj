@@ -130,9 +130,12 @@
                                 :tracking-id tracking-id}))
 
 (defn stop-tracking! [user-id]
-  (when-let [tracking-manager (@tracking user-id)]
-    (component/stop tracking-manager)
-    (swap! tracking dissoc user-id)))
+  (swap! tracking
+         (fn [tr]
+           (if-let [manager (tr user-id)]
+             (do (component/stop manager)
+                 (dissoc tr user-id))
+             tr))))
 
 (defn start-tracking! [send-fn! peer-config {:keys [deployment-id tracking-id]} user-id]
   (println deployment-id " tracking id " tracking-id peer-config)
