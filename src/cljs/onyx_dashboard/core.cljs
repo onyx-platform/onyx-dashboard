@@ -71,22 +71,24 @@
   (render [_]
           (let [num-displayed 100
                 start-id (max 0 (- (inc message-id-max) num-displayed))
-                displayed-msg-ids (range start-id (inc message-id-max))] 
-            (table {:striped? true :bordered? true :condensed? true :hover? true}
-                   (dom/thead
+                displayed-msg-ids (range start-id (inc message-id-max))]
+            (dom/pre
+             (dom/h4 "Cluster Activity")
+             (table {:striped? true :bordered? true :condensed? true :hover? true}
+                    (dom/thead
                      (dom/tr
-                       (dom/th "ID")
-                       (dom/th "Time")
-                       (dom/th "fn")))
-                   (dom/tbody ;{:height "500px" :position "absolute" :overflow-y "scroll"}
-                              ; Entries may not exist if they have come in out of order from sente, 
-                              ; thus we only keep the not nil entries
-                              (for [entry (keep entries (reverse displayed-msg-ids))] 
-                                (dom/tr {:key (str "entry-" (:message-id entry))
-                                         :title (str (om/value entry))}
-                                        (dom/td (str (:id (:args entry))))
-                                        (dom/td (str (js/Date. (:created-at entry))))
-                                        (dom/td (str (:fn entry))))))))))
+                      (dom/th "ID")
+                      (dom/th "Time")
+                      (dom/th "fn")))
+                    (dom/tbody ;{:height "500px" :position "absolute" :overflow-y "scroll"}
+                                        ; Entries may not exist if they have come in out of order from sente, 
+                                        ; thus we only keep the not nil entries
+                     (for [entry (keep entries (reverse displayed-msg-ids))] 
+                       (dom/tr {:key (str "entry-" (:message-id entry))
+                                :title (str (om/value entry))}
+                               (dom/td (str (:id (:args entry))))
+                               (dom/td (str (js/Date. (:created-at entry))))
+                               (dom/td (str (:fn entry)))))))))))
 
 (defn select-job [id]
   (println "Selecting job " id)
@@ -94,21 +96,23 @@
 
 (defcomponent job-selector [{:keys [selected-job jobs]} owner]
   (render [_]
-          (table {:striped? true :bordered? true :condensed? true :hover? true}
-                 (dom/thead
+          (dom/pre
+           (dom/h4 "Jobs")
+           (table {:striped? true :bordered? true :condensed? true :hover? true}
+                  (dom/thead
                    (dom/tr
-                     (dom/th "ID")
-                     (dom/th "Time")))
-                 (dom/tbody
+                    (dom/th "ID")
+                    (dom/th "Time")))
+                  (dom/tbody
                    (for [job (reverse (sort-by :created-at (vals jobs)))] 
                      (let [job-id (:id job)] 
-                       (dom/tr {; make this a class
+                       (dom/tr {        ; make this a class
                                 :style {:background-color (if (= job-id selected-job)
                                                             "lightblue")}}
-                         (dom/td {:on-click (fn [_] (select-job job-id))} 
-                                 (str job-id))
-                         (dom/td {}
-                                 (str (js/Date. (:created-at job)))))))))))
+                               (dom/td {:on-click (fn [_] (select-job job-id))} 
+                                       (str job-id))
+                               (dom/td {}
+                                       (str (js/Date. (:created-at job))))))))))))
 
 (defcomponent catalog-view [catalog owner]
   (render [_]
