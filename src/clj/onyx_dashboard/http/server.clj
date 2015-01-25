@@ -198,6 +198,11 @@
 (defrecord HttpServer [peer-config]
   component/Lifecycle
   (start [{:keys [sente] :as component}]
+
+    ; Just reset atoms for now. Atoms should be created and reset in here
+    (reset! tracking {})
+    (reset! deployments {})
+
     (println "Starting HTTP Server")
 
     (defroutes my-routes
