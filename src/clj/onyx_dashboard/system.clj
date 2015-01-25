@@ -14,22 +14,20 @@
             [environ.core :refer [env]]
             [ring.adapter.jetty :refer [run-jetty]]))
 
-(def id "WHATEV")
-
 (def remote? true)
 
 (def zk-addr 
-  (if remote?
-    "54.169.229.123:2181,54.169.240.52:2181"
-    "172.31.5.32:2181,172.31.5.33:2181"))
+  (or (env :zookeeper-addr)
+      (if remote?
+        "54.169.229.123:2181,54.169.240.52:2181"
+        "172.31.5.32:2181,172.31.5.33:2181")))
 
 (def env-config 
   {:hornetq/mode :standalone
-   :hornetq.standalone/host "54.169.41.99"
-   :hornetq.standalone/port 5445
+   :hornetq.standalone/host (or (env :hornetq-host) "54.169.41.99")
+   :hornetq.standalone/port (or (env :hornetq-port) 5445)
    :zookeeper/address zk-addr
-   :onyx.peer/job-scheduler :onyx.job-scheduler/round-robin
-   :onyx/id id})
+   :onyx.peer/job-scheduler :onyx.job-scheduler/round-robin})
 
 
 (defn get-system []

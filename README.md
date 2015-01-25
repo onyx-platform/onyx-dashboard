@@ -5,11 +5,17 @@ A dashboard for the Onyx distributed computation system
 
 ## Development
 
+
+
 Open a terminal and type `lein figwheel` to start the Figwheel build
 (https://github.com/bhauman/lein-figwheel).
 
-Open a second terminal and type `lein repl` to start a Clojure REPL
-(interactive prompt).
+Set env variables for HORNETQ_HOST, HORNETQ_PORT and ZOOKEEPER_ADDR (in the
+usual environ (https://github.com/weavejester/environ) way, can be in profile,
+shell environment or java properties)
+
+and run
+start your repl.
 
 In the REPL, type
 
