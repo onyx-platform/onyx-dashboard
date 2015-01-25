@@ -64,8 +64,8 @@
 
 (defcomponent deployment-entries [{:keys [selected-job entries]} owner]
   (render [_]
-          (let [filtered-entries (filter (partial entry-for-job? selected-job) 
-                                         entries)] 
+          ;(println "ENTRY INFO:" (count (map :message-id entries))  (count (set (map :message-id entries))))
+          (let [filtered-entries nil #_(filter (partial entry-for-job? selected-job) entries)] 
             (table {:striped? true :bordered? true :condensed? true :hover? true}
                    (dom/thead
                      (dom/tr
@@ -73,8 +73,9 @@
                        (dom/th "Time")
                        (dom/th "fn")))
                    (dom/tbody ;{:height "500px" :position "absolute" :overflow-y "scroll"}
-                              (for [entry (reverse (sort-by :created-at entries))] 
-                                (dom/tr {:title (str (om/value entry))}
+                              (for [entry (take 100 (reverse (sort-by :message-id entries)))] 
+                                (dom/tr {:key (str "entry-" (:message-id entry))
+                                         :title (str (om/value entry))}
                                         (dom/td (str (:id (:args entry))))
                                         (dom/td (str (js/Date. (:created-at entry))))
                                         (dom/td (str (:fn entry))))))))))
@@ -91,7 +92,7 @@
                      (dom/th "ID")
                      (dom/th "Time")))
                  (dom/tbody
-                   (for [job (reverse (sort-by :created-at (vals jobs)))] 
+                   (for [job (reverse (time (sort-by :created-at (vals jobs))))] 
                      (let [job-id (:id job)] 
                        (dom/tr {; make this a class
                                 :style {:background-color (if (= job-id selected-job)
@@ -107,12 +108,12 @@
 
 (defcomponent job-info [{:keys [selected-job jobs]} owner]
   (render [_]
-          ; Maybe only pass in job
-          (let [job (jobs selected-job)] 
-            (dom/div 
-              (dom/div (str (om/value job)))
-              (if-let [catalog (:catalog job)]
-                (om/build catalog-view catalog {}))))))
+          (if (and selected-job jobs)
+            (let [job (jobs selected-job)] 
+              (dom/div 
+                (dom/div (str (om/value job)))
+                (if-let [catalog (:catalog job)]
+                  (om/build catalog-view catalog {})))))))
 
 (defn event-handler [{:keys [event]}]
   (let [[msg-type msg] event]
@@ -140,7 +141,7 @@
 (sente/start-chsk-router! ch-chsk event-handler)
 
 (defn main []
-  (om/root
+  #_(om/root
     ankha/inspector
     app-state
     {:target (js/document.getElementById "ankha")})
