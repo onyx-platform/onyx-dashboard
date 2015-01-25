@@ -94,11 +94,11 @@
                     (dom/tbody ;{:height "500px" :position "absolute" :overflow-y "scroll"}
                                         ; Entries may not exist if they have come in out of order from sente, 
                                         ; thus we only keep the not nil entries
-                     (for [entry (keep entries (reverse displayed-msg-ids))] 
+                     (for [entry (keep entries (reverse displayed-msg-ids))]
                        (dom/tr {:key (str "entry-" (:message-id entry))
                                 :title (str (om/value entry))}
                                (dom/td (str (:id (:args entry))))
-                               (dom/td (str (js/Date. (:created-at entry))))
+                               (dom/td (.fromNow (js/moment (str (js/Date. (:created-at entry))))))
                                (dom/td (str (:fn entry)))))))))))
 
 (defn select-job [id]
@@ -123,7 +123,7 @@
                                (dom/td {:on-click (fn [_] (select-job job-id))} 
                                        (str job-id))
                                (dom/td {}
-                                       (str (js/Date. (:created-at job))))))))))))
+                                       (.fromNow (js/moment (str (js/Date. (:created-at job))))))))))))))
 
 (defcomponent catalog-view [catalog owner]
   (render [_]
