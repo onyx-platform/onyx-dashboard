@@ -13,6 +13,7 @@
             [compojure.core :as comp :refer (defroutes GET POST)]
             [compojure.route :as route]
             [com.stuartsierra.component :as component]
+            [fipp.edn :refer [pprint] :rename {pprint fipp}]
             [onyx.system :as system :refer [onyx-client]]
             [onyx.extensions :as extensions]
             [onyx.api]
@@ -70,6 +71,7 @@
                                                              :id job-id
                                                              :entry entry
                                                              :catalog catalog
+                                                             :pretty-catalog (with-out-str (fipp (into [] catalog)))
                                                              :created-at (:created-at entry)}]))
             ; TODO: check if newly submitted jobs will result in peer assigned messages being sent.
             :volunteer-for-task (let [peer-id (:id (:args entry))

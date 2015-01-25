@@ -45,6 +45,18 @@
                                     :tracking-id tracking-id}])
     false))
 
+(defcomponent clojure-block [data owner]
+  (render-state [_ _] (dom/pre (:input data)))
+  (did-mount [_]
+             (let [editor (.edit js/ace (om/get-node owner))]
+               (.setOptions editor
+                            (clj->js {:maxLines 15}))
+               (.setMode (.getSession editor) "ace/mode/clojure")
+               (.setHighlightActiveLine editor false)
+               (.setHighlightGutterLine editor false)
+               (.setReadOnly editor true)
+               (set! (.-opacity (.-style (.-element (.-$cursorLayer (.-renderer editor))))) 0))))
+
 (defcomponent select-deployment [{:keys [deployments deployment]} owner]
   (render [_] 
           (dom/div
@@ -123,9 +135,8 @@
           (if-let [job (and selected-job jobs (jobs selected-job))]
             (dom/div
              (dom/pre
-              (dom/div (str (om/value job))))
-              (if-let [catalog (:catalog job)]
-                (om/build catalog-view catalog {}))))))
+              (dom/h4 "Catalog")
+              (om/build clojure-block {:input (:pretty-catalog job)}))))))
 
 (defn msg-controller [type msg]
   (swap! app-state 
@@ -138,7 +149,7 @@
                      :job/completed-task
                      (do (println "Task completed: " msg)
                          state)
-                     :job/submitted-job 
+                     :job/submitted-job
                      (assoc-in state [:deployment :jobs (:id msg)] msg)
                      :job/entry
                      (update-in state [:deployment] (fn [deployment]

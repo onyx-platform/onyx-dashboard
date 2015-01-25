@@ -26,6 +26,7 @@
                  [om "0.7.3"]
                  ;[org.om/om "0.8.1"]
                  [ankha "0.1.5.1-21e6ac" :exclude [om]]
+                 [fipp "0.5.1"]
                  [environ "1.0.0"]
                  [http-kit "2.1.19"]
                  [prismatic/om-tools "0.3.10" :exclusions [potemkin om]]]
