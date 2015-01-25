@@ -47,8 +47,7 @@
 
 (defcomponent select-deployment [{:keys [deployments deployment]} owner]
   (render [_] 
-          (dom/div 
-            "Some deployment: "
+          (dom/div
             (b/toolbar {}
                        (apply (partial b/dropdown {:bs-style "primary" 
                                                    :title (or (:id deployment) 
@@ -116,13 +115,15 @@
 
 (defcomponent catalog-view [catalog owner]
   (render [_]
-          (om/build ankha/collection-view catalog {:opts {:open? true}})))
+          (dom/pre
+           (om/build ankha/collection-view catalog {:opts {:open? true}}))))
 
 (defcomponent job-info [{:keys [selected-job jobs]} owner]
   (render [_]
           (if-let [job (and selected-job jobs (jobs selected-job))]
-            (dom/div 
-              (dom/div (str (om/value job)))
+            (dom/div
+             (dom/pre
+              (dom/div (str (om/value job))))
               (if-let [catalog (:catalog job)]
                 (om/build catalog-view catalog {}))))))
 
@@ -175,11 +176,13 @@
       (reify
         om/IRender
         (render [_]
-          (dom/div 
+          (dom/div
+           (g/grid
+            {}
             (om/build select-deployment app {})
             (dom/aside {}
                        (dom/nav (om/build job-selector (:deployment app) {}))
                        (dom/nav (om/build job-info (:deployment app) {}))
-                       (dom/nav (om/build deployment-entries (:deployment app) {})))))))
+                       (dom/nav (om/build deployment-entries (:deployment app) {}))))))))
     app-state
     {:target (. js/document (getElementById "app"))}))
