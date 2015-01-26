@@ -62,8 +62,7 @@
           (dom/div
             (b/toolbar {}
                        (apply (partial b/dropdown {:bs-style "primary" 
-                                                   :title (or (:id deployment) 
-                                                              "Deployments")})
+                                                   :title (or (:id deployment) "Deployments")})
                               (for [[id info] (reverse (sort-by (comp :created-at val) 
                                                                 deployments))]
                                 (b/menu-item {:key id
@@ -78,31 +77,27 @@
                           (:job-id entry))]
     (= entry-job-id job-id)))
 
-(defcomponent deployment-entries [{:keys [selected-job entries message-id-max]} owner]
+(defcomponent log-entry-row [entry owner]
+  (render [_] 
+          (dom/tr {:key (str "entry-" (:message-id entry))
+                   :title (str (om/value entry))}
+                  (dom/td (str (:id (:args entry))))
+                  (dom/td (.fromNow (js/moment (str (js/Date. (:created-at entry))))))
+                  (dom/td (str (:fn entry))))))
+
+(defcomponent log-entries-table [entries owner]
   (render [_]
-          (let [num-displayed 100
-                start-id (max 0 (- (inc message-id-max) num-displayed))
-                displayed-msg-ids (range start-id (inc message-id-max))]
+          (let []
             (dom/pre
              (dom/h4 "Cluster Activity")
              (table {:striped? true :bordered? true :condensed? true :hover? true}
-                    (dom/thead
-                     (dom/tr
-                      (dom/th "ID")
-                      (dom/th "Time")
-                      (dom/th "fn")))
+                    (dom/thead (dom/tr (dom/th "ID") (dom/th "Time") (dom/th "fn")))
                     (dom/tbody ;{:height "500px" :position "absolute" :overflow-y "scroll"}
-                                        ; Entries may not exist if they have come in out of order from sente, 
-                                        ; thus we only keep the not nil entries
-                     (for [entry (keep entries (reverse displayed-msg-ids))]
-                       (dom/tr {:key (str "entry-" (:message-id entry))
-                                :title (str (om/value entry))}
-                               (dom/td (str (:id (:args entry))))
-                               (dom/td (.fromNow (js/moment (str (js/Date. (:created-at entry))))))
-                               (dom/td (str (:fn entry)))))))))))
+                               (map (fn [entry]
+                                      (om/build log-entry-row entry {}))
+                                    entries)))))))
 
 (defn select-job [id]
-  (println "Selecting job " id)
   (swap! app-state assoc-in [:deployment :selected-job] id))
 
 (defcomponent job-selector [{:keys [selected-job jobs]} owner]
@@ -150,6 +145,8 @@
                      :closeWith ["click" "button"]})))
 
 (defn msg-controller [type msg]
+  ; success notification currently notifys about bad tracking ids
+  ; probably going to need a better session management check
   (success-notification type)
   (swap! app-state 
          (fn [state]
@@ -180,7 +177,7 @@
     (case msg-type 
       :chsk/recv
       (let [[recv-type recv-msg] msg]
-        (println "Recv event " event)
+        ;(println "Recv event " event)
         (msg-controller recv-type recv-msg))
       :chsk/state (when (:first-open? msg)
                     (chsk-send! [:deployment/get-listing])
@@ -188,6 +185,12 @@
                     (println "First opened: " event)))))
 
 (sente/start-chsk-router! ch-chsk event-handler)
+
+(defn deployment->latest-log-entries [{:keys [entries message-id-max] :as deployment}]
+  (let [num-displayed 100
+        start-id (max 0 (- (inc message-id-max) num-displayed))
+        displayed-msg-ids (range start-id (inc message-id-max))]
+    (keep entries (reverse displayed-msg-ids))))
 
 (defn main []
   (om/root
@@ -206,6 +209,6 @@
             (dom/aside {}
                        (dom/nav (om/build job-selector (:deployment app) {}))
                        (dom/nav (om/build job-info (:deployment app) {}))
-                       (dom/nav (om/build deployment-entries (:deployment app) {}))))))))
+                       (dom/nav (om/build log-entries-table (deployment->latest-log-entries (:deployment app)) {}))))))))
     app-state
     {:target (. js/document (getElementById "app"))}))
