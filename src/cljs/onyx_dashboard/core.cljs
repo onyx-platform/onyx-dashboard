@@ -142,7 +142,15 @@
               (dom/h4 "Workflow")
               (om/build clojure-block {:input (:pretty-workflow job)}))))))
 
+(defn success-notification [msg]
+  (js/noty (clj->js {:text msg
+                     :type "success"
+                     :layout "bottomRight"
+                     :timeout 8000
+                     :closeWith ["click" "button"]})))
+
 (defn msg-controller [type msg]
+  (success-notification type)
   (swap! app-state 
          (fn [state]
            (if-let [tracking-id (:tracking-id msg)] 
