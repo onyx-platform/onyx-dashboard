@@ -24,7 +24,6 @@
 
 (defn get-system []
   (component/system-map
-    ;:onyx-env (onyx-client env-config)
     :sente (component/using (sente) [])
     :http (component/using (new-http-server env-config) [:sente])))
 

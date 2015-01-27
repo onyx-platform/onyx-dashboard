@@ -65,6 +65,7 @@
                                   [leiningen "2.5.1"]]
 
                    :repl-options {:init-ns onyx-dashboard.system
+                                  :timeout 90000
                                   :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl
                                                      ;cljx.repl-middleware/wrap-cljx
                                                      ]}
