@@ -12,6 +12,7 @@
             [om-bootstrap.table :refer [table]]
             [cljs.core.async :as async :refer [<! >! put! chan]]
             [cljs-uuid.core :as uuid]
+            [onyx-dashboard.controllers.api :refer [api-controller]]
             [taoensso.sente  :as sente :refer [cb-success?]])
   (:require-macros [cljs.core.async.macros :as asyncm :refer [go go-loop]]))
 
@@ -20,11 +21,25 @@
 (defonce app-state 
   (atom {:ready? false
          :deployments {}
+         ; Maybe these should be in component local state
+         ; The advantage is they can be controlled from elsewhere but it does
+         ; complicate the code a bit and may not gain much for now
+         ; Component state will also handle lifecycle stuff inc default
+         ; state when new job is loaded (assuming they're keyed differently)
+         :visible {:job true
+                   :catalog true
+                   :workflow true
+                   :task false
+                   :peers false
+                   :statistics true
+                   :log-entries true}
          :deployment {:tracking-id nil
                       :jobs []
                       :selected-job nil
                       :message-id-max nil
                       :entries {}}}))
+
+(def left-bar-width 350)
 
 (let [{:keys [chsk ch-recv send-fn state]}
       (sente/make-channel-socket! "/chsk" {:type :auto})]
@@ -36,6 +51,9 @@
 ; (defn stop-tracking! [deployment-id]
 ;   (chsk-send! [:deployment/track-cancel deployment-id]))
 
+
+;; Controller type stuff to split out
+
 (defn start-tracking! [deployment-id]
   (let [tracking-id (uuid/make-random)] 
     (swap! app-state assoc :deployment {:tracking-id tracking-id
@@ -45,109 +63,14 @@
                                     :tracking-id tracking-id}])
     false))
 
-(defcomponent clojure-block [data owner]
-  (render-state [_ _] (dom/pre (:input data)))
-  (did-mount [_]
-             (let [editor (.edit js/ace (om/get-node owner))]
-               (.setOptions editor
-                            (clj->js {:maxLines 15}))
-               (.setMode (.getSession editor) "ace/mode/clojure")
-               (.setHighlightActiveLine editor false)
-               (.setHighlightGutterLine editor false)
-               (.setReadOnly editor true)
-               (set! (.-opacity (.-style (.-element (.-$cursorLayer (.-renderer editor))))) 0))))
-
-(defcomponent select-deployment [{:keys [deployments deployment]} owner]
-  (render [_] 
-          (dom/div
-            (b/toolbar {}
-                       (apply (partial b/dropdown {:bs-style "primary" 
-                                                   :title (or (:id deployment) "Deployments")})
-                              (for [[id info] (reverse (sort-by (comp :created-at val) 
-                                                                deployments))]
-                                (b/menu-item {:key id
-                                              :on-select (fn [_] 
-                                                           ;(stop-tracking! id)
-                                                           (start-tracking! id))} 
-                                             id)))))))
-
-(defn is-job-entry? [job-id entry]
-  (if-let [entry-job-id (if (= (:fn entry) :submit-job)
-                          (:id entry)
-                          (:job-id entry))]
-    (= entry-job-id job-id)))
-
-(defcomponent log-entry-row [entry owner]
-  (render [_] 
-          (dom/tr {:key (str "entry-" (:message-id entry))
-                   :title (str (om/value entry))}
-                  (dom/td (str (:id (:args entry))))
-                  (dom/td (.fromNow (js/moment (str (js/Date. (:created-at entry))))))
-                  (dom/td (str (:fn entry))))))
-
-(defcomponent log-entries-table [entries owner]
-  (render [_]
-          (let []
-            (dom/pre
-             (dom/h4 "Cluster Activity")
-             (table {:striped? true :bordered? true :condensed? true :hover? true}
-                    (dom/thead (dom/tr (dom/th "ID") (dom/th "Time") (dom/th "fn")))
-                    (dom/tbody ;{:height "500px" :position "absolute" :overflow-y "scroll"}
-                               (map (fn [entry]
-                                      (om/build log-entry-row entry {}))
-                                    entries)))))))
-
 (defn select-job [id]
   (swap! app-state assoc-in [:deployment :selected-job] id))
-
-(defcomponent job-selector [{:keys [selected-job jobs]} owner]
-  (render [_]
-          (dom/pre
-           (dom/h4 "Jobs")
-           (table {:striped? true :bordered? true :condensed? true :hover? true}
-                  (dom/thead
-                   (dom/tr
-                    (dom/th "ID")
-                    (dom/th "Time")))
-                  (dom/tbody
-                   (for [job (reverse (sort-by :created-at (vals jobs)))] 
-                     (let [job-id (:id job)] 
-                       (dom/tr {        ; make this a class
-                                :style {:background-color (if (= job-id selected-job)
-                                                            "lightblue")}}
-                               (dom/td {:on-click (fn [_] (select-job job-id))} 
-                                       (str job-id))
-                               (dom/td {}
-                                       (.fromNow (js/moment (str (js/Date. (:created-at job))))))))))))))
-
-(defcomponent catalog-view [catalog owner]
-  (render [_]
-          (dom/pre
-           (om/build ankha/collection-view catalog {:opts {:open? true}}))))
-
-(defcomponent job-info [{:keys [selected-job jobs]} owner]
-  (render [_]
-          (if-let [job (and selected-job jobs (jobs selected-job))]
-            (dom/div
-             (dom/pre
-              (dom/h4 "Catalog")
-              (om/build clojure-block {:input (:pretty-catalog job)}))
-
-             (dom/pre
-              (dom/h4 "Workflow")
-              (om/build clojure-block {:input (:pretty-workflow job)}))))))
-
-(defn success-notification [msg]
-  (js/noty (clj->js {:text msg
-                     :type "success"
-                     :layout "bottomRight"
-                     :timeout 8000
-                     :closeWith ["click" "button"]})))
 
 (defn msg-controller [type msg]
   ; success notification currently notifys about bad tracking ids
   ; probably going to need a better session management check
-  (success-notification type)
+  ; Disable for now as it's a bit distracting during dev
+  ;(success-notification type)
   (swap! app-state 
          (fn [state]
            (if-let [tracking-id (:tracking-id msg)] 
@@ -184,6 +107,120 @@
                     (swap! app-state assoc :ready? true)
                     (println "First opened: " event)))))
 
+;; TODO
+;; Components to start splitting out
+
+(defcomponent clojure-block [data owner]
+  (render-state [_ _] (dom/pre (:input data)))
+  (did-mount [_]
+             (let [editor (.edit js/ace (om/get-node owner))]
+               (.setOptions editor
+                            (clj->js {:maxLines 15}))
+               (.setMode (.getSession editor) "ace/mode/clojure")
+               (.setHighlightActiveLine editor false)
+               (.setHighlightGutterLine editor false)
+               (.setReadOnly editor true)
+               (set! (.-opacity (.-style (.-element (.-$cursorLayer (.-renderer editor))))) 0))))
+
+(defcomponent select-deployment [{:keys [deployments deployment]} owner]
+  (render [_] 
+          (dom/div
+            (b/toolbar {}
+                       (apply (partial b/dropdown {:bs-style "primary" 
+                                                   :style {:width left-bar-width}
+                                                   :title (or (:id deployment) "Deployments")})
+                              (for [[id info] (reverse (sort-by (comp :created-at val) 
+                                                                deployments))]
+                                (b/menu-item {:key id
+                                              :on-select (fn [_] 
+                                                           ;(stop-tracking! id)
+                                                           (start-tracking! id))} 
+                                             id)))))))
+
+(defn is-job-entry? [job-id entry]
+  (if-let [entry-job-id (if (= (:fn entry) :submit-job)
+                          (:id entry)
+                          (:job-id entry))]
+    (= entry-job-id job-id)))
+
+(defcomponent log-entry-row [entry owner]
+  (render [_] 
+          (dom/tr {:key (str "entry-" (:message-id entry))
+                   :title (str (om/value entry))}
+                  (dom/td (str (:id (:args entry))))
+                  (dom/td (str (:fn entry)))
+                  (dom/td (.fromNow (js/moment (str (js/Date. (:created-at entry)))))))))
+
+(defcomponent section-header [{:keys [text visible type]} owner]
+  (render [_]
+          (dom/h4 {:class "unselectable"} 
+                  text
+                  (dom/i {:class (if visible 
+                                   "fa fa-caret-square-o-up"
+                                   "fa fa-caret-square-o-down")
+                          :on-click (fn [_] (put! (om/get-shared owner :api-ch) 
+                                                  [:visibility type (not visible)]))}))))
+
+(defcomponent log-entries-table [{:keys [entries visible]} owner]
+  (render [_]
+          (dom/pre (om/build section-header {:text "Cluster Activity" 
+                                             :visible visible 
+                                             :type :log-entries} {})
+                   (if visible
+                     (table {:striped? true :bordered? true :condensed? true :hover? true}
+                            (dom/thead (dom/tr (dom/th "ID") (dom/th "fn") (dom/th "Time")))
+                            (dom/tbody ;{:height "500px" :position "absolute" :overflow-y "scroll"}
+                                       (map (fn [entry]
+                                              (om/build log-entry-row entry {}))
+                                            entries)))))))
+
+(defcomponent job-selector [{:keys [selected-job jobs]} owner]
+  (render [_]
+          (dom/pre
+            (dom/h4 "Jobs")
+            (table {:striped? true :bordered? true :condensed? true :hover? true}
+                   (dom/thead (dom/tr (dom/th "ID") (dom/th "Time")))
+                   (dom/tbody
+                     (for [job (reverse (sort-by :created-at (vals jobs)))] 
+                       (let [job-id (:id job)] 
+                         (dom/tr {:class (str "job-entry " 
+                                              (if (= job-id selected-job)
+                                                "selected-job"))}
+                                 (dom/td {:on-click (fn [_] (select-job job-id))} 
+                                         (str job-id))
+                                 (dom/td {}
+                                         (.fromNow (js/moment (str (js/Date. (:created-at job))))))))))))))
+
+(defcomponent catalog-view [catalog owner]
+  (render [_]
+          (dom/pre (om/build ankha/collection-view catalog {:opts {:open? true}}))))
+
+(defcomponent job-info [{:keys [deployment visible]} owner]
+  (render [_]
+          (let [{:keys [selected-job jobs]} deployment] 
+            (if-let [job (and selected-job jobs (jobs selected-job))]
+              (dom/div
+                (dom/pre
+                  (om/build section-header {:text "Catalog" 
+                                            :visible (:job visible) 
+                                            :type :job} {})
+                  (if (:job visible)
+                    (om/build clojure-block {:input (:pretty-catalog job)})))
+
+                (dom/pre
+                  (om/build section-header {:text "Workflow" 
+                                            :visible (:workflow visible) 
+                                            :type :workflow} {})
+                  (if (:workflow visible)
+                    (om/build clojure-block {:input (:pretty-workflow job)}))))))))
+
+(defn success-notification [msg]
+  (js/noty (clj->js {:text msg
+                     :type "success"
+                     :layout "bottomRight"
+                     :timeout 8000
+                     :closeWith ["click" "button"]})))
+
 (sente/start-chsk-router! ch-chsk event-handler)
 
 (defn deployment->latest-log-entries [{:keys [entries message-id-max] :as deployment}]
@@ -192,23 +229,31 @@
         displayed-msg-ids (range start-id (inc message-id-max))]
     (keep entries (reverse displayed-msg-ids))))
 
+(defcomponent main-component [{:keys [deployment visible] :as app} owner]
+  (did-mount [_] 
+             (let [api-ch (om/get-shared owner :api-ch)] 
+               (go-loop []
+                        (let [msg (<! api-ch)]
+                          (println "Handling msg: " msg)
+                          (om/transact! app (partial api-controller msg))
+                          (recur)))))
+
+  (render-state [_ {:keys [api-chan]}]
+                (dom/div
+                  (dom/aside {}
+                             (dom/nav {:class "left-nav-deployment" :style {:width left-bar-width :position "fixed"}} 
+                                      (om/build select-deployment app {})
+                                      (om/build job-selector deployment {})))
+                  (dom/div {:style {:margin-left left-bar-width}}
+                           (om/build job-info {:deployment deployment
+                                               :visible visible} {})
+                           (om/build log-entries-table {:entries (deployment->latest-log-entries deployment)
+                                                        :visible (:log-entries visible)} {})))))
+
 (defn main []
   (om/root
     ankha/inspector
     app-state
     {:target (js/document.getElementById "ankha")})
-  (om/root
-    (fn [app owner]
-      (reify
-        om/IRender
-        (render [_]
-          (dom/div
-           (g/grid
-            {}
-            (om/build select-deployment app {})
-            (dom/aside {}
-                       (dom/nav (om/build job-selector (:deployment app) {}))
-                       (dom/nav (om/build job-info (:deployment app) {}))
-                       (dom/nav (om/build log-entries-table (deployment->latest-log-entries (:deployment app)) {}))))))))
-    app-state
-    {:target (. js/document (getElementById "app"))}))
+  (om/root main-component app-state {:shared {:api-ch (chan)}
+                                     :target (. js/document (getElementById "app"))}))

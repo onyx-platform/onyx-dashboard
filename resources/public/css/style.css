@@ -1,3 +1,18 @@
 h1 {
   text-decoration: underline;
 }
+
+.job-entry {
+	font-size: 10px;
+}
+
+.selected-job {
+	background-color: "lightblue";
+}
+
+.unselectable 
+{
+	user-select: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+}
