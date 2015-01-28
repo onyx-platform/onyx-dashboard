@@ -111,7 +111,7 @@
 ;; Components to start splitting out
 
 (defcomponent clojure-block [data owner]
-  (render-state [_ _] (dom/pre (:input data)))
+  (render-state [_ _] (dom/div (:input data)))
   (did-mount [_]
              (let [editor (.edit js/ace (om/get-node owner))]
                (.setOptions editor
@@ -163,23 +163,24 @@
 
 (defcomponent log-entries-table [{:keys [entries visible]} owner]
   (render [_]
-          (dom/pre (om/build section-header {:text "Cluster Activity" 
-                                             :visible visible 
-                                             :type :log-entries} {})
-                   (if visible
-                     (table {:striped? true :bordered? true :condensed? true :hover? true}
-                            (dom/thead (dom/tr (dom/th "ID") (dom/th "fn") (dom/th "Time")))
-                            (dom/tbody ;{:height "500px" :position "absolute" :overflow-y "scroll"}
-                                       (map (fn [entry]
-                                              (om/build log-entry-row entry {}))
-                                            entries)))))))
+          (p/panel
+           {:header (om/build section-header {:text "Cluster Activity" 
+                                     :visible visible 
+                                     :type :log-entries} {})}
+           (if visible
+             (table {:striped? true :bordered? true :condensed? true :hover? true}
+                    (dom/thead (dom/tr (dom/th "ID") (dom/th "fn") (dom/th "Time")))
+                    (dom/tbody ;{:height "500px" :position "absolute" :overflow-y "scroll"}
+                     (map (fn [entry]
+                            (om/build log-entry-row entry {}))
+                          entries)))))))
 
 (defcomponent job-selector [{:keys [selected-job jobs]} owner]
   (render [_]
-          (dom/pre
-            (dom/h4 "Jobs")
-            (table {:striped? true :bordered? true :condensed? true :hover? true}
-                   (dom/thead (dom/tr (dom/th "ID") (dom/th "Time")))
+          (p/panel
+           {:header (dom/h4 "Jobs")}
+            (table {:striped? true :bordered? false :condensed? true :hover? true}
+;;                   (dom/thead (dom/tr (dom/th "ID") (dom/th "Time")))
                    (dom/tbody
                      (for [job (reverse (sort-by :created-at (vals jobs)))] 
                        (let [job-id (:id job)] 
@@ -193,26 +194,26 @@
 
 (defcomponent catalog-view [catalog owner]
   (render [_]
-          (dom/pre (om/build ankha/collection-view catalog {:opts {:open? true}}))))
+          (dom/div (om/build ankha/collection-view catalog {:opts {:open? true}}))))
 
 (defcomponent job-info [{:keys [deployment visible]} owner]
   (render [_]
           (let [{:keys [selected-job jobs]} deployment] 
             (if-let [job (and selected-job jobs (jobs selected-job))]
               (dom/div
-                (dom/pre
-                  (om/build section-header {:text "Catalog" 
-                                            :visible (:job visible) 
-                                            :type :job} {})
-                  (if (:job visible)
-                    (om/build clojure-block {:input (:pretty-catalog job)})))
+               (p/panel
+                {:header (om/build section-header {:text "Catalog" 
+                                          :visible (:job visible) 
+                                          :type :job} {})}
+                (if (:job visible)
+                  (om/build clojure-block {:input (:pretty-catalog job)})))
 
-                (dom/pre
-                  (om/build section-header {:text "Workflow" 
-                                            :visible (:workflow visible) 
-                                            :type :workflow} {})
-                  (if (:workflow visible)
-                    (om/build clojure-block {:input (:pretty-workflow job)}))))))))
+               (p/panel
+                {:header (om/build section-header {:text "Workflow" 
+                                          :visible (:workflow visible) 
+                                          :type :workflow} {})}
+                (if (:workflow visible)
+                  (om/build clojure-block {:input (:pretty-workflow job)}))))))))
 
 (defn success-notification [msg]
   (js/noty (clj->js {:text msg
@@ -240,15 +241,25 @@
 
   (render-state [_ {:keys [api-chan]}]
                 (dom/div
-                  (dom/aside {}
-                             (dom/nav {:class "left-nav-deployment" :style {:width left-bar-width :position "fixed"}} 
-                                      (om/build select-deployment app {})
-                                      (om/build job-selector deployment {})))
-                  (dom/div {:style {:margin-left left-bar-width}}
-                           (om/build job-info {:deployment deployment
-                                               :visible visible} {})
-                           (om/build log-entries-table {:entries (deployment->latest-log-entries deployment)
-                                                        :visible (:log-entries visible)} {})))))
+                 (g/grid {}
+                         (r/page-header
+                          {}
+                          "Onyx Dashboard")
+                         (g/row
+                          {}
+                          (g/col
+                           {:xs 6 :md 4}
+                           (dom/aside {}
+                                      (dom/nav {:class "left-nav-deployment" :style {:width left-bar-width :position "fixed"}} 
+                                               (om/build select-deployment app {})
+                                               (om/build job-selector deployment {}))))
+                          (g/col
+                           {:xs 12 :md 11 :md-push 1}
+                           (dom/div {:style {:margin-left left-bar-width}}
+                                    (om/build job-info {:deployment deployment
+                                                        :visible visible} {})
+                                    (om/build log-entries-table {:entries (deployment->latest-log-entries deployment)
+                                                                 :visible (:log-entries visible)} {}))))))))
 
 (defn main []
   (om/root
