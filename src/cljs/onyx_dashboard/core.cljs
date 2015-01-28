@@ -114,8 +114,7 @@
   (render-state [_ _] (dom/div (:input data)))
   (did-mount [_]
              (let [editor (.edit js/ace (om/get-node owner))]
-               (.setOptions editor
-                            (clj->js {:maxLines 15}))
+               (.setOptions editor (clj->js {:maxLines 15}))
                (.setMode (.getSession editor) "ace/mode/clojure")
                (.setHighlightActiveLine editor false)
                (.setHighlightGutterLine editor false)
@@ -124,18 +123,17 @@
 
 (defcomponent select-deployment [{:keys [deployments deployment]} owner]
   (render [_] 
-          (dom/div
-            (b/toolbar {}
-                       (apply (partial b/dropdown {:bs-style "primary" 
-                                                   :style {:width left-bar-width}
-                                                   :title (or (:id deployment) "Deployments")})
-                              (for [[id info] (reverse (sort-by (comp :created-at val) 
-                                                                deployments))]
-                                (b/menu-item {:key id
-                                              :on-select (fn [_] 
-                                                           ;(stop-tracking! id)
-                                                           (start-tracking! id))} 
-                                             id)))))))
+          (b/toolbar {:style {:width "100%"}}
+                     (apply (partial b/dropdown {:bs-style "primary" 
+                                                 :style {:width "100%"}
+                                                 :title (or (:id deployment) "Select Deployment")})
+                            (for [[id info] (reverse (sort-by (comp :created-at val) 
+                                                              deployments))]
+                              (b/menu-item {:key id
+                                            :on-select (fn [_] 
+                                                         ;(stop-tracking! id)
+                                                         (start-tracking! id))} 
+                                           id))))))
 
 (defn is-job-entry? [job-id entry]
   (if-let [entry-job-id (if (= (:fn entry) :submit-job)
@@ -202,9 +200,10 @@
             (if-let [job (and selected-job jobs (jobs selected-job))]
               (dom/div
                (p/panel
-                {:header (om/build section-header {:text "Catalog" 
-                                          :visible (:job visible) 
-                                          :type :job} {})}
+                 {:header (om/build section-header 
+                                    {:text "Catalog" 
+                                     :visible (:job visible) 
+                                     :type :job} {})}
                 (if (:job visible)
                   (om/build clojure-block {:input (:pretty-catalog job)})))
 
@@ -240,26 +239,27 @@
                           (recur)))))
 
   (render-state [_ {:keys [api-chan]}]
-                (dom/div
-                 (g/grid {}
-                         (r/page-header
-                          {}
-                          "Onyx Dashboard")
-                         (g/row
-                          {}
-                          (g/col
-                           {:xs 6 :md 4}
-                           (dom/aside {}
-                                      (dom/nav {:class "left-nav-deployment" :style {:width left-bar-width :position "fixed"}} 
-                                               (om/build select-deployment app {})
-                                               (om/build job-selector deployment {}))))
-                          (g/col
-                           {:xs 12 :md 11 :md-push 1}
-                           (dom/div {:style {:margin-left left-bar-width}}
-                                    (om/build job-info {:deployment deployment
-                                                        :visible visible} {})
-                                    (om/build log-entries-table {:entries (deployment->latest-log-entries deployment)
-                                                                 :visible (:log-entries visible)} {}))))))))
+                #_(dom/div
+                  {:class "grids-examples"}
+                  (g/grid {}
+                          (g/row {:class "show-grid"}
+                                 (g/col {:xs 12 :md 8}
+                                        (dom/div {} "Who (g/col {:xs 12 :md 8})"))
+                                 (g/col {:xs 6 :md 4}
+                                        (dom/div {} "What (g/col {:xs 6 :md 4})")))))
+                (dom/div {:class "grids-examples"} ;(r/page-header {} "Onyx Dashboard")
+                         (g/grid {}
+                                 (g/row {}
+                                        (g/col {:xs 6 :md 4}
+                                               (dom/div {:class "left-nav-deployment"} 
+                                                        (om/build select-deployment app {}))
+                                               (dom/div {} 
+                                                        (om/build job-selector deployment {})))
+                                        (g/col {:xs 12 :md 8 :md-push 1 }
+                                               (dom/div (om/build job-info {:deployment deployment
+                                                                            :visible visible} {})
+                                                        (om/build log-entries-table {:entries (deployment->latest-log-entries deployment)
+                                                                                     :visible (:log-entries visible)} {}))))))))
 
 (defn main []
   (om/root
