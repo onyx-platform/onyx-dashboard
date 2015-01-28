@@ -112,6 +112,7 @@
 
 (defcomponent clojure-block [data owner]
   (render-state [_ _] (dom/div (:input data)))
+
   (did-mount [_]
              (let [editor (.edit js/ace (om/get-node owner))]
                (.setOptions editor (clj->js {:maxLines 15}))
@@ -119,13 +120,18 @@
                (.setHighlightActiveLine editor false)
                (.setHighlightGutterLine editor false)
                (.setReadOnly editor true)
-               (set! (.-opacity (.-style (.-element (.-$cursorLayer (.-renderer editor))))) 0))))
+               (set! (.-opacity (.-style (.-element (.-$cursorLayer (.-renderer editor))))) 0)
+               (om/set-state! owner :dom-editor editor)))
+  (will-unmount [_]
+                ; not sure if this helps with lost node issues yet
+                (let [editor (om/get-state owner :dom-editor)] 
+                  (.destroy editor)
+                  #_(.. editor container remove))))
 
 (defcomponent select-deployment [{:keys [deployments deployment]} owner]
   (render [_] 
-          (b/toolbar {:style {:width "100%"}}
-                     (apply (partial b/dropdown {:bs-style "primary" 
-                                                 :style {:width "100%"}
+          (dom/div {:class "btn-group btn-group-justified" :role "group"} 
+                     (apply (partial b/dropdown {:bs-style "info" 
                                                  :title (or (:id deployment) "Select Deployment")})
                             (for [[id info] (reverse (sort-by (comp :created-at val) 
                                                               deployments))]
@@ -151,44 +157,49 @@
 
 (defcomponent section-header [{:keys [text visible type]} owner]
   (render [_]
-          (dom/h4 {:class "unselectable"} 
-                  text
-                  (dom/i {:class (if visible 
-                                   "fa fa-caret-square-o-up"
-                                   "fa fa-caret-square-o-down")
-                          :on-click (fn [_] (put! (om/get-shared owner :api-ch) 
-                                                  [:visibility type (not visible)]))}))))
+          ; should this handler should be on the panel header itself? There's
+          ; some unclickable margin / buffer space in there
+          (dom/div {:on-click (fn [_] (put! (om/get-shared owner :api-ch) 
+                                            [:visibility type (not visible)]))}
+                   (dom/h4 {:class "unselectable"} 
+                           text
+                           (dom/i {:style {:float "right"}
+                                   :class (if visible 
+                                            "fa fa-caret-square-o-up"
+                                            "fa fa-caret-square-o-down")})))))
 
 (defcomponent log-entries-table [{:keys [entries visible]} owner]
   (render [_]
           (p/panel
-           {:header (om/build section-header {:text "Cluster Activity" 
-                                     :visible visible 
-                                     :type :log-entries} {})}
+            {:header (om/build section-header 
+                               {:text "Cluster Activity" 
+                                :visible visible 
+                                :type :log-entries} {})
+             :bs-style "primary"}
            (if visible
              (table {:striped? true :bordered? true :condensed? true :hover? true}
                     (dom/thead (dom/tr (dom/th "ID") (dom/th "fn") (dom/th "Time")))
-                    (dom/tbody ;{:height "500px" :position "absolute" :overflow-y "scroll"}
-                     (map (fn [entry]
-                            (om/build log-entry-row entry {}))
-                          entries)))))))
+                    (dom/tbody (map (fn [entry]
+                                      (om/build log-entry-row entry {}))
+                                    entries)))))))
 
 (defcomponent job-selector [{:keys [selected-job jobs]} owner]
   (render [_]
-          (p/panel
-           {:header (dom/h4 "Jobs")}
-            (table {:striped? true :bordered? false :condensed? true :hover? true}
-;;                   (dom/thead (dom/tr (dom/th "ID") (dom/th "Time")))
-                   (dom/tbody
-                     (for [job (reverse (sort-by :created-at (vals jobs)))] 
-                       (let [job-id (:id job)] 
-                         (dom/tr {:class (str "job-entry " 
-                                              (if (= job-id selected-job)
-                                                "selected-job"))}
-                                 (dom/td {:on-click (fn [_] (select-job job-id))} 
-                                         (str job-id))
-                                 (dom/td {}
-                                         (.fromNow (js/moment (str (js/Date. (:created-at job))))))))))))))
+          (p/panel {:header (dom/h4 "Jobs") :bs-style "primary" }
+                   (table {:striped? true :bordered? false :condensed? true :hover? true}
+                          ;;                   (dom/thead (dom/tr (dom/th "ID") (dom/th "Time")))
+                          (dom/tbody
+                            (for [job (reverse (sort-by :created-at (vals jobs)))] 
+                              (let [job-id (:id job)] 
+                                (println job-id selected-job)
+                                (dom/tr {:style {:background-color 
+                                                 (if (= job-id selected-job)
+                                                   "lightblue") }
+                                         :class (str "job-entry")}
+                                        (dom/td {:on-click (fn [_] (select-job job-id))} 
+                                                (str job-id))
+                                        (dom/td {}
+                                                (.fromNow (js/moment (str (js/Date. (:created-at job))))))))))))))
 
 (defcomponent catalog-view [catalog owner]
   (render [_]
@@ -199,18 +210,37 @@
           (let [{:keys [selected-job jobs]} deployment] 
             (if-let [job (and selected-job jobs (jobs selected-job))]
               (dom/div
+                (p/panel
+                  {:header (om/build section-header 
+                                     {:text "Job Management" 
+                                      :visible (:job-management visible) 
+                                      :type :job-management} 
+                                     {})
+                   :bs-style "primary"}
+                  (g/grid {} 
+                          ; Show operations based on current status of job)
+                          (g/row {} 
+                                 (g/col {:xs 4 :md 2} (dom/i {:class "fa fa-heartbeat"} "Running"))
+                                 (g/col {:xs 4 :md 2} (dom/i {:class "fa fa-repeat"} "Restart"))
+                                 (g/col {:xs 4 :md 2} (dom/i {:class "fa fa-times-circle-o"} "Kill")))))
+
                (p/panel
                  {:header (om/build section-header 
                                     {:text "Catalog" 
                                      :visible (:job visible) 
-                                     :type :job} {})}
+                                     :type :job} 
+                                    {})
+                  :bs-style "primary"}
                 (if (:job visible)
                   (om/build clojure-block {:input (:pretty-catalog job)})))
 
                (p/panel
-                {:header (om/build section-header {:text "Workflow" 
-                                          :visible (:workflow visible) 
-                                          :type :workflow} {})}
+                 {:header (om/build section-header 
+                                    {:text "Workflow" 
+                                     :visible (:workflow visible) 
+                                     :type :workflow} 
+                                    {})
+                  :bs-style "primary"}
                 (if (:workflow visible)
                   (om/build clojure-block {:input (:pretty-workflow job)}))))))))
 
@@ -239,32 +269,25 @@
                           (recur)))))
 
   (render-state [_ {:keys [api-chan]}]
-                #_(dom/div
-                  {:class "grids-examples"}
+                (dom/div 
+                  (r/page-header {:class "page-header" :style {:text-align "center"}} 
+                                "Onyx Dashboard")
                   (g/grid {}
-                          (g/row {:class "show-grid"}
-                                 (g/col {:xs 12 :md 8}
-                                        (dom/div {} "Who (g/col {:xs 12 :md 8})"))
-                                 (g/col {:xs 6 :md 4}
-                                        (dom/div {} "What (g/col {:xs 6 :md 4})")))))
-                (dom/div {:class "grids-examples"} ;(r/page-header {} "Onyx Dashboard")
-                         (g/grid {}
-                                 (g/row {}
-                                        (g/col {:xs 6 :md 4}
-                                               (dom/div {:class "left-nav-deployment"} 
-                                                        (om/build select-deployment app {}))
-                                               (dom/div {} 
-                                                        (om/build job-selector deployment {})))
-                                        (g/col {:xs 12 :md 8 :md-push 1 }
-                                               (dom/div (om/build job-info {:deployment deployment
-                                                                            :visible visible} {})
-                                                        (om/build log-entries-table {:entries (deployment->latest-log-entries deployment)
-                                                                                     :visible (:log-entries visible)} {}))))))))
+                          (g/row {}
+                                 (g/col {:xs 6 :md 4 ;:md-offset 
+                                         }
+                                        (dom/div {:class "left-nav-deployment"} 
+                                                 (om/build select-deployment app {}))
+                                        (dom/div {} 
+                                                 (om/build job-selector deployment {})))
+                                 (g/col {:xs 12 :md 8; :md-push 1 
+                                         }
+                                        (dom/div (om/build job-info {:deployment deployment
+                                                                     :visible visible} {})
+                                                 (om/build log-entries-table {:entries (deployment->latest-log-entries deployment)
+                                                                              :visible (:log-entries visible)} {}))))))))
 
 (defn main []
-  (om/root
-    ankha/inspector
-    app-state
-    {:target (js/document.getElementById "ankha")})
+  (om/root ankha/inspector app-state {:target (js/document.getElementById "ankha")})
   (om/root main-component app-state {:shared {:api-ch (chan)}
                                      :target (. js/document (getElementById "app"))}))

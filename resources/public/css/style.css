@@ -1,14 +1,19 @@
-h1 {
+/*h1 {
   text-decoration: underline;
+}
+*/
+
+.page-header { 
+	text-align: "center";
 }
 
 .job-entry {
 	font-size: 10px;
 }
 
-.selected-job {
+/*.selected-job {
 	background-color: "lightblue";
-}
+}*/
 
 .unselectable 
 {
