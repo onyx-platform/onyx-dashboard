@@ -5,7 +5,8 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
-  :source-paths ["src/clj" #_"target/generated/clj" #_"target/generated/cljx"]
+  :source-paths ["src/clj" ;"target/generated/clj" "target/generated/cljx"
+                 ]
 
   :test-paths ["spec/clj"]
 
@@ -68,9 +69,12 @@
 
                    :repl-options {:init-ns onyx-dashboard.system
                                   :timeout 90000
-                                  :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl #_cljx.repl-middleware/wrap-cljx]}
+                                  :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl 
+                                                     ;cljx.repl-middleware/wrap-cljx
+                                                     ]}
 
-                   :plugins [[lein-figwheel "0.2.2-SNAPSHOT"] #_[com.keminglabs/cljx "0.5.0" :exclusions [org.clojure/clojure]]]
+                   :plugins [;[com.keminglabs/cljx "0.5.0" :exclusions [org.clojure/clojure]]
+                             [lein-figwheel "0.2.2-SNAPSHOT"]]
 
                    :figwheel {:http-server-root "public"
                               :server-port 3449
