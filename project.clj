@@ -5,9 +5,11 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
-  :source-paths ["src/clj" "target/generated/clj" "target/generated/cljx"]
+  :source-paths ["src/clj" #_"target/generated/clj" #_"target/generated/cljx"]
 
   :test-paths ["spec/clj"]
+
+  :main onyx-dashboard.system
 
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojurescript "0.0-2665" :scope "provided"]
@@ -15,7 +17,7 @@
                  [com.stuartsierra/component "0.2.2"]
                  [com.taoensso/sente "1.3.0"]
                  [com.taoensso/timbre "3.3.1" :exclusions [com.taoensso/encore]]
-                 [prismatic/schema "0.3.3" :exclusions [potemkin]]
+                 [prismatic/schema "0.3.4"]
                  ;[org.danielsz/system "0.1.4"]
                  [cljs-uuid "0.0.4"]
                  [ring "1.3.2"]
@@ -48,14 +50,14 @@
                                         :optimizations :none
                                         :pretty-print  true}}}}
 
-  :cljx {:builds [{:source-paths ["src/cljx"]
-                   :output-path "target/generated/clj"
-                   :rules :clj}
-                  {:source-paths ["src/cljx"]
-                   :output-path "target/generated/cljs"
-                   :rules :cljs}]}
-
-  :prep-tasks [["cljx" "once"]]
+  ;:cljx {:builds [{:source-paths ["src/cljx"]
+  ;                 :output-path "target/generated/clj"
+  ;                 :rules :clj}
+  ;                {:source-paths ["src/cljx"]
+  ;                 :output-path "target/generated/cljs"
+  ;                 :rules :cljs}]}
+  ;
+  ;  :prep-tasks [["cljx" "once"]]
 
   :profiles {:dev {:source-paths ["env/dev/clj"]
 
@@ -66,12 +68,9 @@
 
                    :repl-options {:init-ns onyx-dashboard.system
                                   :timeout 90000
-                                  :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl
-                                                     ;cljx.repl-middleware/wrap-cljx
-                                                     ]}
+                                  :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl #_cljx.repl-middleware/wrap-cljx]}
 
-                   :plugins [[lein-figwheel "0.2.2-SNAPSHOT"]
-                             [com.keminglabs/cljx "0.5.0" :exclusions [org.clojure/clojure]]]
+                   :plugins [[lein-figwheel "0.2.2-SNAPSHOT"] #_[com.keminglabs/cljx "0.5.0" :exclusions [org.clojure/clojure]]]
 
                    :figwheel {:http-server-root "public"
                               :server-port 3449

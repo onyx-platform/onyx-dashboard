@@ -12,7 +12,8 @@
             [net.cgrand.enlive-html :refer [deftemplate]]
             [ring.middleware.reload :as reload]
             [environ.core :refer [env]]
-            [ring.adapter.jetty :refer [run-jetty]]))
+            [ring.adapter.jetty :refer [run-jetty]])
+  (:gen-class))
 
 (def env-config 
   {:hornetq/mode :standalone
