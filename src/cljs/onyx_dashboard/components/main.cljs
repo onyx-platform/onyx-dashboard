@@ -4,15 +4,14 @@
             [om-tools.core :refer-macros [defcomponent]]
             [om-bootstrap.grid :as g]
             [om-bootstrap.random :as r]
-            [cljs.core.async :as async :refer [<! >! put! chan]]
-            [cljs-uuid.core :as uuid]
             [onyx-dashboard.components.deployment :refer [select-deployment]]
             [onyx-dashboard.components.jobs :refer [job-selector job-info]]
             [onyx-dashboard.components.log :refer [log-entries-table]]
-            [onyx-dashboard.controllers.api :refer [api-controller]])
-  (:require-macros [cljs.core.async.macros :as asyncm :refer [go go-loop]]))
+            [onyx-dashboard.controllers.api :refer [api-controller]]
+            [cljs.core.async :as async :refer [<! >! put! chan]])
+  (:require-macros [cljs.core.async.macros :as asyncm :refer [go-loop]]))
 
-(defn deployment->latest-log-entries [{:keys [entries message-id-max] :as deployment}]
+(defn latest-log-entries [{:keys [entries message-id-max] :as deployment}]
   (let [num-displayed 100
         start-id (max 0 (- (inc message-id-max) num-displayed))
         displayed-msg-ids (range start-id (inc message-id-max))]
@@ -43,5 +42,5 @@
                                  (g/col {:xs 12 :md 8}
                                         (dom/div (om/build job-info {:deployment deployment
                                                                      :visible visible} {})
-                                                 (om/build log-entries-table {:entries (deployment->latest-log-entries deployment)
+                                                 (om/build log-entries-table {:entries (latest-log-entries deployment)
                                                                               :visible (:log-entries visible)} {}))))))))

@@ -4,8 +4,7 @@
             [om-tools.core :refer-macros [defcomponent]]
             [om-bootstrap.panel :as p]
             [om-bootstrap.table :as t]
-            [onyx-dashboard.components.ui-elements :refer [section-header]])
-  (:require-macros [cljs.core.async.macros :as asyncm :refer [go go-loop]]))
+            [onyx-dashboard.components.ui-elements :refer [section-header]]))
 
 (defcomponent log-entry-row [entry owner]
   (render [_] 
