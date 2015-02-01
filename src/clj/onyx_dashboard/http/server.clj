@@ -1,5 +1,5 @@
 (ns onyx-dashboard.http.server
-  (:require [clojure.core.async :refer [chan thread <!! alts!!]]
+  (:require [clojure.core.async :refer [chan timeout thread <!! alts!!]]
             [onyx-dashboard.dev :refer [is-dev? inject-devmode-html browser-repl start-figwheel]]
             [org.httpkit.server :as http-kit-server]
             [com.stuartsierra.component :as component]
@@ -55,9 +55,10 @@
 ; with multiple clients viewing the same deployment we can only subscribe once.
 ; Probably not worth the complexity!
 (defn track-deployment [send-fn! subscription ch tracking-id uid]
-  (let [log (:log (:env subscription))]
+  (let [log (:log (:env subscription))
+        up-to-date? (atom false)]
     (loop [replica (:replica subscription)]
-      (when-let [position (<!! ch)]
+      (if-let [position (first (alts!! (vector ch (timeout 50))))]
         (let [entry (extensions/read-log-entry log position)
               new-replica (extensions/apply-log-entry entry replica)
               diff (extensions/replica-diff entry replica new-replica)
@@ -91,8 +92,13 @@
                                                                  :name task-name}]))
             (info "Unable to custom handle entry"))
           (send-fn! uid [:job/entry (assoc entry :tracking-id tracking-id)])
+          (reset! up-to-date? false)
           ;(send-fn! uid [:deployment/replica {:replica new-replica :diff diff}])
-          (recur new-replica))))))
+          (recur new-replica))
+        (do 
+          (send-fn! uid [:deployment/up-to-date {:tracking-id tracking-id}])
+          (reset! up-to-date? true)
+          (recur replica))))))
 
 
 (defrecord LogSubscription [peer-config]
