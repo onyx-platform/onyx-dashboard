@@ -168,16 +168,21 @@
   (send-all-fn! [:deployment/listing deployments]))
 
 (defn refresh-deployments-watch [send-all-fn! zk-client]
-  (->> (zk/children zk-client zk-onyx/root-path :watcher (fn [_] (refresh-deployments-watch send-all-fn! zk-client)))
-       (map (juxt identity 
-                  (partial zk-deployment-entry-stat zk-client)))
-       (map (fn [[child stat]]
-              (vector child
-                      {:created-at (java.util.Date. (:ctime stat))
-                       :modified-at (java.util.Date. (:mtime stat))})))
-       (into {})
-       (reset! deployments)
-       (distribute-deployments send-all-fn!)))
+  (if-let [children (zk/children zk-client zk-onyx/root-path :watcher (fn [_] (refresh-deployments-watch send-all-fn! zk-client)))]
+    (->> children
+         (map (juxt identity 
+                    (partial zk-deployment-entry-stat zk-client)))
+         (map (fn [[child stat]]
+                (vector child
+                        {:created-at (java.util.Date. (:ctime stat))
+                         :modified-at (java.util.Date. (:mtime stat))})))
+         (into {})
+         (reset! deployments)
+         (distribute-deployments send-all-fn!))
+    (do
+      (println (format "Could not find deployments at %s. Retrying in 1s." zk-onyx/root-path))
+      (Thread/sleep 1000)
+      (recur send-all-fn! zk-client))))
 
 (defn event->uid [event]
   (get-in event [:ring-req :cookies "ring-session" :value]))
