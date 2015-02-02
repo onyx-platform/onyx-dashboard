@@ -60,7 +60,10 @@
     (loop [replica (:replica subscription)]
       (if-let [position (first (alts!! (vector ch (timeout 50))))]
         (let [entry (extensions/read-log-entry log position)
-              new-replica (extensions/apply-log-entry entry replica)
+              new-replica (try (extensions/apply-log-entry entry replica)
+                               (catch Throwable t
+                                 (error (str "Could not apply log entry: " entry) t)
+                                 (throw t)))
               diff (extensions/replica-diff entry replica new-replica)
               job-id (:job (:args entry))
               ;complete-tasks (get (:completions new-replica) job-id)
