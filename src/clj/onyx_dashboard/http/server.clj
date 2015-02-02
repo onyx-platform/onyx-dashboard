@@ -50,6 +50,8 @@
                  {:job job-id :task task}))
              (keys allocations))))
 
+(def freshness-timeout 50)
+
 ; May want to track events in a deployment atom
 ; including chunks that are read e.g. catalog. Then if we end up
 ; with multiple clients viewing the same deployment we can only subscribe once.
@@ -58,7 +60,7 @@
   (let [log (:log (:env subscription))
         up-to-date? (atom false)]
     (loop [replica (:replica subscription)]
-      (if-let [position (first (alts!! (vector ch (timeout 50))))]
+      (if-let [position (first (alts!! (vector ch (timeout freshness-timeout))))]
         (let [entry (extensions/read-log-entry log position)
               new-replica (try (extensions/apply-log-entry entry replica)
                                (catch Throwable t
