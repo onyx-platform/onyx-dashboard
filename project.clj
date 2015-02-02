@@ -13,9 +13,9 @@
   :main onyx-dashboard.system
 
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/clojurescript "0.0-2665" :scope "provided"]
+                 [org.clojure/clojurescript "0.0-2740" :scope "provided"]
                  [racehub/om-bootstrap "0.3.4" :exclusions [om]]
-                 [prismatic/schema "0.3.4" :exclusions [potemkin]]
+                 [prismatic/schema "0.3.6" :exclusions [potemkin]]
                  [com.stuartsierra/component "0.2.2"]
                  [com.taoensso/sente "1.3.0"]
                  [om "0.7.3"]
@@ -28,7 +28,7 @@
                  [compojure "1.3.1"]
                  [enlive "1.1.5"]
                  ;[org.om/om "0.8.1"]
-                 [ankha "0.1.5.1-21e6ac" :exclude [om]]
+                 [ankha "0.1.5.1-479897" :exclude [om]]
                  [fipp "0.5.1"]
                  [environ "1.0.0"]
                  [http-kit "2.1.19"]

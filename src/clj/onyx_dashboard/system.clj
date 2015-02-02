@@ -12,14 +12,21 @@
             [net.cgrand.enlive-html :refer [deftemplate]]
             [ring.middleware.reload :as reload]
             [environ.core :refer [env]]
+            [clojure.string :refer [upper-case]]
             [ring.adapter.jetty :refer [run-jetty]])
   (:gen-class))
 
+(defn env-throw [v]
+  (or (env v)
+      (throw (Exception. (format "Please set %s environment variable via shell, or via env map %s" 
+                                 (clojure.string/replace (upper-case (name v)) "-" "_")
+                                 v)))))
+
 (def env-config 
   {:hornetq/mode :standalone
-   :hornetq.standalone/host (env :hornetq-host) 
-   :hornetq.standalone/port (env :hornetq-port)
-   :zookeeper/address (env :zookeeper-addr)
+   :hornetq.standalone/host (env-throw :hornetq-host) 
+   :hornetq.standalone/port (env-throw :hornetq-port)
+   :zookeeper/address (env-throw :zookeeper-addr)
    :onyx.peer/job-scheduler :onyx.job-scheduler/round-robin})
 
 

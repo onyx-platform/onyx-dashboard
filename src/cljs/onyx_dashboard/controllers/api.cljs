@@ -18,6 +18,6 @@
                               :entries {}})))
 
 ; Currently unused
-(defmethod api-controller :track-cancel [_ chsk-send! _]
+(defmethod api-controller :track-cancel [[_ deployment-id] chsk-send! state]
   (chsk-send! [:deployment/track-cancel deployment-id])
   state)
