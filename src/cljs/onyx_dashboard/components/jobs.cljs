@@ -13,7 +13,7 @@
   (render [_]
           (p/panel {:header (dom/h4 "Job Selector") :bs-style "primary" }
                    (t/table {:striped? true :bordered? false :condensed? true :hover? true}
-                          ;;                   (dom/thead (dom/tr (dom/th "ID") (dom/th "Time")))
+                          ;; (dom/thead (dom/tr (dom/th "ID") (dom/th "Time")))
                           (dom/tbody
                             (for [job (reverse (sort-by :created-at (vals jobs)))] 
                               (let [job-id (:id job)

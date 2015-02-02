@@ -22,18 +22,15 @@
                                  (clojure.string/replace (upper-case (name v)) "-" "_")
                                  v)))))
 
-(def env-config 
-  {:hornetq/mode :standalone
-   :hornetq.standalone/host (env-throw :hornetq-host) 
-   :hornetq.standalone/port (env-throw :hornetq-port)
-   :zookeeper/address (env-throw :zookeeper-addr)
-   :onyx.peer/job-scheduler :onyx.job-scheduler/round-robin})
-
-
 (defn get-system []
-  (component/system-map
-    :sente (component/using (sente) [])
-    :http (component/using (new-http-server env-config) [:sente])))
+  (let [env-config {:hornetq/mode :standalone
+                    :hornetq.standalone/host (env-throw :hornetq-host) 
+                    :hornetq.standalone/port (env-throw :hornetq-port)
+                    :zookeeper/address (env-throw :zookeeper-addr)
+                    :onyx.peer/job-scheduler :onyx.job-scheduler/round-robin}]
+    (component/system-map
+      :sente (component/using (sente) [])
+      :http (component/using (new-http-server env-config) [:sente]))))
 
 (defn -main [& [port]]
   (component/start (get-system)))
