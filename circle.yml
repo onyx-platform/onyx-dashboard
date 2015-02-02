@@ -12,7 +12,7 @@ dependencies:
                 - lein deps
 
         post:
-                - lein cljx once
+                #- lein cljx once
                 - lein cljsbuild once
                 - lein with-profile production uberjar
 test:
