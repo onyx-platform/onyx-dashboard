@@ -4,15 +4,17 @@
             [om-tools.core :refer-macros [defcomponent]]
             [cljs.core.async :as async :refer [put!]]))
 
-(defcomponent section-header [{:keys [text visible type]} owner]
+(defcomponent section-header [{:keys [text visible type hide-expander?]} owner]
   (render [_]
           ; should this handler should be on the panel header itself? There's
           ; some unclickable margin / buffer space in there
-          (dom/div {:on-click (fn [_] (put! (om/get-shared owner :api-ch) 
-                                            [:visibility type (not visible)]))}
+          (dom/div {:on-click (fn [_] (if-not hide-expander? 
+                                        (put! (om/get-shared owner :api-ch) 
+                                              [:visibility type (not visible)])))}
                    (dom/h4 {:class "unselectable"} 
                            text
-                           (dom/i {:style {:float "right"}
-                                   :class (if visible 
-                                            "fa fa-caret-square-o-up"
-                                            "fa fa-caret-square-o-down")})))))
+                           (if-not hide-expander? 
+                             (dom/i {:style {:float "right"}
+                                     :class (if visible 
+                                              "fa fa-caret-square-o-up"
+                                              "fa fa-caret-square-o-down")}))))))
