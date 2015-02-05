@@ -33,6 +33,7 @@
          :deployment {:tracking-id nil
                       :jobs []
                       :selected-job nil
+                      :view-index nil
                       :message-id-max nil
                       :entries {}}}))
 
@@ -52,12 +53,6 @@
                     (chsk-send! [:deployment/get-listing])
                     (swap! app-state assoc :ready? true)
                     (println "First opened: " event)))))
-
-; (defn is-job-entry? [job-id entry]
-;   (if-let [entry-job-id (if (= (:fn entry) :submit-job)
-;                           (:id entry)
-;                           (:job-id entry))]
-;     (= entry-job-id job-id)))
 
 (sente/start-chsk-router! ch-chsk sente-event-handler)
 

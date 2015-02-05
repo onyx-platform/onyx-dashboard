@@ -18,6 +18,7 @@
                  [prismatic/schema "0.3.7" :exclusions [potemkin]]
                  [com.stuartsierra/component "0.2.2"]
                  [com.taoensso/sente "1.3.0"]
+                 ;[org.omcljs/om "0.8.8"]
                  [om "0.7.3"]
                  [com.taoensso/timbre "3.3.1"]
                  [cljs-uuid "0.0.4"]
@@ -46,6 +47,7 @@
                              :compiler {:output-to     "resources/public/js/app.js"
                                         :output-dir    "resources/public/js/out"
                                         :source-map    "resources/public/js/out.js.map"
+                                        ;:main onyx-dashboard.core.main
                                         :preamble      ["react/react.min.js"]
                                         :externs       ["react/externs/react.js"]
                                         :optimizations :none

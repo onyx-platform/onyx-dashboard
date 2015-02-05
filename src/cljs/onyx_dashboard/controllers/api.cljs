@@ -1,6 +1,10 @@
 (ns onyx-dashboard.controllers.api
   (:require [cljs-uuid.core :as uuid]))
 
+#_(def null-deployment 
+  
+  )
+
 (defmulti api-controller (fn [[cmd] _ _] cmd))
 
 (defmethod api-controller :visibility [[_ type visible?] _ state]

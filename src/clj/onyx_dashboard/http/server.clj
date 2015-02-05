@@ -13,11 +13,7 @@
             [compojure.core :as comp :refer (defroutes GET POST)]
             [compojure.route :as route]
             [com.stuartsierra.component :as component]
-            [fipp.edn :refer [pprint] :rename {pprint fipp}]
-            [onyx.system :as system :refer [onyx-client]]
-            [onyx.extensions :as extensions]
-            [onyx.api]
-            [onyx.log.zookeeper :as zk-onyx]
+            [onyx-dashboard.onyx-deployment :as od]
             [zookeeper :as zk]
             [taoensso.timbre :as timbre :refer [info error spy]]))
 
@@ -28,177 +24,6 @@
   (assoc-in ring.middleware.defaults/site-defaults
             [:security :anti-forgery]
             {:read-token (fn [req] (-> req :params :csrf-token))}))
-
-; TODO:  Improve fn name
-(defn job-peer-allocated-task [job-allocations job-id peer-id]
-  (ffirst 
-    (filter (fn [[task-id peer-ids]]
-              (not-empty (filter #{peer-id} peer-ids))) 
-            job-allocations)))
-
-; TODO:  Improve fn name
-(defn task-allocated-to-peer [allocations peer-id]
-  (some identity 
-        (map (fn [job-id] 
-               (if-let [task (job-peer-allocated-task (allocations job-id)
-                                                      job-id
-                                                      peer-id)]
-                 {:job job-id :task task}))
-             (keys allocations))))
-
-(def freshness-timeout 50)
-
-; May want to track events in a deployment atom
-; including chunks that are read e.g. catalog. Then if we end up
-; with multiple clients viewing the same deployment we can only subscribe once.
-; Probably not worth the complexity!
-(defn track-deployment [send-fn! subscription ch tracking-id uid]
-  (let [log (:log (:env subscription))
-        up-to-date? (atom false)]
-    (loop [replica (:replica subscription)]
-      (if-let [position (first (alts!! (vector ch (timeout freshness-timeout))))]
-        (let [entry (extensions/read-log-entry log position)
-              new-replica (try (extensions/apply-log-entry entry replica)
-                               (catch Throwable t
-                                 ; Send a crashy message via sente here
-                                 (error (str "Could not apply log entry: " entry) t)
-                                 (throw t)))
-              diff (extensions/replica-diff entry replica new-replica)
-              job-id (:job (:args entry))
-              ;complete-tasks (get (:completions new-replica) job-id)
-              tasks (get (:tasks new-replica) job-id)]
-          ; Split into multimethods
-          (cond (= :submit-job (:fn entry)) 
-                (let [job-id (:id (:args entry))
-                      catalog (extensions/read-chunk log :catalog job-id)
-                      workflow (extensions/read-chunk log :workflow job-id)]
-                  (send-fn! uid [:job/submitted-job {:tracking-id tracking-id
-                                                     :id job-id
-                                                     :entry entry
-                                                     :catalog catalog
-                                                     :pretty-catalog (with-out-str (fipp (into [] catalog)))
-                                                     :pretty-workflow (with-out-str (fipp (into [] workflow)))
-                                                     :created-at (:created-at entry)}]))
-                ; TODO: check if newly submitted jobs will result in peer assigned messages being sent.
-                ; This might be doing more work than required
-                (= :volunteer-for-task (:fn entry)) 
-                (let [peer-id (:id (:args entry))
-                      task (task-allocated-to-peer (:allocations new-replica) peer-id)
-                      ;task-chunk (extensions/read-chunk log :task (:task task))
-                      ]
-                  (try (extensions/read-chunk log :task (:task task))
-                       (println "Replica " replica)
-                       (catch Exception e (println " Couldn't read " e)))
-                  (when task 
-                    (send-fn! uid [:job/peer-assigned {:tracking-id tracking-id
-                                                       :job (:job task)
-                                                       ;:name (:name task-chunk)
-                                                       :task (:task task)
-                                                       :peer peer-id}])))
-
-                (#{:seal-task :complete-task} (:fn entry)) 
-                (let [task (extensions/read-chunk log :task (:task (:args entry)))
-                      task-name (:name task)]
-                  (send-fn! uid [:job/completed-task {:tracking-id tracking-id
-                                                      :job (:job (:args entry))
-                                                      ;:task-data task
-                                                      :task (:id task)
-                                                      :name task-name}]))
-                :else 
-                (println "Unable to custom handle entry " entry))
-          (send-fn! uid [:job/entry (assoc entry :tracking-id tracking-id)])
-          (reset! up-to-date? false)
-          ;(send-fn! uid [:deployment/replica {:replica new-replica :diff diff}])
-          (recur new-replica))
-        (do 
-          ; send current max id with it
-          (send-fn! uid [:deployment/up-to-date {:tracking-id tracking-id}])
-          (reset! up-to-date? true)
-          (recur replica))))))
-
-
-(defrecord LogSubscription [peer-config]
-  component/Lifecycle
-  (start [component]
-    (info "Start log subscription")
-    (let [sub-ch (chan 100)
-          subscription (onyx.api/subscribe-to-log peer-config sub-ch)] 
-      (assoc component :subscription subscription :subscription-ch sub-ch)))
-  (stop [component]
-    (info "Shutting down log subscription")
-    (onyx.api/shutdown-env (:env (:subscription component)))
-    (assoc component :subscription nil :channel nil)))
-
-(defrecord TrackDeploymentManager [send-fn! peer-config tracking-id user-id]
-  component/Lifecycle
-  (start [component]
-    ; Convert to a system?
-    (info "Starting Track Deployment manager " send-fn! peer-config user-id)
-    (let [subscription (component/start (map->LogSubscription {:peer-config peer-config}))]
-      (assoc component 
-             :subscription subscription
-             :tracking-fut (future 
-                             (track-deployment send-fn!
-                                               (:subscription subscription)
-                                               (:subscription-ch subscription)
-                                               tracking-id
-                                               user-id)))))
-  (stop [component]
-    (info "Stopping Track Deployment manager.")
-    (assoc component 
-           :subscription (component/stop (:subscription component))
-           :tracking-fut (future-cancel (:tracking-fut component)))))
-
-(defn new-track-deployment-manager [send-fn! peer-config user-id tracking-id]
-  (map->TrackDeploymentManager {:send-fn! send-fn! 
-                                :peer-config peer-config 
-                                :user-id user-id
-                                :tracking-id tracking-id}))
-
-(defn stop-tracking! [tracking user-id]
-  (swap! tracking
-         (fn [tr]
-           (if-let [manager (tr user-id)]
-             (do (component/stop manager)
-                 (dissoc tr user-id))
-             tr))))
-
-(defn start-tracking! [send-fn! peer-config tracking {:keys [deployment-id tracking-id]} user-id]
-  (println deployment-id " tracking id " tracking-id peer-config)
-  (stop-tracking! tracking user-id)
-  (swap! tracking 
-         assoc 
-         user-id
-         (component/start (new-track-deployment-manager send-fn! 
-                                                        (assoc peer-config :onyx/id deployment-id)
-                                                        user-id
-                                                        tracking-id))))
-
-(defn stop-all-tracking! [tracking]
-  (map stop-tracking! (keys @tracking)))
-
-(defn zk-deployment-entry-stat [client entry]
-  (:stat (zk/data client (zk-onyx/prefix-path entry))))
-
-(defn distribute-deployment-listing [send-all-fn! listing]
-  (send-all-fn! [:deployment/listing listing]))
-
-(defn refresh-deployments-watch [send-all-fn! zk-client deployments]
-  (if-let [children (zk/children zk-client zk-onyx/root-path :watcher (fn [_] (refresh-deployments-watch send-all-fn! zk-client)))]
-    (->> children
-         (map (juxt identity 
-                    (partial zk-deployment-entry-stat zk-client)))
-         (map (fn [[child stat]]
-                (vector child
-                        {:created-at (java.util.Date. (:ctime stat))
-                         :modified-at (java.util.Date. (:mtime stat))})))
-         (into {})
-         (reset! deployments)
-         (distribute-deployment-listing send-all-fn!))
-    (do
-      (println (format "Could not find deployments at %s. Retrying in 1s." zk-onyx/root-path))
-      (Thread/sleep 1000)
-      (recur send-all-fn! zk-client deployments))))
 
 (defn event->uid [event]
   (get-in event [:ring-req :cookies "ring-session" :value]))
@@ -214,13 +39,13 @@
         ;; then stop the future.
         (let [user-id (event->uid event)] 
           (case (:id event) 
-            :deployment/track (start-tracking! (:chsk-send! sente)
+            :deployment/track (od/start-tracking! (:chsk-send! sente)
                                                peer-config
                                                tracking
                                                (:?data event)
                                                user-id)
             :deployment/get-listing ((:chsk-send! sente) user-id [:deployment/listing @deployments])
-            :chsk/uidport-close (stop-tracking! user-id)
+            :chsk/uidport-close (od/stop-tracking! user-id)
             :chsk/ws-ping nil
             (println "Dunno what to do with: " event)))
         (recur)))))
@@ -246,16 +71,19 @@
     (let [deployments (atom {})
           tracking (atom {})
           event-handler-fut (start-event-handler sente peer-config deployments tracking)
-          ; TODO: no way to currently stop this watch
-          _ (refresh-deployments-watch (partial send-mult-fn 
-                                                (:chsk-send! sente) 
-                                                (:connected-uids sente)) 
-                                       (zk/connect (:zookeeper/address peer-config))
-                                       deployments)
           handler (ring.middleware.defaults/wrap-defaults routes ring-defaults-config)
           server (http-kit-server/run-server handler {:port 3000})
           uri (format "http://localhost:%s/" (:local-port (meta server)))]
       (println "Http-kit server is running at" uri)
+
+      ; TODO: no way to currently stop this watch
+      ; Should be in component and stoppable
+      (od/refresh-deployments-watch (partial send-mult-fn 
+                                             (:chsk-send! sente) 
+                                             (:connected-uids sente)) 
+                                    (zk/connect (:zookeeper/address peer-config))
+                                    deployments)
+
       (assoc component 
              :server server 
              :event-handler-fut event-handler-fut 
@@ -263,7 +91,7 @@
              :tracking tracking)))
   (stop [{:keys [server tracking deployments] :as component}]
     (println "Stopping HTTP Server")
-    (stop-all-tracking! tracking)
+    (swap! tracking od/stop-all-tracking!)
     (future-cancel (:event-handler-fut component))
     (server :timeout 100)
     (assoc component :server nil :event-handler-fut nil :deployments nil :tracking nil)))

@@ -7,7 +7,7 @@
   (assoc-in state [:deployments] msg))
 
 (defmethod msg-controller :deployment/up-to-date [[_ msg] state]
-  (println "Got deployment up to date")
+  ;(println "Got deployment up to date")
   (assoc-in state [:deployment :up-to-date?] true))
 
 (defn is-tracking? [msg state]

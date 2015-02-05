@@ -7,17 +7,20 @@ A dashboard for the Onyx distributed computation system
 
 ## Development
 
+Setup environment variables for `HORNETQ_PORT`, `HORNETQ_HOST`, and `ZOOKEEPER_ADDR` in your lein user profiles.clj like so:
 
+```
+{:user {:env {:hornetq-port 5445
+	      :hornetq-host "54.44.41.99"
+	      :zookeeper-addr "54.44.229.123:2181,54.44.240.52:2181"}
+```
 
-Open a terminal and type `lein figwheel` to start the Figwheel build
+or by setting the environment variables in your shell.
+
+Then open a terminal and type `lein figwheel` to start the Figwheel build
 (https://github.com/bhauman/lein-figwheel).
 
-Set env variables for HORNETQ_HOST, HORNETQ_PORT and ZOOKEEPER_ADDR (in the
-usual environ (https://github.com/weavejester/environ) way, can be in profile,
-shell environment or java properties)
-
-and run
-start your repl.
+and run `lein repl` to start your repl.
 
 In the REPL, type
 
@@ -29,7 +32,7 @@ Then point your browser at http://localhost:3000/
 
 ## License
 
-Copyright © 2014 FIXME
+Copyright © 2014 Lucas Bradstreet
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
