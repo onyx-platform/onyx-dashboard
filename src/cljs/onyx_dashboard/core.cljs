@@ -23,6 +23,7 @@
          ; Component state will also handle lifecycle stuff inc default
          ; state when new job is loaded (assuming they're keyed differently)
          :visible {:job true
+                   :job-management true
                    :catalog true
                    :workflow true
                    :task false
