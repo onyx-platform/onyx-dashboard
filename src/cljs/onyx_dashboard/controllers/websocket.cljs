@@ -1,4 +1,5 @@
-(ns onyx-dashboard.controllers.websocket)
+(ns onyx-dashboard.controllers.websocket
+  (:require [clojure.set :refer [union]]))
 
 (defmulti msg-controller (fn [[type _] _] type))
 
@@ -13,14 +14,19 @@
   (= (:tracking-id msg)
      (get-in state [:deployment :tracking-id])))
 
-(defmethod msg-controller :job/completed-task [[_ msg] state]
-  (when (is-tracking? msg state)
-    (println "Task completed: " msg))
-  state)
-
 (defmethod msg-controller :job/submitted-job [[_ msg] state]
   (if (is-tracking? msg state)
     (assoc-in state [:deployment :jobs (:id msg)] msg) 
+    state))
+
+(defmethod msg-controller :job/peer-assigned [[_ msg] state]
+  (if (is-tracking? msg state)
+    (update-in state [:deployment :jobs (:job msg) :tasks] union #{(:task msg)}) 
+    state))
+
+(defmethod msg-controller :job/completed-task [[_ msg] state]
+  (if (is-tracking? msg state)
+    (update-in state [:deployment :jobs (:job msg) :tasks] disj (:task msg)) 
     state))
 
 (defmethod msg-controller :job/entry [[_ msg] state]
