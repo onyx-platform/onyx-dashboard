@@ -19,12 +19,10 @@
                               (let [job-id (:id job)
                                     selected? (= job-id selected-job)] 
                                 (dom/tr {:class (str "job-entry")}
-                                        (dom/td
-                                          (dom/i {:class (if selected? "fa fa-dot-circle-o" "fa fa-circle-o")}))
+                                        (dom/td (dom/i {:class (if selected? "fa fa-dot-circle-o" "fa fa-circle-o")}))
                                         (dom/td {:on-click (fn [_] 
                                                              (put! (om/get-shared owner :api-ch) 
                                                                    [:select-job job-id]))} 
-                                                
                                                 (str job-id))
                                         (dom/td {}
                                                 (.fromNow (js/moment (str (js/Date. (:created-at job))))))))))))))
