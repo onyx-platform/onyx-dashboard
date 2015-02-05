@@ -29,7 +29,8 @@
                                     :hide-expander? true
                                     :type :job-management} 
                                    {})
-                 :bs-style (if crashed?  "danger" "primary")}
+                 :bs-style (if crashed?  "danger" "primary")
+                 :footer (dom/div (str "Last entry time: " (js/Date. (:created-at last-entry))))}
                 (if crashed? 
                   (dom/div 
                     "Log replay crashed. Cluster probably died if the dashboard is using the same version of Onyx."
@@ -37,7 +38,6 @@
                              (:error (:status deployment))))
 
                   (dom/div {:style {:text-align "center"}} 
-                           (str "Last played log entry: " (js/Date. (:created-at last-entry)))
                            (dom/i {:style {:font-size 42}
                                    :class (if (:up-to-date? deployment)
                                             "fa fa-thumbs-o-up"

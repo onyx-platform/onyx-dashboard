@@ -14,8 +14,7 @@
 
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojurescript "0.0-2760" :scope "provided"]
-                 [racehub/om-bootstrap "0.3.5" :exclusions [om]]
-                 [prismatic/schema "0.3.7" :exclusions [potemkin]]
+                 [prismatic/schema "0.3.7"]
                  [com.stuartsierra/component "0.2.2"]
                  [com.taoensso/sente "1.3.0"]
                  ;[org.omcljs/om "0.8.8"]
@@ -32,7 +31,10 @@
                  [fipp "0.5.1"]
                  [environ "1.0.0"]
                  [http-kit "2.1.19"]
-                 [prismatic/om-tools "0.3.10" :exclusions [om potemkin]]]
+                 ; make this explicit to fix uberjar?
+                 [potemkin "0.3.11"]
+                 [racehub/om-bootstrap "0.3.5" :exclusions [om]]
+                 [prismatic/om-tools "0.3.10" :exclusions [om]]]
 
   :plugins [[lein-cljsbuild "1.0.4"]
             [lein-version-spec "0.0.4"]
