@@ -64,43 +64,58 @@
         (let [entry (extensions/read-log-entry log position)
               new-replica (try (extensions/apply-log-entry entry replica)
                                (catch Throwable t
+                                 ; Send a crashy message via sente here
                                  (error (str "Could not apply log entry: " entry) t)
                                  (throw t)))
               diff (extensions/replica-diff entry replica new-replica)
               job-id (:job (:args entry))
               ;complete-tasks (get (:completions new-replica) job-id)
               tasks (get (:tasks new-replica) job-id)]
-          (case (:fn entry)
-            :submit-job (let [job-id (:id (:args entry))
-                              catalog (extensions/read-chunk log :catalog job-id)
-                              workflow (extensions/read-chunk log :workflow job-id)]
-                          (send-fn! uid [:job/submitted-job {:tracking-id tracking-id
-                                                             :id job-id
-                                                             :entry entry
-                                                             :catalog catalog
-                                                             :pretty-catalog (with-out-str (fipp (into [] catalog)))
-                                                             :pretty-workflow (with-out-str (fipp (into [] workflow)))
-                                                             :created-at (:created-at entry)}]))
-            ; TODO: check if newly submitted jobs will result in peer assigned messages being sent.
-            :volunteer-for-task (let [peer-id (:id (:args entry))
-                                      task (task-allocated-to-peer (:allocations new-replica) peer-id)]  
-                                  (when task 
-                                    (send-fn! uid 
-                                              [:job/peer-assigned {:tracking-id tracking-id
-                                                                   :job (:job task)
-                                                                   :task (:task task)
-                                                                   :peer peer-id}])))
+          ; Split into multimethods
+          (cond (= :submit-job (:fn entry)) 
+                (let [job-id (:id (:args entry))
+                      catalog (extensions/read-chunk log :catalog job-id)
+                      workflow (extensions/read-chunk log :workflow job-id)]
+                  (send-fn! uid [:job/submitted-job {:tracking-id tracking-id
+                                                     :id job-id
+                                                     :entry entry
+                                                     :catalog catalog
+                                                     :pretty-catalog (with-out-str (fipp (into [] catalog)))
+                                                     :pretty-workflow (with-out-str (fipp (into [] workflow)))
+                                                     :created-at (:created-at entry)}]))
+                ; TODO: check if newly submitted jobs will result in peer assigned messages being sent.
+                ; This might be doing more work than required
+                (= :volunteer-for-task (:fn entry)) 
+                (let [peer-id (:id (:args entry))
+                      task (task-allocated-to-peer (:allocations new-replica) peer-id)
+                      ;task-chunk (extensions/read-chunk log :task (:task task))
+                      ]
+                  (try (extensions/read-chunk log :task (:task task))
+                       (println "Replica " replica)
+                       (catch Exception e (println " Couldn't read " e)))
+                  (when task 
+                    (send-fn! uid [:job/peer-assigned {:tracking-id tracking-id
+                                                       :job (:job task)
+                                                       ;:name (:name task-chunk)
+                                                       :task (:task task)
+                                                       :peer peer-id}])))
 
-            :complete-task (let [task (extensions/read-chunk log :task (:task (:args entry)))
-                                 task-name (:name task)]
-                             (send-fn! uid [:job/completed-task {:tracking-id tracking-id
-                                                                 :name task-name}]))
-            (info "Unable to custom handle entry"))
+                (#{:seal-task :complete-task} (:fn entry)) 
+                (let [task (extensions/read-chunk log :task (:task (:args entry)))
+                      task-name (:name task)]
+                  (send-fn! uid [:job/completed-task {:tracking-id tracking-id
+                                                      :job (:job (:args entry))
+                                                      ;:task-data task
+                                                      :task (:id task)
+                                                      :name task-name}]))
+                :else 
+                (println "Unable to custom handle entry " entry))
           (send-fn! uid [:job/entry (assoc entry :tracking-id tracking-id)])
           (reset! up-to-date? false)
           ;(send-fn! uid [:deployment/replica {:replica new-replica :diff diff}])
           (recur new-replica))
         (do 
+          ; send current max id with it
           (send-fn! uid [:deployment/up-to-date {:tracking-id tracking-id}])
           (reset! up-to-date? true)
           (recur replica))))))
