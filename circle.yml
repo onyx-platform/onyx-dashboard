@@ -14,9 +14,9 @@ dependencies:
         post:
                 #- lein cljx once
                 - lein cljsbuild once
-                - lein with-profile production uberjar
 test:
         override: 
-                - docker build -t lbradstreet/onyx-dashboard:$CIRCLE_SHA1 . | tee docker-build.log
                 - lein test:
                     timeout: 1800
+                - lein clean && lein with-profile production uberjar
+                - docker build -t lbradstreet/onyx-dashboard:$CIRCLE_SHA1 . | tee docker-build.log
