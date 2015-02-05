@@ -29,7 +29,8 @@
                                    {})
                  :bs-style "primary"}
                 (if (:id deployment) 
-                  (dom/i {:style {:align "center"}
-                          :class (if (:up-to-date? deployment)
-                                   "fa fa-thumbs-o-up"
-                                   "fa fa-thumbs-o-down")})))))))
+                  (dom/div {:style {:text-align "center"}} 
+                           (dom/i {:style {:font-size 42}
+                                   :class (if (:up-to-date? deployment)
+                                            "fa fa-thumbs-o-up"
+                                            "fa fa-thumbs-o-down")}))))))))
