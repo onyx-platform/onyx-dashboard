@@ -29,10 +29,6 @@
             [:security :anti-forgery]
             {:read-token (fn [req] (-> req :params :csrf-token))}))
 
-; TODO: Move into component
-(def deployments (atom {}))
-(def tracking (atom {}))
-
 ; TODO:  Improve fn name
 (defn job-peer-allocated-task [job-allocations job-id peer-id]
   (ffirst 
@@ -159,7 +155,7 @@
                                 :user-id user-id
                                 :tracking-id tracking-id}))
 
-(defn stop-tracking! [user-id]
+(defn stop-tracking! [tracking user-id]
   (swap! tracking
          (fn [tr]
            (if-let [manager (tr user-id)]
@@ -167,9 +163,9 @@
                  (dissoc tr user-id))
              tr))))
 
-(defn start-tracking! [send-fn! peer-config {:keys [deployment-id tracking-id]} user-id]
+(defn start-tracking! [send-fn! peer-config tracking {:keys [deployment-id tracking-id]} user-id]
   (println deployment-id " tracking id " tracking-id peer-config)
-  (stop-tracking! user-id)
+  (stop-tracking! tracking user-id)
   (swap! tracking 
          assoc 
          user-id
@@ -178,16 +174,16 @@
                                                         user-id
                                                         tracking-id))))
 
-(defn stop-all-tracking! []
+(defn stop-all-tracking! [tracking]
   (map stop-tracking! (keys @tracking)))
 
 (defn zk-deployment-entry-stat [client entry]
   (:stat (zk/data client (zk-onyx/prefix-path entry))))
 
-(defn distribute-deployments [send-all-fn! deployments]
-  (send-all-fn! [:deployment/listing deployments]))
+(defn distribute-deployment-listing [send-all-fn! listing]
+  (send-all-fn! [:deployment/listing listing]))
 
-(defn refresh-deployments-watch [send-all-fn! zk-client]
+(defn refresh-deployments-watch [send-all-fn! zk-client deployments]
   (if-let [children (zk/children zk-client zk-onyx/root-path :watcher (fn [_] (refresh-deployments-watch send-all-fn! zk-client)))]
     (->> children
          (map (juxt identity 
@@ -198,16 +194,16 @@
                          :modified-at (java.util.Date. (:mtime stat))})))
          (into {})
          (reset! deployments)
-         (distribute-deployments send-all-fn!))
+         (distribute-deployment-listing send-all-fn!))
     (do
       (println (format "Could not find deployments at %s. Retrying in 1s." zk-onyx/root-path))
       (Thread/sleep 1000)
-      (recur send-all-fn! zk-client))))
+      (recur send-all-fn! zk-client deployments))))
 
 (defn event->uid [event]
   (get-in event [:ring-req :cookies "ring-session" :value]))
 
-(defn start-event-handler [sente peer-config]
+(defn start-event-handler [sente peer-config deployments tracking]
   (future
     (loop []
       (when-let [event (<!! (:ch-chsk sente))]
@@ -220,6 +216,7 @@
           (case (:id event) 
             :deployment/track (start-tracking! (:chsk-send! sente)
                                                peer-config
+                                               tracking
                                                (:?data event)
                                                user-id)
             :deployment/get-listing ((:chsk-send! sente) user-id [:deployment/listing @deployments])
@@ -235,14 +232,8 @@
 (defrecord HttpServer [peer-config]
   component/Lifecycle
   (start [{:keys [sente] :as component}]
-
-    ; Just reset atoms for now. Atoms should be created and reset in here
-    (reset! tracking {})
-    (reset! deployments {})
-
     (println "Starting HTTP Server")
-
-    (defroutes my-routes
+    (defroutes routes
       (GET  "/" [] (page))
       (GET  "/chsk" req ((:ring-ajax-get-or-ws-handshake sente) req))
       (POST "/chsk" req ((:ring-ajax-post sente) req))
@@ -252,24 +243,30 @@
       (resources "/react" {:root "react"})
       (route/not-found "Page not found"))
 
-    (let [event-handler-fut (start-event-handler sente peer-config)
+    (let [deployments (atom {})
+          tracking (atom {})
+          event-handler-fut (start-event-handler sente peer-config deployments tracking)
           ; TODO: no way to currently stop this watch
           _ (refresh-deployments-watch (partial send-mult-fn 
                                                 (:chsk-send! sente) 
                                                 (:connected-uids sente)) 
-                                       (zk/connect (:zookeeper/address peer-config)))
-          my-ring-handler (ring.middleware.defaults/wrap-defaults my-routes ring-defaults-config)
-          server (http-kit-server/run-server my-ring-handler {:port 3000})
+                                       (zk/connect (:zookeeper/address peer-config))
+                                       deployments)
+          handler (ring.middleware.defaults/wrap-defaults routes ring-defaults-config)
+          server (http-kit-server/run-server handler {:port 3000})
           uri (format "http://localhost:%s/" (:local-port (meta server)))]
       (println "Http-kit server is running at" uri)
-      (assoc component :server server :event-handler-fut event-handler-fut)))
-  (stop [{:keys [server] :as component}]
+      (assoc component 
+             :server server 
+             :event-handler-fut event-handler-fut 
+             :deployments deployments 
+             :tracking tracking)))
+  (stop [{:keys [server tracking deployments] :as component}]
     (println "Stopping HTTP Server")
-    (stop-all-tracking!)
+    (stop-all-tracking! tracking)
     (future-cancel (:event-handler-fut component))
     (server :timeout 100)
-    (assoc component :server nil :event-handler-fut nil)))
+    (assoc component :server nil :event-handler-fut nil :deployments nil :tracking nil)))
 
 (defn new-http-server [peer-config]
   (map->HttpServer {:peer-config peer-config}))
-
