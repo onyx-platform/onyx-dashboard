@@ -45,7 +45,7 @@
                                                (:?data event)
                                                user-id)
             :deployment/get-listing ((:chsk-send! sente) user-id [:deployment/listing @deployments])
-            :chsk/uidport-close (od/stop-tracking! user-id)
+            :chsk/uidport-close (swap! tracking od/stop-tracking! user-id)
             :chsk/ws-ping nil
             (println "Dunno what to do with: " event)))
         (recur)))))
@@ -62,8 +62,6 @@
       (GET  "/" [] (page))
       (GET  "/chsk" req ((:ring-ajax-get-or-ws-handshake sente) req))
       (POST "/chsk" req ((:ring-ajax-post sente) req))
-      ;(GET "/cluster/:deployment-id" req (get-job-output req))
-      ;(GET "/job/:job-id" req (get-job-output req))
       (resources "/")
       (resources "/react" {:root "react"})
       (route/not-found "Page not found"))

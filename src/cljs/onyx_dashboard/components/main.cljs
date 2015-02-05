@@ -4,18 +4,12 @@
             [om-tools.core :refer-macros [defcomponent]]
             [om-bootstrap.grid :as g]
             [om-bootstrap.random :as r]
-            [onyx-dashboard.components.deployment :refer [select-deployment]]
-            [onyx-dashboard.components.jobs :refer [job-selector job-info]]
-            [onyx-dashboard.components.log :refer [log-entries-table]]
+            [onyx-dashboard.components.deployment :refer [select-deployment deployment-indicator deployment-peers]]
+            [onyx-dashboard.components.jobs :refer [job-selector job-info job-management]]
+            [onyx-dashboard.components.log :refer [log-entries-pager]]
             [onyx-dashboard.controllers.api :refer [api-controller]]
             [cljs.core.async :as async :refer [<! >! put! chan]])
   (:require-macros [cljs.core.async.macros :as asyncm :refer [go-loop]]))
-
-(defn latest-log-entries [{:keys [entries message-id-max] :as deployment}]
-  (let [num-displayed 100
-        start-id (max 0 (- (inc message-id-max) num-displayed))
-        displayed-msg-ids (range start-id (inc message-id-max))]
-    (keep entries (reverse displayed-msg-ids))))
 
 (defcomponent main-component [{:keys [deployment visible] :as app} owner]
   (did-mount [_] 
@@ -28,19 +22,39 @@
                           (recur)))))
 
   (render-state [_ {:keys [api-chan]}]
-                (dom/div 
-                  (r/page-header {:class "page-header" 
-                                  :style {:text-align "center"}} 
-                                 "Onyx Dashboard")
-                  (g/grid {}
-                          (g/row {}
-                                 (g/col {:xs 6 :md 4}
-                                        (dom/div {:class "left-nav-deployment"} 
-                                                 (om/build select-deployment app {}))
-                                        (dom/div {} 
-                                                 (om/build job-selector deployment {})))
-                                 (g/col {:xs 12 :md 8}
-                                        (dom/div (om/build job-info {:deployment deployment
-                                                                     :visible visible} {})
-                                                 (om/build log-entries-table {:entries (latest-log-entries deployment)
-                                                                              :visible (:log-entries visible)} {}))))))))
+                (let [{:keys [selected-job jobs]} deployment
+                      job (and selected-job jobs (jobs selected-job))] 
+                  (dom/div 
+                    (r/page-header {:class "page-header" 
+                                    :style {:text-align "center"}} 
+                                   "Onyx Dashboard")
+                    (g/grid {}
+                            (g/row {}
+                                   (g/col {:xs 6 :md 4}
+                                          (dom/div {:class "left-nav-deployment"} 
+                                                   (om/build select-deployment app {}))
+
+                                          (if (:id deployment) 
+                                            (dom/div {} 
+                                                     (om/build deployment-indicator 
+                                                               {:deployment deployment
+                                                                :last-entry ((:entries deployment) (:message-id-max deployment))} 
+                                                               {})))
+
+                                          (if (:id deployment) 
+                                            (dom/div {} 
+                                                     (om/build deployment-peers deployment {})))
+
+                                          (dom/div {} 
+                                                   (om/build job-selector deployment {}))
+
+                                          (dom/div {}
+                                                   (if job 
+                                                     (om/build job-management {:job job
+                                                                               :visible (:job-management visible)} {}))))
+                                   (g/col {:xs 12 :md 8}
+                                          (dom/div 
+                                            (if job 
+                                              (om/build job-info {:job job :visible visible} {}))
+                                            (om/build log-entries-pager {:entries (:entries deployment) 
+                                                                         :visible (:log-entries visible)} {})))))))))

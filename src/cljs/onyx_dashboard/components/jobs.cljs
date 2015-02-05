@@ -18,7 +18,7 @@
                             (for [job (reverse (sort-by :created-at (vals jobs)))] 
                               (let [job-id (:id job)
                                     selected? (= job-id selected-job)] 
-                                (dom/tr {:class (str "job-entry")}
+                                (dom/tr {:class "job-entry"}
                                         (dom/td (dom/i {:class (if selected? "fa fa-dot-circle-o" "fa fa-circle-o")}))
                                         (dom/td {:on-click (fn [_] 
                                                              (put! (om/get-shared owner :api-ch) 
@@ -27,42 +27,77 @@
                                         (dom/td {}
                                                 (.fromNow (js/moment (str (js/Date. (:created-at job))))))))))))))
 
-(defcomponent job-info [{:keys [deployment visible]} owner]
+(defcomponent task-table [tasks owner]
   (render [_]
-          (let [{:keys [selected-job jobs]} deployment] 
-            (if-let [job (and selected-job jobs (jobs selected-job))]
-              (dom/div
-                (p/panel
-                  {:header (om/build section-header 
-                                     {:text "Job Management" 
-                                      :visible (:job-management visible) 
-                                      :type :job-management} 
-                                     {})
-                   :bs-style "primary"}
-                  (if (:job-management visible) 
-                    (g/grid {} 
-                            ; Show operations based on current status of job)
-                            (g/row {} 
-                                   (g/col {:xs 4 :md 2} (dom/i {:class "fa fa-heartbeat"} "Running"))
-                                   (g/col {:xs 4 :md 2} (dom/i {:class "fa fa-repeat"} "Restart"))
-                                   (g/col {:xs 4 :md 2} (dom/i {:class "fa fa-times-circle-o"} "Kill"))))))
+          (if (empty? tasks) 
+            (dom/div "No tasks are currently being processed for this job")
+            (t/table {:striped? true :bordered? false :condensed? true :hover? true}
+                     (dom/thead (dom/tr (dom/th "Name") (dom/th "Task ID") (dom/th "Peer ID")))
+                     (dom/tbody
+                       (for [[peer-id task] (sort-by (comp :name val) tasks)] 
+                         (dom/tr {:class "task-entry"}
+                                 (dom/td (str (:name task)))
+                                 (dom/td (str (:id task)))
+                                 (dom/td (str peer-id)))))))))
 
-               (p/panel
-                 {:header (om/build section-header 
-                                    {:text "Catalog" 
-                                     :visible (:job visible) 
-                                     :type :job} 
-                                    {})
-                  :bs-style "primary"}
-                (if (:job visible)
-                  (om/build clojure-block {:input (:pretty-catalog job)})))
+(defcomponent peer-table [peers owner]
+  (render [_]
+          (if (empty? peers) 
+            (dom/div "No peers are currently running")
+            (t/table {:striped? true :bordered? false :condensed? true :hover? true}
+                     (dom/thead (dom/tr (dom/th "ID")))
+                     (dom/tbody
+                       (for [peer peers] 
+                         (dom/tr {:class "peer-entry"}
+                                 (dom/td (str (:id peer))))))))))
 
-               (p/panel
-                 {:header (om/build section-header 
-                                    {:text "Workflow" 
-                                     :visible (:workflow visible) 
-                                     :type :workflow} 
-                                    {})
-                  :bs-style "primary"}
-                (if (:workflow visible)
-                  (om/build clojure-block {:input (:pretty-workflow job)}))))))))
+(defcomponent job-management [{:keys [job visible]} owner]
+  (render [_]
+          (dom/div
+            (p/panel
+              {:header (om/build section-header 
+                                 {:text "Job Management" 
+                                  :visible visible 
+                                  :type :job-management} 
+                                 {})
+               :bs-style "primary"}
+              (if visible 
+                (g/grid {} 
+                        ; Show operations based on current status of job)
+                        (g/row {} 
+                               (g/col {:xs 2 :md 1} (dom/i {:class "fa fa-heartbeat"} "Running"))
+                               (g/col {:xs 2 :md 1} (dom/i {:class "fa fa-repeat"} "Restart"))
+                               (g/col {:xs 2 :md 1} (dom/i {:class "fa fa-times-circle-o"} "Kill")))))))))
+
+(defcomponent job-info [{:keys [job visible]} owner]
+  (render [_]
+          (dom/div
+            (p/panel
+              {:header (om/build section-header 
+                                 {:text "Running Tasks" 
+                                  :visible (:tasks visible) 
+                                  :type :tasks} 
+                                 {})
+               :bs-style "primary"}
+              (if (:tasks visible) 
+                (om/build task-table (:tasks job) {})))
+
+            (p/panel
+              {:header (om/build section-header 
+                                 {:text "Catalog" 
+                                  :visible (:job visible) 
+                                  :type :job} 
+                                 {})
+               :bs-style "primary"}
+              (if (:job visible)
+                (om/build clojure-block {:input (:pretty-catalog job)})))
+
+            (p/panel
+              {:header (om/build section-header 
+                                 {:text "Workflow" 
+                                  :visible (:workflow visible) 
+                                  :type :workflow} 
+                                 {})
+               :bs-style "primary"}
+              (if (:workflow visible)
+                (om/build clojure-block {:input (:pretty-workflow job)}))))))

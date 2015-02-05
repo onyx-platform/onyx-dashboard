@@ -26,8 +26,8 @@
                    :job-management true
                    :catalog true
                    :workflow true
-                   :task false
-                   :peers false
+                   :tasks true
+                   :peers true
                    :statistics true
                    :log-entries true}
          :deployment {:tracking-id nil

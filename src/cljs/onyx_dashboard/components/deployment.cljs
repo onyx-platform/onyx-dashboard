@@ -4,22 +4,24 @@
             [om-tools.core :refer-macros [defcomponent]]
             [om-bootstrap.panel :as p]
             [om-bootstrap.button :as b]
+            [om-bootstrap.table :as t]
             [onyx-dashboard.components.ui-elements :refer [section-header]]
             [cljs.core.async :as async :refer [put!]]))
 
-(defcomponent select-deployment [{:keys [deployments deployment]} owner]
+(defcomponent peer-table [peers owner]
+  (render [_]
+          (if (empty? peers) 
+            (dom/div "No peers are currently running")
+            (t/table {:striped? true :bordered? false :condensed? true :hover? true}
+                     (dom/thead (dom/tr (dom/th "ID")))
+                     (dom/tbody
+                       (for [peer-id peers] 
+                         (dom/tr {:class "peer-entry"}
+                                 (dom/td (str peer-id)))))))))
+
+(defcomponent deployment-indicator [{:keys [deployment last-entry]} owner]
   (render [_] 
-          (dom/div 
-            (dom/div {:class "btn-group btn-group-justified" :role "group"} 
-                     (apply (partial b/dropdown {:bs-style "default" 
-                                                 :title (or (:id deployment) "Select Deployment")})
-                            (for [[id info] (reverse (sort-by (comp :created-at val) 
-                                                              deployments))]
-                              (b/menu-item {:key id
-                                            :on-select (fn [_] 
-                                                         (put! (om/get-shared owner :api-ch) 
-                                                               [:track-deployment id]))} 
-                                           id))))
+          (let [crashed? (= :crashed (:status (:status deployment)))] 
             (dom/div
               (p/panel
                 {:header (om/build section-header 
@@ -27,10 +29,43 @@
                                     :hide-expander? true
                                     :type :job-management} 
                                    {})
-                 :bs-style "primary"}
-                (if (:id deployment) 
+                 :bs-style (if crashed?  "danger" "primary")}
+                (if crashed? 
+                  (dom/div 
+                    "Log replay crashed. Cluster probably died if the dashboard is using the same version of Onyx."
+                    (dom/pre {} 
+                             (:error (:status deployment))))
+
                   (dom/div {:style {:text-align "center"}} 
+                           (str "Last played log entry: " (js/Date. (:created-at last-entry)))
                            (dom/i {:style {:font-size 42}
                                    :class (if (:up-to-date? deployment)
                                             "fa fa-thumbs-o-up"
                                             "fa fa-thumbs-o-down")}))))))))
+
+(defcomponent deployment-peers [deployment owner]
+  (render [_] 
+          (dom/div
+            (p/panel
+              {:header (om/build section-header 
+                                 {:text "Deployment Peers" 
+                                  :hide-expander? true
+                                  :type :deployment-peers} 
+                                 {})
+               :bs-style "primary"}
+              (if (:id deployment) 
+                (om/build peer-table (:peers deployment) {}))))))
+
+
+(defcomponent select-deployment [{:keys [deployments deployment]} owner]
+  (render [_] 
+          (dom/div {:class "btn-group btn-group-justified" :role "group"} 
+                   (apply (partial b/dropdown {:bs-style "default" 
+                                               :title (or (:id deployment) "Select Deployment")})
+                          (for [[id info] (reverse (sort-by (comp :created-at val) 
+                                                            deployments))]
+                            (b/menu-item {:key id
+                                          :on-select (fn [_] 
+                                                       (put! (om/get-shared owner :api-ch) 
+                                                             [:track-deployment id]))} 
+                                         id))))))
