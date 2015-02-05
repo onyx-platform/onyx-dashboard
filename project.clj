@@ -13,14 +13,13 @@
   :main onyx-dashboard.system
 
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/clojurescript "0.0-2740" :scope "provided"]
-                 [racehub/om-bootstrap "0.3.4" :exclusions [om]]
-                 [prismatic/schema "0.3.6" :exclusions [potemkin]]
+                 [org.clojure/clojurescript "0.0-2760" :scope "provided"]
+                 [racehub/om-bootstrap "0.3.5" :exclusions [om]]
+                 [prismatic/schema "0.3.7" :exclusions [potemkin]]
                  [com.stuartsierra/component "0.2.2"]
                  [com.taoensso/sente "1.3.0"]
                  [om "0.7.3"]
                  [com.taoensso/timbre "3.3.1"]
-                 ;[org.danielsz/system "0.1.4"]
                  [cljs-uuid "0.0.4"]
                  [ring "1.3.2"]
                  [com.mdrogalis/onyx "0.5.1"]
