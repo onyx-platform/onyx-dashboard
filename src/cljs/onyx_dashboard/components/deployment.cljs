@@ -62,10 +62,12 @@
           (dom/div {:class "btn-group btn-group-justified" :role "group"} 
                    (apply (partial b/dropdown {:bs-style "default" 
                                                :title (or (:id deployment) "Select Deployment")})
-                          (for [[id info] (reverse (sort-by (comp :created-at val) 
-                                                            deployments))]
-                            (b/menu-item {:key id
-                                          :on-select (fn [_] 
-                                                       (put! (om/get-shared owner :api-ch) 
-                                                             [:track-deployment id]))} 
-                                         id))))))
+                          (if-not (seq deployments)
+                            [(b/menu-item {:class "disabled"} "No deployments found")]
+                            (for [[id info] (reverse (sort-by (comp :created-at val) 
+                                                              deployments))]
+                              (b/menu-item {:key id
+                                            :on-select (fn [_] 
+                                                         (put! (om/get-shared owner :api-ch) 
+                                                               [:track-deployment id]))} 
+                                           id)))))))

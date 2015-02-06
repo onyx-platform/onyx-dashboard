@@ -24,10 +24,16 @@
   (render-state [_ {:keys [api-chan]}]
                 (let [{:keys [selected-job jobs]} deployment
                       job (and selected-job jobs (jobs selected-job))] 
-                  (dom/div 
-                    (r/page-header {:class "page-header" 
-                                    :style {:text-align "center"}} 
-                                   "Onyx Dashboard")
+                  (dom/div
+                   (g/row {}
+                          (r/page-header {:class "page-header, main-header"}
+                                         (g/grid {}
+                                                 (g/col {:xs 8 :md 2}
+                                                        (dom/a {:href "https://github.com/MichaelDrogalis/onyx"}
+                                                               (dom/img {:class "logo" :src "/img/high-res.png" :height "70%" :width "70%"})))
+                                                 (g/col {:xs 12 :md 8}
+                                                        (dom/div {:style {:margin-top "50px" :margin-left "200px" :font-size "50px"}}
+                                                                 "Onyx Dashboard")))))
                     (g/grid {}
                             (g/row {}
                                    (g/col {:xs 6 :md 4}

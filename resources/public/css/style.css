@@ -1,19 +1,19 @@
-/*h1 {
-  text-decoration: underline;
+body {
+    background-image: url("/img/crossword.png");
 }
-*/
 
 .page-header { 
 	text-align: "center";
 }
 
+.main-header {
+    text-align: "left";
+    margin-left: 75px;
+}
+
 .job-entry {
 	font-size: 10px;
 }
-
-/*.selected-job {
-	background-color: "lightblue";
-}*/
 
 .unselectable 
 {
@@ -21,3 +21,28 @@
 	-webkit-user-select: none;
 	-moz-user-select: none;
 }
+
+.panel-primary > .panel-heading {
+    background-color: #E8E8E8;
+    border-color: #E8E8E8;
+    color: #000;
+}
+
+.panel-primary {
+    border-color: #F5F5F5;
+    border-width: 1px;
+}
+
+.panel-heading h4 {
+    font-size: 16px;
+    margin: 0;
+}
+
+.panel-heading {
+    padding: 10px;
+}
+
+.left-nav-deployment {
+    margin-bottom: 20px;
+}
+
