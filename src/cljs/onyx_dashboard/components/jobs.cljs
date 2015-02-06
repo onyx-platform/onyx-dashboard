@@ -15,18 +15,23 @@
                    (t/table {:striped? true :bordered? false :condensed? true :hover? true}
                           ;; (dom/thead (dom/tr (dom/th "ID") (dom/th "Time")))
                           (dom/tbody
-                            (for [job (reverse (sort-by :created-at (vals jobs)))] 
-                              (let [job-id (:id job)
-                                    selected? (= job-id selected-job)] 
-                                (dom/tr {:class "job-entry"
-                                         :on-click (fn [_] 
-                                                     (put! (om/get-shared owner :api-ch) 
-                                                           [:select-job job-id]))}
-                                        (dom/td (dom/i {:class (if selected? "fa fa-dot-circle-o" "fa fa-circle-o")}))
-                                        (dom/td {} 
-                                                (dom/a {:href "#"} (str job-id)))
-                                        (dom/td {}
-                                                (.fromNow (js/moment (str (js/Date. (:created-at job))))))))))))))
+                            (cons (dom/tr {:class "job-entry"
+                                           :on-click (fn [_] (put! (om/get-shared owner :api-ch) [:select-job nil]))}
+                                          (dom/td (dom/i {:class (if (nil? selected-job) "fa fa-dot-circle-o" "fa fa-circle-o")}))
+                                          (dom/td {} (dom/a {:href "#"} "None"))
+                                          (dom/td {}))
+                                  (for [job (reverse (sort-by :created-at (vals jobs)))] 
+                                    (let [job-id (:id job)
+                                          selected? (= job-id selected-job)] 
+                                      (dom/tr {:class "job-entry"
+                                               :on-click (fn [_] 
+                                                           (put! (om/get-shared owner :api-ch) 
+                                                                 [:select-job job-id]))}
+                                              (dom/td (dom/i {:class (if selected? "fa fa-dot-circle-o" "fa fa-circle-o")}))
+                                              (dom/td {} 
+                                                      (dom/a {:href "#"} (str job-id)))
+                                              (dom/td {}
+                                                      (.fromNow (js/moment (str (js/Date. (:created-at job)))))))))))))))
 
 (defcomponent task-table [tasks owner]
   (render [_]
