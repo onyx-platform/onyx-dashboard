@@ -28,11 +28,14 @@
                    (g/row {}
                           (r/page-header {:class "page-header, main-header"}
                                          (g/grid {}
-                                                 (g/col {:xs 8 :md 2}
+                                                 (g/col {:xs 4 :md 2}
                                                         (dom/a {:href "https://github.com/MichaelDrogalis/onyx"}
-                                                               (dom/img {:class "logo" :src "/img/high-res.png" :height "50%" :width "50%"})))
+                                                               (dom/img {:class "logo" 
+                                                                         :src "/img/high-res.png" 
+                                                                         :height "50%" 
+                                                                         :width "50%"})))
                                                  (g/col {:xs 12 :md 8}
-                                                        (dom/div {:style {:margin-top "50px" :margin-left "200px" :font-size "50px"}}
+                                                        (dom/div {:style {:font-size "50px"}}
                                                                  "Onyx Dashboard")))))
                     (g/grid {}
                             (g/row {}
