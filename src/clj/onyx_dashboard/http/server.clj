@@ -40,10 +40,10 @@
         (let [user-id (event->uid event)] 
           (case (:id event) 
             :deployment/track (od/start-tracking! (:chsk-send! sente)
-                                               peer-config
-                                               tracking
-                                               (:?data event)
-                                               user-id)
+                                                  peer-config
+                                                  tracking
+                                                  (:?data event)
+                                                  user-id)
             :deployment/get-listing ((:chsk-send! sente) user-id [:deployment/listing @deployments])
             :job/kill (od/kill-job peer-config 
                                    (:deployment-id (:?data event))

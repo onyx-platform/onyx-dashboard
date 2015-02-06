@@ -23,29 +23,33 @@
   (kill-job peer-config deployment-id job-info)
   (start-job peer-config deployment-id job-info))
 
+
 (defn zk-deployment-entry-stat [client entry]
   (:stat (zk/data client (zk-onyx/prefix-path entry))))
 
 (defn distribute-deployment-listing [send-all-fn! listing]
   (send-all-fn! [:deployment/listing listing]))
 
+(defn deployment-pulses [client deployment-id]
+  (zk/children client (zk-onyx/pulse-path deployment-id)))
+
 (defn refresh-deployments-watch [send-all-fn! zk-client deployments]
   (if-let [children (zk/children zk-client zk-onyx/root-path :watcher (fn [_] (refresh-deployments-watch send-all-fn! zk-client)))]
-    (->> children
-         (map (juxt identity 
-                    (partial zk-deployment-entry-stat zk-client)))
-         (map (fn [[child stat]]
-                (vector child
-                        {:created-at (java.util.Date. (:ctime stat))
-                         :modified-at (java.util.Date. (:mtime stat))})))
-         (into {})
-         (reset! deployments)
-         (distribute-deployment-listing send-all-fn!))
+    (do 
+      (->> children
+           (map (juxt identity 
+                      (partial zk-deployment-entry-stat zk-client)))
+           (map (fn [[child stat]]
+                  (vector child
+                          {:created-at (java.util.Date. (:ctime stat))
+                           :modified-at (java.util.Date. (:mtime stat))})))
+           (into {})
+           (reset! deployments)
+           (distribute-deployment-listing send-all-fn!)))
     (do
       (println (format "Could not find deployments at %s. Retrying in 1s." zk-onyx/root-path))
       (Thread/sleep 1000)
       (recur send-all-fn! zk-client deployments))))
-
 
 (defn peer-allocated-to-task [job-allocations job-id peer-id]
   (ffirst 
@@ -69,11 +73,58 @@
       (send-fn! [:deployment/log-replay-crash {:tracking-id tracking-id :error (str t)}])
       nil)))
 
-; May want to track events in a deployment atom
-; including chunks that are read e.g. catalog. Then if we end up
-; with multiple clients viewing the same deployment we can only subscribe once.
-; Probably not worth the complexity!
-(defn track-deployment [send-fn! subscription ch tracking-id]
+(defmulti log-notifications 
+  (fn [send-fn! replica log entry tracking-id]
+    ((:fn entry) {:complete-task :job/completed-task
+                  :seal-task :job/completed-task
+                  :volunteer-for-task :job/peer-assigned
+                  :accept-join-cluster :deployment/peer-joined
+                  :leave-cluster :deployment/peer-left
+                  :submit-job :deployment/submitted-job})))
+
+(defmethod log-notifications :deployment/submitted-job [send-fn! replica log entry tracking-id]
+  (let [job-id (:id (:args entry))
+        catalog (extensions/read-chunk log :catalog job-id)
+        workflow (extensions/read-chunk log :workflow job-id)]
+    (send-fn! [:deployment/submitted-job {:tracking-id tracking-id
+                                          :id job-id
+                                          :entry entry
+                                          :task-scheduler (:task-scheduler (:args entry))
+                                          :catalog catalog
+                                          :workflow workflow
+                                          :pretty-catalog (with-out-str (fipp (into [] catalog)))
+                                          :pretty-workflow (with-out-str (fipp (into [] workflow)))
+                                          :created-at (:created-at entry)}])))
+
+(defmethod log-notifications :deployment/peer-joined [send-fn! _ _ entry tracking-id]
+  (send-fn! [:deployment/peer-joined {:tracking-id tracking-id
+                                      :id (:subject (:args entry))}]))
+
+(defmethod log-notifications :deployment/peer-left [send-fn! _ _ entry tracking-id]
+  (send-fn! [:deployment/peer-left {:tracking-id tracking-id
+                                    :id (:id (:args entry))}]))
+
+(defmethod log-notifications :job/peer-assigned [send-fn! replica log entry tracking-id]
+  (let [peer-id (:id (:args entry))
+        {:keys [job-id task-id]} (task-allocated-to-peer (:allocations replica) peer-id)]
+  (when task-id 
+    (let [task (extensions/read-chunk log :task task-id)] 
+      (send-fn! [:job/peer-assigned {:tracking-id tracking-id
+                                     :job-id job-id 
+                                     :peer-id peer-id
+                                     :task (select-keys task [:id :name])}])))))
+
+(defmethod log-notifications :job/completed-task [send-fn! replica log entry tracking-id]
+  (let [task (extensions/read-chunk log :task (:task (:args entry)))]
+    (send-fn! [:job/completed-task {:tracking-id tracking-id
+                                    :job-id (:job (:args entry))
+                                    :peer-id (:id (:args entry))
+                                    :task (select-keys task [:id :name])}])))
+
+(defmethod log-notifications :default [send-fn! replica log entry tracking-id]
+  (println "Default hrm " entry))
+
+(defn track-deployment [send-fn! deployment-id subscription ch f-check-pulses tracking-id]
   (let [log (:log (:env subscription))
         up-to-date? (atom false)
         last-id (atom nil)]
@@ -82,59 +133,14 @@
         (let [entry (extensions/read-log-entry log position)]
           (reset! last-id position)
           (if-let [new-replica (apply-log-entry send-fn! tracking-id entry replica)] 
-            (let [diff (extensions/replica-diff entry replica new-replica)
-                  job-id (:job (:args entry))
-                  ;complete-tasks (get (:completions new-replica) job-id)
-                  tasks (get (:tasks new-replica) job-id)]
-              ; Split into multimethods
-              (cond (= :submit-job (:fn entry)) 
-                    (let [job-id (:id (:args entry))
-                          catalog (extensions/read-chunk log :catalog job-id)
-                          workflow (extensions/read-chunk log :workflow job-id)]
-                      (send-fn! [:job/submitted-job {:tracking-id tracking-id
-                                                     :id job-id
-                                                     :entry entry
-                                                     :task-scheduler (:task-scheduler (:args entry))
-                                                     :catalog catalog
-                                                     :workflow workflow
-                                                     :pretty-catalog (with-out-str (fipp (into [] catalog)))
-                                                     :pretty-workflow (with-out-str (fipp (into [] workflow)))
-                                                     :created-at (:created-at entry)}]))
-
-                    (= :accept-join-cluster (:fn entry))
-                    (send-fn! [:deployment/peer-joined {:tracking-id tracking-id
-                                                        :id (:subject (:args entry))}])
-
-                    (= :leave-cluster (:fn entry))
-                    (send-fn! [:deployment/peer-left {:tracking-id tracking-id
-                                                      :id (:id (:args entry))}])
-
-                    ; TODO: check if newly submitted jobs will result in peer assigned messages being sent.
-                    ; This might be doing more work than required
-                    (= :volunteer-for-task (:fn entry)) 
-                    (let [peer-id (:id (:args entry))
-                          {:keys [job-id task-id]} (task-allocated-to-peer (:allocations new-replica) peer-id)]
-                      (when task-id 
-                        (let [task (extensions/read-chunk log :task task-id)] 
-                          (send-fn! [:job/peer-assigned {:tracking-id tracking-id
-                                                         :job-id job-id 
-                                                         :peer-id peer-id
-                                                         :task (select-keys task [:id :name])}]))))
-
-                    (#{:seal-task :complete-task} (:fn entry)) 
-                    (let [task (extensions/read-chunk log :task (:task (:args entry)))]
-                      (send-fn! [:job/completed-task {:tracking-id tracking-id
-                                                      :job-id (:job (:args entry))
-                                                      :peer-id (:id (:args entry))
-                                                      :task (select-keys task [:id :name])}]))
-                    :else nil #_(info "Unable to custom handle entry " entry))
-              (println entry)
-              (println "Replica is " replica " \n " diff)
+            (do
+              (log-notifications send-fn! new-replica log entry tracking-id)
               (send-fn! [:deployment/log-entry (assoc entry :tracking-id tracking-id)])
               (reset! up-to-date? false)
-              ;(send-fn! [:deployment/replica {:replica new-replica :diff diff}])
               (recur new-replica))))
         (do 
+          (when-not (seq (f-check-pulses))
+            (send-fn! [:deployment/no-pulse {:tracking-id tracking-id}]))
           (send-fn! [:deployment/up-to-date {:tracking-id tracking-id :last-id @last-id}])
           (reset! up-to-date? true)
           (recur replica))))))
@@ -156,13 +162,18 @@
   (start [component]
     ; Convert to a system?
     (info "Starting Track Deployment manager " send-fn! peer-config user-id)
-    (let [subscription (component/start (map->LogSubscription {:peer-config peer-config}))]
+    (let [subscription (component/start (map->LogSubscription {:peer-config peer-config}))
+          f-check-pulses (partial deployment-pulses 
+                                  (zk/connect (:zookeeper/address peer-config)) 
+                                  (:onyx/id peer-config))]
       (assoc component 
              :subscription subscription
              :tracking-fut (future 
                              (track-deployment (partial send-fn! user-id)
+                                               (:onyx/id peer-config)
                                                (:subscription subscription)
                                                (:subscription-ch subscription)
+                                               f-check-pulses
                                                tracking-id)))))
   (stop [component]
     (info "Stopping Track Deployment manager.")
@@ -183,9 +194,7 @@
     tracking))
 
 (defn stop-all-tracking! [tr]
-  (reduce stop-tracking!
-          tr
-          (keys tr)))
+  (reduce stop-tracking! tr (keys tr)))
 
 (defn start-tracking! [send-fn! peer-config tracking {:keys [deployment-id tracking-id]} user-id]
   (swap! tracking 
@@ -197,5 +206,3 @@
                                                               (assoc peer-config :onyx/id deployment-id)
                                                               user-id
                                                               tracking-id)))))))
-
-

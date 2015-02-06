@@ -52,8 +52,10 @@
                                   :type :deployment-peers} 
                                  {})
                :bs-style "primary"}
-              (if (:id deployment) 
-                (om/build peer-table (:peers deployment) {}))))))
+              (if (and (:id deployment) 
+                       (:up? deployment)) 
+                (om/build peer-table (:peers deployment) {})
+                (dom/div "Deployment has no pulse."))))))
 
 
 (defcomponent select-deployment [{:keys [deployments deployment]} owner]

@@ -16,7 +16,7 @@
     (assoc-in state [:deployment :up-to-date?] true)
     state))
 
-(defmethod msg-controller :job/submitted-job [[_ msg] state]
+(defmethod msg-controller :deployment/submitted-job [[_ msg] state]
   (if (is-tracking? msg state)
     (assoc-in state [:deployment :jobs (:id msg)] msg) 
     state))
@@ -67,10 +67,16 @@
                (fn [deployment]
                  (-> deployment
                      (assoc :up-to-date? false)
+                     (assoc :up? true)
                      (update-in [:message-id-max] max (:message-id msg))
                      (assoc-in [:entries (:message-id msg)] msg))))
     state))
 
+(defmethod msg-controller :deployment/no-pulse [[_ msg] state]
+  (if (is-tracking? msg state)
+    (assoc-in state [:deployment :up?] false)
+    state))
+
 (defmethod msg-controller :default [[type msg] state]
-  ;(println "Unhandled msg type:" type "msg:" msg)
+  (println "Unhandled msg type:" type "msg:" msg)
   state)
