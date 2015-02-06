@@ -40,7 +40,8 @@
                                       :-webkit-transform rotation-css
                                       :transform rotation-css}
                               :src "/img/high-res.png" :height 25 :width 25})
-                    (str " Display status as of " (.fromNow (js/moment (str (js/Date. (:created-at last-entry)))))))))))))
+                    (if-let [entry-time (:created-at last-entry)] 
+                      (str " Display status as of " (.fromNow (js/moment (str (js/Date. entry-time)))))))))))))
 
 (defcomponent deployment-peers [deployment owner]
   (render [_] 

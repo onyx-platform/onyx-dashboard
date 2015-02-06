@@ -40,7 +40,7 @@
 ;     state))
 
 (defmethod msg-controller :deployment/peer-notify-joined-accepted [[_ {:keys [id] :as msg}] state]
-  (println "Peer immediate notify joined " msg)
+  ;(println "Peer immediate notify joined " msg)
   (if (is-tracking? msg state)
     (update-in state [:deployment :peers] union #{id}) 
     state))
