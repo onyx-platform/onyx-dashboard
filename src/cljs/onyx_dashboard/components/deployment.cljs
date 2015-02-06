@@ -21,22 +21,26 @@
 
 (defcomponent deployment-indicator [{:keys [deployment last-entry]} owner]
   (render [_] 
-          (let [crashed? (= :crashed (:status (:status deployment)))] 
+          (let [crashed? (= :crashed (:status (:status deployment)))
+                onyx-logo-rotation (mod (* (:message-id last-entry) 
+                                           10)
+                                        360)
+                rotation-css (str "rotate(" onyx-logo-rotation "deg)")] 
             (dom/div
               (p/panel
-                {:header (om/build section-header 
-                                   {:text "Dashboard Status" 
-                                    :hide-expander? true
-                                    :type :job-management} 
-                                   {})
+                {:header (dom/div {} (dom/h4 {:class "unselectable"} "Dashboard Status"))
                  :bs-style (if (or crashed? (not (:up-to-date? deployment)))  "danger" "primary")}
-                (dom/div
-                 (if crashed? 
-                   (dom/div 
-                    "Log replay crashed. Cluster probably died if the dashboard is using the same version of Onyx."
-                    (dom/pre {} 
-                             (:error (:status deployment)))))
-                 (dom/div (str "Display status as of " (.fromNow (js/moment (str (js/Date. (:created-at last-entry)))))))))))))
+                (dom/div 
+                  (if crashed? 
+                    (dom/div "Log replay crashed. Cluster probably died if the dashboard is using the same version of Onyx."
+                             (dom/pre {} 
+                                      (:error (:status deployment)))))
+                  (dom/div 
+                    (dom/img {:style {:-ms-transform rotation-css
+                                      :-webkit-transform rotation-css
+                                      :transform rotation-css}
+                              :src "/img/high-res.png" :height 25 :width 25})
+                    (str " Display status as of " (.fromNow (js/moment (str (js/Date. (:created-at last-entry)))))))))))))
 
 (defcomponent deployment-peers [deployment owner]
   (render [_] 
