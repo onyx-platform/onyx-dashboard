@@ -30,7 +30,7 @@
                                          (g/grid {}
                                                  (g/col {:xs 8 :md 2}
                                                         (dom/a {:href "https://github.com/MichaelDrogalis/onyx"}
-                                                               (dom/img {:class "logo" :src "/img/high-res.png" :height "70%" :width "70%"})))
+                                                               (dom/img {:class "logo" :src "/img/high-res.png" :height "50%" :width "50%"})))
                                                  (g/col {:xs 12 :md 8}
                                                         (dom/div {:style {:margin-top "50px" :margin-left "200px" :font-size "50px"}}
                                                                  "Onyx Dashboard")))))
@@ -66,6 +66,7 @@
                                                         {:job job :visible visible} 
                                                         {:react-key (str "job-info-" (:id job))}))
                                             (om/build log-entries-pager 
-                                                      {:entries (:entries deployment) 
+                                                      {:entries (:entries deployment)
+                                                       :job-filter (:id job) 
                                                        :visible (:log-entries visible)} 
-                                                      {:react-key (str "log-" (:id deployment))})))))))))
+                                                      {:react-key (str "log-" (:id deployment) "-filter-" (:id job))})))))))))

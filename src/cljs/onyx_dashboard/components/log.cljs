@@ -33,14 +33,23 @@
     {:entries (map second displayed-entries) 
      :num-pages (Math/ceil (/ (count entries) entries-per-page))}))
 
-(defcomponent log-entries-pager [{:keys [entries visible] :as log} owner]
+(defcomponent log-entries-pager [{:keys [job-filter entries visible] :as log} owner]
   (init-state [_]
               {:current-page 0})
   (render-state [_ {:keys [current-page]}]
-                (let [entries-selection (log-page-info entries current-page)
+                (let [filtered-entries (if job-filter
+                                         (into {} 
+                                               (filter (comp (partial = job-filter)
+                                                             :job
+                                                             :args
+                                                             val) 
+                                                       entries))
+                                         entries)
+                      entries-selection (log-page-info filtered-entries current-page)
                       num-pages (:num-pages entries-selection)] 
                   (p/panel {:header (om/build section-header 
-                                              {:text "Raw Cluster Activity" 
+                                              {:text (str "Raw Cluster Activity" 
+                                                          (if job-filter (str " - Job " job-filter))) 
                                                :visible visible 
                                                :type :log-entries} {})
                             :bs-style "primary"}
@@ -60,7 +69,7 @@
                                                                         (om/set-state! owner :current-page pg))}) 
                                                          (str (inc pg))))
                                               (pg/next 
-                                                (if (= current-page num-pages)
+                                                (if (= current-page (dec num-pages))
                                                   {:disabled? true}
                                                   {:on-click (fn [_]
                                                                (om/update-state! owner :current-page inc))})))))))))
