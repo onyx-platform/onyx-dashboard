@@ -83,20 +83,26 @@
                                         (dom/div {:on-click kill-job-handler}
                                                  (dom/i {:class "fa fa-times-circle-o"} " Kill")))))))))))
 
+(defcomponent task-panel [{:keys [job visible]} owner]
+  (render [_]
+          (p/panel
+            {:header (om/build section-header 
+                               {:text "Running Tasks" 
+                                :visible visible
+                                :hide-expander? true
+                                :type :tasks} 
+                               {})
+             :footer (if-not (empty? (:tasks job)) 
+                       (dom/div {:style {:color "rgb(197, 6, 11)"}} 
+                                (str "Scheduler " (:task-scheduler job))))
+             :bs-style "primary"}
+            (if visible 
+              (om/build task-table (:tasks job) {})))))
+
 (defcomponent job-info [{:keys [job visible]} owner]
   (render [_]
           (dom/div
-            (p/panel
-              {:header (om/build section-header 
-                                 {:text "Running Tasks" 
-                                  :visible (:tasks visible)
-                                  :hide-expander? true
-                                  :type :tasks} 
-                                 {})
-               :bs-style "primary"}
-              (if (:tasks visible) 
-                (om/build task-table (:tasks job) {})))
-
+            (om/build task-panel {:job job :visible (:tasks visible)} {})
             (p/panel
               {:header (om/build section-header 
                                  {:text "Catalog" 
