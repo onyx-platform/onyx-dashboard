@@ -25,23 +25,18 @@
             (dom/div
               (p/panel
                 {:header (om/build section-header 
-                                   {:text "Dashboard Fresh?" 
+                                   {:text "Dashboard Status" 
                                     :hide-expander? true
                                     :type :job-management} 
                                    {})
-                 :bs-style (if crashed?  "danger" "primary")
-                 :footer (dom/div (str "Last entry time: " (js/Date. (:created-at last-entry))))}
-                (if crashed? 
-                  (dom/div 
+                 :bs-style (if (or crashed? (not (:up-to-date? deployment)))  "danger" "primary")}
+                (dom/div
+                 (if crashed? 
+                   (dom/div 
                     "Log replay crashed. Cluster probably died if the dashboard is using the same version of Onyx."
                     (dom/pre {} 
-                             (:error (:status deployment))))
-
-                  (dom/div {:style {:text-align "center"}} 
-                           (dom/i {:style {:font-size 42}
-                                   :class (if (:up-to-date? deployment)
-                                            "fa fa-thumbs-o-up"
-                                            "fa fa-thumbs-o-down")}))))))))
+                             (:error (:status deployment)))))
+                 (dom/div (str "Display status as of " (.fromNow (js/moment (str (js/Date. (:created-at last-entry)))))))))))))
 
 (defcomponent deployment-peers [deployment owner]
   (render [_] 
@@ -62,12 +57,10 @@
           (dom/div {:class "btn-group btn-group-justified" :role "group"} 
                    (apply (partial b/dropdown {:bs-style "default" 
                                                :title (or (:id deployment) "Select Deployment")})
-                          (if-not (seq deployments)
-                            [(b/menu-item {:class "disabled"} "No deployments found")]
-                            (for [[id info] (reverse (sort-by (comp :created-at val) 
-                                                              deployments))]
-                              (b/menu-item {:key id
-                                            :on-select (fn [_] 
-                                                         (put! (om/get-shared owner :api-ch) 
-                                                               [:track-deployment id]))} 
-                                           id)))))))
+                          (for [[id info] (reverse (sort-by (comp :created-at val) 
+                                                            deployments))]
+                            (b/menu-item {:key id
+                                          :on-select (fn [_] 
+                                                       (put! (om/get-shared owner :api-ch) 
+                                                             [:track-deployment id]))} 
+                                         id))))))

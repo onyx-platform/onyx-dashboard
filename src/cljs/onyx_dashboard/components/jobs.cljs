@@ -23,7 +23,7 @@
                                         (dom/td {:on-click (fn [_] 
                                                              (put! (om/get-shared owner :api-ch) 
                                                                    [:select-job job-id]))} 
-                                                (str job-id))
+                                                (dom/a {:href "#"} (str job-id)))
                                         (dom/td {}
                                                 (.fromNow (js/moment (str (js/Date. (:created-at job))))))))))))))
 
@@ -57,7 +57,8 @@
             (p/panel
               {:header (om/build section-header 
                                  {:text "Job Management" 
-                                  :visible visible 
+                                  :visible visible
+                                  :hide-expander? true
                                   :type :job-management} 
                                  {})
                :bs-style "primary"}
@@ -75,7 +76,8 @@
             (p/panel
               {:header (om/build section-header 
                                  {:text "Running Tasks" 
-                                  :visible (:tasks visible) 
+                                  :visible (:tasks visible)
+                                  :hide-expander? true
                                   :type :tasks} 
                                  {})
                :bs-style "primary"}
@@ -95,7 +97,8 @@
             (p/panel
               {:header (om/build section-header 
                                  {:text "Workflow" 
-                                  :visible (:workflow visible) 
+                                  :visible (:workflow visible)
+                                  :hide-expander? true
                                   :type :workflow} 
                                  {})
                :bs-style "primary"}

@@ -42,17 +42,17 @@
 
                                           (if (:id deployment) 
                                             (dom/div {} 
-                                                     (om/build deployment-indicator 
-                                                               {:deployment deployment
-                                                                :last-entry ((:entries deployment) (:message-id-max deployment))} 
-                                                               {})))
-
-                                          (if (:id deployment) 
-                                            (dom/div {} 
                                                      (om/build deployment-peers deployment {})))
 
                                           (dom/div {} 
                                                    (om/build job-selector deployment {}))
+
+                                          (if (:id deployment) 
+                                            (dom/div {} 
+                                                     (om/build deployment-indicator 
+                                                               {:deployment deployment
+                                                                :last-entry ((:entries deployment) (:message-id-max deployment))} 
+                                                               {})))
 
                                           (dom/div {}
                                                    (if job 

@@ -58,7 +58,7 @@
 
 (defn main []
   ;; Mike's note: disabling for now - switch to dev-only mode.
-  ;; (om/root ankha/inspector app-state {:target (js/document.getElementById "ankha")})
+  (om/root ankha/inspector app-state {:target (js/document.getElementById "ankha")})
   (om/root main-component app-state {:shared {:chsk-send! chsk-send!
                                               :api-ch (chan)}
                                      :target (. js/document (getElementById "app"))}))

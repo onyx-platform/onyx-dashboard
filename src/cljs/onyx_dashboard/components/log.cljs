@@ -40,7 +40,7 @@
                 (let [entries-selection (log-page-info entries current-page)
                       num-pages (:num-pages entries-selection)] 
                   (p/panel {:header (om/build section-header 
-                                              {:text "Cluster Activity" 
+                                              {:text "Raw Cluster Activity" 
                                                :visible visible 
                                                :type :log-entries} {})
                             :bs-style "primary"}
