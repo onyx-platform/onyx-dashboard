@@ -23,7 +23,6 @@
   (kill-job peer-config deployment-id job-info)
   (start-job peer-config deployment-id job-info))
 
-
 (defn zk-deployment-entry-stat [client entry]
   (:stat (zk/data client (zk-onyx/prefix-path entry))))
 
@@ -64,7 +63,7 @@
               {:job-id job-id :task-id task-id}))
           (keys allocations))))
 
-(def freshness-timeout 50)
+(def freshness-timeout 100)
 
 (defn apply-log-entry [send-fn! tracking-id entry replica]
   (try 
@@ -122,6 +121,7 @@
                                     :task (select-keys task [:id :name])}])))
 
 (defmethod log-notifications :default [send-fn! replica log entry tracking-id])
+
 (defn track-deployment [send-fn! deployment-id subscription ch f-check-pulses tracking-id]
   (let [log (:log (:env subscription))
         up-to-date? (atom false)
