@@ -31,7 +31,8 @@
   state)
 
 (defmethod api-controller :kill-job [[_ job-id] chsk-send! state]
-  (chsk-send! [:job/kill {:id job-id}])
+  (chsk-send! [:job/kill {:deployment-id (:id (:deployment state))
+                          :job {:id job-id}}])
   state)
 
 ; Currently unused
