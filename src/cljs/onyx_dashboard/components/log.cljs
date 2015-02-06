@@ -23,15 +23,14 @@
                                      (om/build log-entry-row entry {}))
                                    entries)))))
 
-(def entries-per-page 
-  10)
+(def entries-per-page 20)
 
 (defn pagination-info [entries start-index]
   (let [num-pages (Math/ceil (/ (count entries) entries-per-page))] 
-    {:displayed-entries (reverse 
-                          (keep entries 
-                                (range (max 0 (inc (- start-index entries-per-page))) 
-                                       (inc start-index))))
+    {:displayed-entries (take entries-per-page
+                              (keep entries 
+                                    (reverse (range 0 
+                                                    (inc start-index)))))
      :current-page (- num-pages (Math/ceil (* num-pages (/ start-index (count entries)))))
      :num-pages num-pages}))
 
