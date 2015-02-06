@@ -18,11 +18,12 @@
                             (for [job (reverse (sort-by :created-at (vals jobs)))] 
                               (let [job-id (:id job)
                                     selected? (= job-id selected-job)] 
-                                (dom/tr {:class "job-entry"}
+                                (dom/tr {:class "job-entry"
+                                         :on-click (fn [_] 
+                                                     (put! (om/get-shared owner :api-ch) 
+                                                           [:select-job job-id]))}
                                         (dom/td (dom/i {:class (if selected? "fa fa-dot-circle-o" "fa fa-circle-o")}))
-                                        (dom/td {:on-click (fn [_] 
-                                                             (put! (om/get-shared owner :api-ch) 
-                                                                   [:select-job job-id]))} 
+                                        (dom/td {} 
                                                 (dom/a {:href "#"} (str job-id)))
                                         (dom/td {}
                                                 (.fromNow (js/moment (str (js/Date. (:created-at job))))))))))))))
@@ -51,24 +52,31 @@
                          (dom/tr {:class "peer-entry"}
                                  (dom/td (str (:id peer))))))))))
 
-(defcomponent job-management [{:keys [job visible]} owner]
+(defcomponent job-management [{:keys [job visible] :as app} owner]
   (render [_]
-          (dom/div
-            (p/panel
-              {:header (om/build section-header 
-                                 {:text "Job Management" 
-                                  :visible visible
-                                  :hide-expander? true
-                                  :type :job-management} 
-                                 {})
-               :bs-style "primary"}
-              (if visible 
-                (g/grid {} 
-                        ; Show operations based on current status of job)
-                        (g/row {} 
-                               (g/col {:xs 2 :md 1} (dom/i {:class "fa fa-heartbeat"} "Running"))
-                               (g/col {:xs 2 :md 1} (dom/i {:class "fa fa-repeat"} "Restart"))
-                               (g/col {:xs 2 :md 1} (dom/i {:class "fa fa-times-circle-o"} "Kill")))))))))
+          (let [api-ch (om/get-shared owner :api-ch)
+                job-id (:id job)
+                restart-job-handler (fn [_] (put! api-ch [:restart-job job-id]))
+                kill-job-handler (fn [_] (put! api-ch [:kill-job job-id]))] 
+            (dom/div
+              (p/panel
+                {:header (om/build section-header 
+                                   {:text "Job Management" 
+                                    :visible visible
+                                    :hide-expander? true
+                                    :type :job-management} 
+                                   {})
+                 :bs-style "primary"}
+                (if visible 
+                  (g/grid {} 
+                          (g/row {} 
+                                 (g/col {:xs 2 :md 1} 
+                                        (dom/div {:on-click restart-job-handler}
+                                                               (dom/i {:class "fa fa-repeat"} 
+                                                                      " Restart")))
+                                 (g/col {:xs 2 :md 1} 
+                                        (dom/div {:on-click kill-job-handler}
+                                                 (dom/i {:class "fa fa-times-circle-o"} " Kill")))))))))))
 
 (defcomponent job-info [{:keys [job visible]} owner]
   (render [_]

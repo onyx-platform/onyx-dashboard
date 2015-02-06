@@ -45,6 +45,15 @@
                                                (:?data event)
                                                user-id)
             :deployment/get-listing ((:chsk-send! sente) user-id [:deployment/listing @deployments])
+            :job/kill (od/kill-job peer-config 
+                                   (:deployment-id (:?data event))
+                                   (:job (:?data event)))
+            :job/start (od/start-job peer-config 
+                                     (:deployment-id (:?data event))
+                                     (:job (:?data event)))
+            :job/restart (od/restart-job peer-config 
+                                         (:deployment-id (:?data event))
+                                         (:job (:?data event)))
             :chsk/uidport-close (swap! tracking od/stop-tracking! user-id)
             :chsk/ws-ping nil
             (println "Dunno what to do with: " event)))

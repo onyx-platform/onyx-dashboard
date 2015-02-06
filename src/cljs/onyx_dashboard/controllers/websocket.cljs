@@ -60,7 +60,7 @@
     (update-in state [:deployment :jobs job-id :tasks] dissoc peer-id) 
     state))
 
-(defmethod msg-controller :job/entry [[_ msg] state]
+(defmethod msg-controller :deployment/log-entry [[_ msg] state]
   (if (is-tracking? msg state)
     (update-in state 
                [:deployment] 

@@ -56,11 +56,16 @@
 
                                           (dom/div {}
                                                    (if job 
-                                                     (om/build job-management {:job job
-                                                                               :visible (:job-management visible)} {}))))
+                                                     (om/build job-management 
+                                                               {:job job :visible (:job-management visible)} 
+                                                               {:react-key (str "management-" (:id job))}))))
                                    (g/col {:xs 12 :md 8}
                                           (dom/div 
                                             (if job 
-                                              (om/build job-info {:job job :visible visible} {}))
-                                            (om/build log-entries-pager {:entries (:entries deployment) 
-                                                                         :visible (:log-entries visible)} {})))))))))
+                                              (om/build job-info 
+                                                        {:job job :visible visible} 
+                                                        {:react-key (str "job-info-" (:id job))}))
+                                            (om/build log-entries-pager 
+                                                      {:entries (:entries deployment) 
+                                                       :visible (:log-entries visible)} 
+                                                      {:react-key (str "log-" (:id deployment))})))))))))

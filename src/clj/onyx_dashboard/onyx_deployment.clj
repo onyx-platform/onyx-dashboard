@@ -9,6 +9,20 @@
             [com.stuartsierra.component :as component]
             [taoensso.timbre :as timbre :refer [info error spy]]))
 
+(defn kill-job [peer-config deployment-id {:keys [id] :as job-info}]
+  (onyx.api/kill-job (assoc peer-config :onyx/id deployment-id)
+                     id))
+
+(defn start-job [peer-config deployment-id {:keys [catalog workflow task-scheduler] :as job-info}]
+  (onyx.api/submit-job (assoc peer-config :onyx/id deployment-id)
+                       {:catalog catalog
+                        :workflow workflow
+                        :task-scheduler task-scheduler}))
+
+(defn restart-job [peer-config deployment-id job-info]
+  (kill-job peer-config deployment-id job-info)
+  (start-job peer-config deployment-id job-info))
+
 (defn zk-deployment-entry-stat [client entry]
   (:stat (zk/data client (zk-onyx/prefix-path entry))))
 
@@ -80,7 +94,9 @@
                       (send-fn! [:job/submitted-job {:tracking-id tracking-id
                                                      :id job-id
                                                      :entry entry
+                                                     :task-scheduler (:task-scheduler (:args entry))
                                                      :catalog catalog
+                                                     :workflow workflow
                                                      :pretty-catalog (with-out-str (fipp (into [] catalog)))
                                                      :pretty-workflow (with-out-str (fipp (into [] workflow)))
                                                      :created-at (:created-at entry)}]))
@@ -111,9 +127,10 @@
                                                       :job-id (:job (:args entry))
                                                       :peer-id (:id (:args entry))
                                                       :task (select-keys task [:id :name])}]))
-                    :else 
-                    (info "Unable to custom handle entry " entry))
-              (send-fn! [:job/entry (assoc entry :tracking-id tracking-id)])
+                    :else nil #_(info "Unable to custom handle entry " entry))
+              (println entry)
+              (println "Replica is " replica " \n " diff)
+              (send-fn! [:deployment/log-entry (assoc entry :tracking-id tracking-id)])
               (reset! up-to-date? false)
               ;(send-fn! [:deployment/replica {:replica new-replica :diff diff}])
               (recur new-replica))))

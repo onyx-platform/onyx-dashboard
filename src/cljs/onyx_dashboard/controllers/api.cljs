@@ -1,10 +1,6 @@
 (ns onyx-dashboard.controllers.api
   (:require [cljs-uuid.core :as uuid]))
 
-#_(def null-deployment 
-  
-  )
-
 (defmulti api-controller (fn [[cmd] _ _] cmd))
 
 (defmethod api-controller :visibility [[_ type visible?] _ state]
@@ -20,6 +16,23 @@
     (assoc state :deployment {:tracking-id tracking-id
                               :id deployment-id
                               :entries {}})))
+
+(defmethod api-controller :start-job [[_ job-info] chsk-send! state]
+  (chsk-send! [:job/start job-info])
+  state)
+
+(defmethod api-controller :restart-job [[_ job-id] chsk-send! state]
+  (let [job-info 
+        (-> state 
+            (get-in [:deployment :jobs job-id])
+            (select-keys [:id :catalog :workflow :task-scheduler]))
+        deployment-id (:id (:deployment state))]
+    (chsk-send! [:job/restart {:deployment-id deployment-id :job job-info}]))
+  state)
+
+(defmethod api-controller :kill-job [[_ job-id] chsk-send! state]
+  (chsk-send! [:job/kill {:id job-id}])
+  state)
 
 ; Currently unused
 (defmethod api-controller :track-cancel [[_ deployment-id] chsk-send! state]
