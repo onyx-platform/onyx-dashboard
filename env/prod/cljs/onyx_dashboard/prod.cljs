@@ -1,4 +1,6 @@
 (ns onyx-dashboard.prod
   (:require [onyx-dashboard.core :as core]))
 
-(core/main)
+(def is-dev? false)
+
+(core/main is-dev?)
