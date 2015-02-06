@@ -33,6 +33,18 @@
     (update-in state [:deployment :peers] union #{id}) 
     state))
 
+; (defmethod msg-controller :deployment/peer-instant-joined [[_ {:keys [id] :as msg}] state]
+;   ;(println "Peer instant joined " msg)
+;   (if (is-tracking? msg state)
+;     (update-in state [:deployment :peers] union #{id}) 
+;     state))
+
+(defmethod msg-controller :deployment/peer-notify-joined-accepted [[_ {:keys [id] :as msg}] state]
+  (println "Peer immediate notify joined " msg)
+  (if (is-tracking? msg state)
+    (update-in state [:deployment :peers] union #{id}) 
+    state))
+
 (defn remove-dead-peer [jobs peer-id]
   (zipmap (keys jobs) 
           (map (fn [job-info]

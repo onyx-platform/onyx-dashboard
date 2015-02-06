@@ -73,15 +73,17 @@
       nil)))
 
 (defmulti log-notifications 
-  (fn [send-fn! replica log entry tracking-id]
+  (fn [send-fn! replica diff log entry tracking-id]
     ((:fn entry) {:complete-task :job/completed-task
                   :seal-task :job/completed-task
                   :volunteer-for-task :job/peer-assigned
                   :accept-join-cluster :deployment/peer-joined
+                  :notify-join-cluster :deployment/peer-notify-joined-accepted
+                  ;:prepare-join-cluster :deployment/peer-instant-joined
                   :leave-cluster :deployment/peer-left
                   :submit-job :deployment/submitted-job})))
 
-(defmethod log-notifications :deployment/submitted-job [send-fn! replica log entry tracking-id]
+(defmethod log-notifications :deployment/submitted-job [send-fn! replica diff log entry tracking-id]
   (let [job-id (:id (:args entry))
         catalog (extensions/read-chunk log :catalog job-id)
         workflow (extensions/read-chunk log :workflow job-id)]
@@ -95,15 +97,29 @@
                                           :pretty-workflow (with-out-str (fipp (into [] workflow)))
                                           :created-at (:created-at entry)}])))
 
-(defmethod log-notifications :deployment/peer-joined [send-fn! _ _ entry tracking-id]
+; (defmethod log-notifications :deployment/peer-instant-joined [send-fn! replica diff _ entry tracking-id]
+;     (when-let [peer (:instant-join diff)]
+;       (send-fn! [:deployment/peer-instant-joined {:tracking-id tracking-id
+;                                                   :log entry
+;                                                   :replica replica
+;                                                   :id peer}])))
+
+(defmethod log-notifications :deployment/peer-notify-joined-accepted [send-fn! replica diff _ entry tracking-id]
+  (when-let [peer (:accepted-joiner diff)]
+    (send-fn! [:deployment/peer-notify-joined-accepted {:tracking-id tracking-id
+                                                        :id peer}])))
+
+
+(defmethod log-notifications :deployment/peer-joined [send-fn! replica _ _ entry tracking-id]
   (send-fn! [:deployment/peer-joined {:tracking-id tracking-id
+                                      :replica replica
                                       :id (:subject (:args entry))}]))
 
-(defmethod log-notifications :deployment/peer-left [send-fn! _ _ entry tracking-id]
+(defmethod log-notifications :deployment/peer-left [send-fn! _ _ _  entry tracking-id]
   (send-fn! [:deployment/peer-left {:tracking-id tracking-id
                                     :id (:id (:args entry))}]))
 
-(defmethod log-notifications :job/peer-assigned [send-fn! replica log entry tracking-id]
+(defmethod log-notifications :job/peer-assigned [send-fn! replica diff log entry tracking-id]
   (let [peer-id (:id (:args entry))
         {:keys [job-id task-id]} (task-allocated-to-peer (:allocations replica) peer-id)]
   (when task-id 
@@ -113,14 +129,14 @@
                                      :peer-id peer-id
                                      :task (select-keys task [:id :name])}])))))
 
-(defmethod log-notifications :job/completed-task [send-fn! replica log entry tracking-id]
+(defmethod log-notifications :job/completed-task [send-fn! replica diff log entry tracking-id]
   (let [task (extensions/read-chunk log :task (:task (:args entry)))]
     (send-fn! [:job/completed-task {:tracking-id tracking-id
                                     :job-id (:job (:args entry))
                                     :peer-id (:id (:args entry))
                                     :task (select-keys task [:id :name])}])))
 
-(defmethod log-notifications :default [send-fn! replica log entry tracking-id])
+(defmethod log-notifications :default [send-fn! replica diff log entry tracking-id])
 
 (defn track-deployment [send-fn! deployment-id subscription ch f-check-pulses tracking-id]
   (let [log (:log (:env subscription))
@@ -131,13 +147,13 @@
         (let [entry (extensions/read-log-entry log position)]
           (reset! last-id position)
           (if-let [new-replica (apply-log-entry send-fn! tracking-id entry replica)] 
-            (do
-              (log-notifications send-fn! new-replica log entry tracking-id)
+            (let [diff (extensions/replica-diff entry replica new-replica)]
+              (log-notifications send-fn! new-replica diff log entry tracking-id)
               (send-fn! [:deployment/log-entry (assoc entry :tracking-id tracking-id)])
               (reset! up-to-date? false)
               (recur new-replica))))
-        (do 
-          (when-not (seq (f-check-pulses))
+        (let [has-pulse? (empty? (f-check-pulses))] 
+          (when-not has-pulse?
             (send-fn! [:deployment/no-pulse {:tracking-id tracking-id}]))
           (send-fn! [:deployment/up-to-date {:tracking-id tracking-id :last-id @last-id}])
           (reset! up-to-date? true)
@@ -150,6 +166,7 @@
     (let [sub-ch (chan 100)
           subscription (onyx.api/subscribe-to-log peer-config sub-ch)] 
       (assoc component :subscription subscription :subscription-ch sub-ch)))
+
   (stop [component]
     (info "Shutting down log subscription")
     (onyx.api/shutdown-env (:env (:subscription component)))
