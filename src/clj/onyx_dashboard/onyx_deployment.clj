@@ -121,6 +121,7 @@
                                     :peer-id (:id (:args entry))
                                     :task (select-keys task [:id :name])}])))
 
+(defmethod log-notifications :default [send-fn! replica log entry tracking-id])
 (defn track-deployment [send-fn! deployment-id subscription ch f-check-pulses tracking-id]
   (let [log (:log (:env subscription))
         up-to-date? (atom false)
