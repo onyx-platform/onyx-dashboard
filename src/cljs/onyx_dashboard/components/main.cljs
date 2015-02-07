@@ -11,13 +11,12 @@
             [cljs.core.async :as async :refer [<! >! put! chan]])
   (:require-macros [cljs.core.async.macros :as asyncm :refer [go-loop]]))
 
-(defcomponent main-component [{:keys [deployment visible] :as app} owner]
+(defcomponent main-component [{:keys [deployment] :as app} owner]
   (did-mount [_] 
              (let [api-ch (om/get-shared owner :api-ch)
                    chsk-send! (om/get-shared owner :chsk-send!)] 
                (go-loop []
                         (let [msg (<! api-ch)]
-                          (println "Handling msg: " msg)
                           (om/transact! app (partial api-controller msg chsk-send!))
                           (recur)))))
 
@@ -62,16 +61,13 @@
                                           (dom/div {}
                                                    (if job 
                                                      (om/build job-management 
-                                                               {:job job :visible (:job-management visible)} 
+                                                               job
                                                                {:react-key (str "management-" (:id job))}))))
                                    (g/col {:xs 12 :md 8}
                                           (dom/div 
                                             (if job 
-                                              (om/build job-info 
-                                                        {:job job :visible visible} 
-                                                        {:react-key (str "job-info-" (:id job))}))
+                                              (om/build job-info job {:react-key (str "job-info-" (:id job))}))
                                             (om/build log-entries-pager 
                                                       {:entries (:entries deployment)
-                                                       :job-filter (:id job) 
-                                                       :visible (:log-entries visible)} 
+                                                       :job-filter (:id job)} 
                                                       {:react-key (str "log-" (:id deployment) "-filter-" (:id job))})))))))))

@@ -17,19 +17,6 @@
 (defonce app-state 
   (atom {:ready? false
          :deployments {}
-         ; Maybe these should be in component local state
-         ; The advantage is they can be controlled from elsewhere but it does
-         ; complicate the code a bit and may not gain much for now
-         ; Component state will also handle lifecycle stuff inc default
-         ; state when new job is loaded (assuming they're keyed differently)
-         :visible {:job true
-                   :job-management true
-                   :catalog true
-                   :workflow true
-                   :tasks true
-                   :peers true
-                   :statistics true
-                   :log-entries true}
          :deployment {:tracking-id nil
                       :jobs []
                       :selected-job nil

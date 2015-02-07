@@ -5,7 +5,7 @@
             [om-bootstrap.panel :as p]
             [om-bootstrap.button :as b]
             [om-bootstrap.table :as t]
-            [onyx-dashboard.components.ui-elements :refer [section-header]]
+            [onyx-dashboard.components.ui-elements :refer [section-header-collapsible]]
             [cljs.core.async :as async :refer [put!]]))
 
 (defcomponent peer-table [peers owner]
@@ -48,11 +48,8 @@
   (render [_] 
           (dom/div
             (p/panel
-              {:header (om/build section-header 
-                                 {:text "Deployment Peers" 
-                                  :hide-expander? true
-                                  :type :deployment-peers} 
-                                 {})
+              {:header (om/build section-header-collapsible {:text "Deployment Peers"} {})
+               :collapsible? true
                :bs-style "primary"}
               (if (and (:id deployment) 
                        (:up? deployment)) 
