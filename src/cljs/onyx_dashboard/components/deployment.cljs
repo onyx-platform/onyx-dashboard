@@ -38,7 +38,8 @@
                   (dom/div 
                     (dom/img {:style {:-ms-transform rotation-css
                                       :-webkit-transform rotation-css
-                                      :transform rotation-css}
+                                      :transform rotation-css
+                                      :margin-right "10px"}
                               :src "/img/high-res.png" :height 25 :width 25})
                     (if-let [entry-time (:created-at last-entry)] 
                       (str "Dashboard last updated " (.fromNow (js/moment (str (js/Date. entry-time)))))))))))))

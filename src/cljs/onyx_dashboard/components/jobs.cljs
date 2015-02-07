@@ -11,8 +11,8 @@
 
 (defcomponent job-selector [{:keys [selected-job jobs]} owner]
   (render [_]
-          (p/panel {:header (dom/h4 "Job Selector") :bs-style "primary" }
-                   (t/table {:striped? true :bordered? false :condensed? true :hover? true}
+          (p/panel {:header (dom/h4 "Jobs") :bs-style "primary" }
+                   (t/table {:striped? true :bordered? false :condensed? true :hover? true :class "job-selector"}
                           ;; (dom/thead (dom/tr (dom/th "ID") (dom/th "Time")))
                           (dom/tbody
                             (cons (dom/tr {:class "job-entry"
@@ -75,13 +75,37 @@
                 (if visible 
                   (g/grid {} 
                           (g/row {} 
-                                 (g/col {:xs 2 :md 1} 
-                                        (dom/div {:on-click restart-job-handler}
-                                                               (dom/i {:class "fa fa-repeat"} 
-                                                                      " Restart")))
-                                 (g/col {:xs 2 :md 1} 
-                                        (dom/div {:on-click kill-job-handler}
-                                                 (dom/i {:class "fa fa-times-circle-o"} " Kill")))))))))))
+                                 (g/col {:xs 2 :md 1}
+                                        (dom/button {:on-click
+                                                     (fn [event]
+                                                       (when (js/confirm "Are you sure you want to restart this job?")
+                                                         (restart-job-handler event)))
+                                                     :type "button"
+                                                     :class "btn btn-warning"}
+                                                    (dom/i {:class "fa fa-repeat"} 
+                                                           " Restart")))
+                                 (g/col {:xs 2 :md 1}
+                                        (dom/button {:on-click
+                                                     (fn [event]
+                                                       (when (js/confirm "Are you sure you want to kill this job?")
+                                                         (kill-job-handler event)))
+                                                     :type "button"
+                                                     :class "btn btn-danger"}
+                                                    (dom/i {:class "fa fa-times-circle-o"
+                                                            :style {:padding-right "10px"}} " Kill")))))))))))
+
+(defcomponent job-overview-panel [{:keys [job]} owner]
+  (render [_]
+          (prn job)
+          (p/panel
+            {:header (om/build section-header 
+                               {:text "Job Overview" 
+                                :visible true
+                                :hide-expander? true}
+                               {})
+             :bs-style "primary"}
+            (dom/div
+             (str "Task Scheduler is " (:task-scheduler job))))))
 
 (defcomponent task-panel [{:keys [job visible]} owner]
   (render [_]
@@ -92,9 +116,6 @@
                                 :hide-expander? true
                                 :type :tasks} 
                                {})
-             :footer (if-not (empty? (:tasks job)) 
-                       (dom/div {:style {:color "rgb(197, 6, 11)"}} 
-                                (str "Scheduler " (:task-scheduler job))))
              :bs-style "primary"}
             (if visible 
               (om/build task-table (:tasks job) {})))))
@@ -102,6 +123,7 @@
 (defcomponent job-info [{:keys [job visible]} owner]
   (render [_]
           (dom/div
+            (om/build job-overview-panel {:job job})
             (om/build task-panel {:job job :visible (:tasks visible)} {})
             (p/panel
               {:header (om/build section-header 
