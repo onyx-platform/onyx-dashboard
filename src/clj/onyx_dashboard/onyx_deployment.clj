@@ -4,6 +4,7 @@
             [onyx.extensions :as extensions]
             [onyx.api]
             [onyx.log.zookeeper :as zk-onyx]
+            [onyx.log.commands.common :as common]
             [zookeeper :as zk]
             [clojure.core.async :refer [chan timeout thread <!! alts!!]]
             [com.stuartsierra.component :as component]
@@ -81,7 +82,8 @@
                   :notify-join-cluster :deployment/peer-notify-joined-accepted
                   ;:prepare-join-cluster :deployment/peer-instant-joined
                   :leave-cluster :deployment/peer-left
-                  :submit-job :deployment/submitted-job})))
+                  :submit-job :deployment/submitted-job
+                  :kill-job :deployment/kill-job})))
 
 (defmethod log-notifications :deployment/submitted-job [send-fn! replica diff log entry tracking-id]
   (let [job-id (:id (:args entry))
@@ -129,6 +131,11 @@
                                      :peer-id peer-id
                                      :task (select-keys task [:id :name])}])))))
 
+(defmethod log-notifications :deployment/kill-job [send-fn! replica diff log entry tracking-id]
+  (send-fn! [:deployment/kill-job {:tracking-id tracking-id
+                                   :entry entry
+                                   :id (:job (:args entry))}]))
+
 (defmethod log-notifications :job/completed-task [send-fn! replica diff log entry tracking-id]
   (let [task (extensions/read-chunk log :task (:task (:args entry)))]
     (send-fn! [:job/completed-task {:tracking-id tracking-id
@@ -138,26 +145,36 @@
 
 (defmethod log-notifications :default [send-fn! replica diff log entry tracking-id])
 
+(defn send-job-statuses [send-fn! tracking-id incomplete-jobs new-incomplete-jobs]
+  (when (not= incomplete-jobs new-incomplete-jobs)
+    (send-fn! [:deployment/job-statuses 
+               {:tracking-id tracking-id 
+                :finished-jobs (clojure.set/difference incomplete-jobs new-incomplete-jobs)
+                :incomplete-jobs (clojure.set/difference new-incomplete-jobs incomplete-jobs)}])))
+
+(defn send-log-entry [send-fn! tracking-id entry]
+  (send-fn! [:deployment/log-entry (assoc entry :tracking-id tracking-id)]))
+
 (defn track-deployment [send-fn! deployment-id subscription ch f-check-pulses tracking-id]
-  (let [log (:log (:env subscription))
-        up-to-date? (atom false)
-        last-id (atom nil)]
-    (loop [replica (:replica subscription)]
+  (let [log (:log (:env subscription))]
+    (loop [replica (:replica subscription)
+           last-id nil
+           up-to-date? false
+           incomplete-jobs #{}]
       (if-let [position (first (alts!! (vector ch (timeout freshness-timeout))))]
         (let [entry (extensions/read-log-entry log position)]
-          (reset! last-id position)
           (if-let [new-replica (apply-log-entry send-fn! tracking-id entry replica)] 
-            (let [diff (extensions/replica-diff entry replica new-replica)]
+            (let [diff (extensions/replica-diff entry replica new-replica)
+                  new-incomplete-jobs (set (common/incomplete-jobs replica))]
+              (send-job-statuses send-fn! tracking-id incomplete-jobs new-incomplete-jobs)
               (log-notifications send-fn! new-replica diff log entry tracking-id)
-              (send-fn! [:deployment/log-entry (assoc entry :tracking-id tracking-id)])
-              (reset! up-to-date? false)
-              (recur new-replica))))
+              (send-log-entry send-fn! tracking-id entry)
+              (recur new-replica position false new-incomplete-jobs))))
         (let [has-pulse? (empty? (f-check-pulses))] 
           (when-not has-pulse?
             (send-fn! [:deployment/no-pulse {:tracking-id tracking-id}]))
           (send-fn! [:deployment/up-to-date {:tracking-id tracking-id :last-id @last-id}])
-          (reset! up-to-date? true)
-          (recur replica))))))
+          (recur replica last-id true incomplete-jobs))))))
 
 (defrecord LogSubscription [peer-config]
   component/Lifecycle

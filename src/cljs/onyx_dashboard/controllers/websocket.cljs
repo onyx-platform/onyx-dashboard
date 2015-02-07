@@ -16,9 +16,9 @@
     (assoc-in state [:deployment :up-to-date?] true)
     state))
 
-(defmethod msg-controller :deployment/submitted-job [[_ msg] state]
+(defmethod msg-controller :deployment/submitted-job [[_ {:keys [id] :as msg}] state]
   (if (is-tracking? msg state)
-    (assoc-in state [:deployment :jobs (:id msg)] msg) 
+    (assoc-in state [:deployment :jobs id] (assoc msg :status :submitted)) 
     state))
 
 (defmethod msg-controller :job/peer-assigned [[_ {:keys [peer-id task job-id] :as msg}] state]
@@ -70,6 +70,26 @@
   ;(println "Completed task " msg)
   (if (is-tracking? msg state)
     (update-in state [:deployment :jobs job-id :tasks] dissoc peer-id) 
+    state))
+
+(defmethod msg-controller :deployment/kill-job [[_ {:keys [id] :as msg}] state]
+  ;; Managed to create a kill-job entry with a nil job. Should fix this upstream
+  ;; {:entry {:args {:job nil}, :fn :kill-job, :message-id 63, :created-at 1423218732944}}}
+  (if (and (is-tracking? msg state) id)
+    (assoc-in state [:deployment :jobs id :status] :killed)
+    state))
+
+(defn update-statuses [state job-ids status]
+  (reduce (fn [st job-id]
+            (assoc-in state [:deployment :jobs job-id :status] status))
+          state
+          job-ids))
+
+(defmethod msg-controller :deployment/job-statuses [[_ {:keys [finished-jobs incomplete-jobs] :as msg}] state]
+  (if (is-tracking? msg state)
+    (-> state
+        (update-statuses finished-jobs :finished)
+        (update-statuses incomplete-jobs :incomplete))
     state))
 
 (defmethod msg-controller :deployment/log-entry [[_ msg] state]
