@@ -3,9 +3,6 @@
 
 (defmulti api-controller (fn [[cmd] _ _] cmd))
 
-(defmethod api-controller :visibility [[_ type visible?] _ state]
-  (assoc-in state [:visible type] visible?))
-
 (defmethod api-controller :select-job [[_ id] _ state]
   (assoc-in state [:deployment :selected-job] id))
 
