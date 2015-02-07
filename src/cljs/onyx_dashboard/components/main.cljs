@@ -35,7 +35,8 @@
                                                                          :height "50%" 
                                                                          :width "50%"})))
                                                  (g/col {:xs 12 :md 8}
-                                                        (dom/div {:style {:font-size "50px"}}
+                                                        (dom/div {:style {:font-size "50px" :margin-top "25px"
+                                                                          :margin-left "150px"}}
                                                                  "Onyx Dashboard")))))
                     (g/grid {}
                             (g/row {}
@@ -54,8 +55,9 @@
                                             (dom/div {} 
                                                      (om/build deployment-peers deployment {})))
 
-                                          (dom/div {} 
-                                                   (om/build job-selector deployment {}))
+                                          (if (:id deployment)
+                                            (dom/div {} 
+                                                     (om/build job-selector deployment {})))
 
                                           (dom/div {}
                                                    (if job 
