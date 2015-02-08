@@ -173,7 +173,7 @@
         (let [has-pulse? (empty? (f-check-pulses))] 
           (when-not has-pulse?
             (send-fn! [:deployment/no-pulse {:tracking-id tracking-id}]))
-          (send-fn! [:deployment/up-to-date {:tracking-id tracking-id :last-id @last-id}])
+          (send-fn! [:deployment/up-to-date {:tracking-id tracking-id :last-id last-id}])
           (recur replica last-id true incomplete-jobs))))))
 
 (defrecord LogSubscription [peer-config]
