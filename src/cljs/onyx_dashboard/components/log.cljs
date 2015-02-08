@@ -21,7 +21,7 @@
           (t/table {:striped? true :bordered? true :condensed? true :hover? true}
                    (dom/thead (dom/tr (dom/th "#") (dom/th "ID") (dom/th "fn") (dom/th "Time")))
                    (dom/tbody (map (fn [entry]
-                                     (om/build log-entry-row entry {}))
+                                     (om/build log-entry-row entry {:react-key (str (:message-id entry))}))
                                    entries)))))
 
 (def entries-per-page 20)
@@ -67,18 +67,22 @@
                                                     {:on-click (fn [_]
                                                                  (om/set-state! owner 
                                                                                 :entry-index 
-                                                                                (min max-id 
-                                                                                     (+ current-index entries-per-page))))}))
+                                                                                (let [new-index (min max-id 
+                                                                                                     (+ current-index entries-per-page))]
+                                                                                  (if (= new-index max-id)
+                                                                                    nil
+                                                                                    new-index))))}))
                                                 (for [pg (range 0 num-pages)]
                                                   (pg/page (if (= current-page pg) 
                                                              {:active? true}
                                                              {:on-click (fn [_]
                                                                           (om/set-state! owner 
                                                                                          :entry-index 
-                                                                                         (max 0 
-                                                                                              (min max-id 
-                                                                                                   (- max-id 
-                                                                                                      (* pg entries-per-page))))))}) 
+                                                                                         (let [new-index (max 0 
+                                                                                                              (min max-id 
+                                                                                                                   (- max-id 
+                                                                                                                      (* pg entries-per-page))))]
+                                                                                           (if (= new-index max-id) nil new-index))))}) 
                                                            (str (inc pg))))
                                                 (pg/next 
                                                   (if (= current-page (dec num-pages))
