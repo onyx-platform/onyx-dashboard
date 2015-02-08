@@ -20,6 +20,6 @@ test:
                     timeout: 1800
                 # TODO: make this happen as build task
                 - lein clean && lein with-profile uberjar cljsbuild once app && lein with-profile uberjar uberjar
-                - docker build -t lbradstreet/onyx-dashboard:$CIRCLE_SHA1 . | tee docker-build.log
+                - docker build -t onyx/onyx-dashboard:$CIRCLE_SHA1 . | tee docker-build.log
                 - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
-                - docker push lbradstreet/onyx-dashboard:$CIRCLE_SHA1
+                - docker push onyx/onyx-dashboard:$CIRCLE_SHA1
