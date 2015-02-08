@@ -28,6 +28,7 @@
                  [ring/ring-defaults "0.1.3"]
                  [compojure "1.3.1"]
                  [enlive "1.1.5"]
+                 [fence "0.2.0"]
                  ;[org.om/om "0.8.1"]
                  [ankha "0.1.5.1-479897" :exclude [om]]
                  [fipp "0.5.1"]
@@ -56,6 +57,8 @@
                                         :optimizations :none
                                         :pretty-print  true}}}}
 
+  :clean-targets ^{:protect false} ["resources/public/js/out"]
+
   :profiles {:dev {:source-paths ["env/dev/clj"]
 
                    :dependencies [[figwheel "0.2.2-SNAPSHOT"]
@@ -80,7 +83,7 @@
                                 {:source-paths ["env/dev/cljs"]}}}}
 
              :uberjar {:source-paths ["env/prod/clj"]
-                       :hooks [leiningen.cljsbuild]
+                       ;:hooks [leiningen.cljsbuild]
                        :env {:production true}
                        :omit-source true
                        :aot :all
