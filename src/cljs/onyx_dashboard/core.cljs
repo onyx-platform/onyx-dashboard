@@ -9,7 +9,8 @@
             [cljs.core.async :as async :refer [<! >! put! chan]]
             [onyx-dashboard.components.main :refer [main-component]]
             [onyx-dashboard.controllers.websocket :refer [msg-controller]]
-            [taoensso.sente  :as sente :refer [cb-success?]])
+            [taoensso.sente  :as sente :refer [cb-success?]]
+            [taoensso.sente.packers.transit :as sente-transit])
   (:require-macros [cljs.core.async.macros :as asyncm :refer [go go-loop]]))
 
 (enable-console-print!)
@@ -24,8 +25,10 @@
                       :message-id-max nil
                       :entries {}}}))
 
+(def packer (sente-transit/get-flexi-packer :edn))
+
 (let [{:keys [chsk ch-recv send-fn state]}
-      (sente/make-channel-socket! "/chsk" {:type :auto})]
+      (sente/make-channel-socket! "/chsk" {:type :auto :packer packer})]
   (def chsk       chsk)
   (def ch-chsk    ch-recv)
   (def chsk-send! send-fn)

@@ -1,6 +1,7 @@
 (ns onyx-dashboard.http.sente
   (:require [clojure.core.async :refer [close!]]
             [com.stuartsierra.component :as component]
+            [taoensso.sente.packers.transit :as sente-transit]
             [taoensso.sente :refer [make-channel-socket!]]))
 
 (defn user-id-fn [req]
@@ -9,11 +10,13 @@
     (println "Connected: " (:remote-addr req) uid)
     uid))
 
+(def packer (sente-transit/get-flexi-packer :edn))
+
 (defrecord Sente []
   component/Lifecycle
   (start [component]
     (println "Starting Sente")
-    (let [x (make-channel-socket! {:user-id-fn user-id-fn})]
+    (let [x (make-channel-socket! {:user-id-fn user-id-fn :packer packer})]
       (assoc component
         :ring-ajax-post (:ajax-post-fn x)
         :ring-ajax-get-or-ws-handshake (:ajax-get-or-ws-handshake-fn x)
