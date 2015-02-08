@@ -5,6 +5,7 @@
             [om-bootstrap.panel :as p]
             [om-bootstrap.grid :as g]
             [om-bootstrap.table :as t]
+            [cljsjs.moment]
             [onyx-dashboard.components.code :refer [clojure-block]]
             [onyx-dashboard.components.ui-elements :refer [section-header-collapsible]]
             [cljs.core.async :as async :refer [put!]]))

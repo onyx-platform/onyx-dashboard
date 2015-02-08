@@ -24,6 +24,7 @@
                  [com.mdrogalis/onyx "0.5.2-20150207.184249-1"]
                  [com.cognitect/transit-clj "0.8.259"]
                  [com.cognitect/transit-cljs "0.8.205"]
+                 [cljsjs/moment "2.9.0-0"]
                  [ring/ring-defaults "0.1.3"]
                  [compojure "1.3.1"]
                  [enlive "1.1.5"]

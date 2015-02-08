@@ -6,7 +6,8 @@
             [om-bootstrap.button :as b]
             [om-bootstrap.table :as t]
             [onyx-dashboard.components.ui-elements :refer [section-header-collapsible]]
-            [cljs.core.async :as async :refer [put!]]))
+            [cljs.core.async :as async :refer [put!]]
+            [cljsjs.moment]))
 
 (defcomponent peer-table [peers owner]
   (render [_]

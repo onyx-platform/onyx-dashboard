@@ -5,6 +5,7 @@
             [om-bootstrap.pagination :as pg]
             [om-bootstrap.panel :as p]
             [om-bootstrap.table :as t]
+            [cljsjs.moment]
             [onyx-dashboard.components.ui-elements :refer [section-header-collapsible]]))
 
 (defcomponent log-entry-row [entry owner]
