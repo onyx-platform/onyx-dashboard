@@ -11,6 +11,7 @@
   (render [_] 
           (dom/tr {:key (str "entry-" (:message-id entry))
                    :title (str (om/value entry))}
+                  (dom/td (str (:message-id entry)))
                   (dom/td (str (:id (:args entry))))
                   (dom/td (str (:fn entry)))
                   (dom/td (.fromNow (js/moment (str (js/Date. (:created-at entry)))))))))
@@ -18,7 +19,7 @@
 (defcomponent log-entries-table [entries owner]
   (render [_]
           (t/table {:striped? true :bordered? true :condensed? true :hover? true}
-                   (dom/thead (dom/tr (dom/th "ID") (dom/th "fn") (dom/th "Time")))
+                   (dom/thead (dom/tr (dom/th "#") (dom/th "ID") (dom/th "fn") (dom/th "Time")))
                    (dom/tbody (map (fn [entry]
                                      (om/build log-entry-row entry {}))
                                    entries)))))
