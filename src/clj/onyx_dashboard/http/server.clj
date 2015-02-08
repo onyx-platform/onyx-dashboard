@@ -56,7 +56,7 @@
                                          (:job (:?data event)))
             :chsk/uidport-close (swap! tracking od/stop-tracking! user-id)
             :chsk/ws-ping nil
-            (println "Dunno what to do with: " event)))
+            nil #_(println "Dunno what to do with: " event)))
         (recur)))))
 
 (defn send-mult-fn [send-fn! connected-uids msg]
