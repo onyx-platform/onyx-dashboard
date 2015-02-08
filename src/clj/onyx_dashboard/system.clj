@@ -26,8 +26,7 @@
   (let [env-config {:hornetq/mode :standalone
                     :hornetq.standalone/host (env-throw :hornetq-host) 
                     :hornetq.standalone/port (env-throw :hornetq-port)
-                    :zookeeper/address (env-throw :zookeeper-addr)
-                    :onyx.peer/job-scheduler :onyx.job-scheduler/round-robin}]
+                    :zookeeper/address (env-throw :zookeeper-addr)}]
     (component/system-map
       :sente (component/using (sente) [])
       :http (component/using (new-http-server env-config) [:sente]))))
