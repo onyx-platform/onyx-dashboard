@@ -33,7 +33,7 @@
                  [http-kit "2.1.19"]
                  ; make this explicit to fix uberjar?
                  [potemkin "0.3.11"]
-                 [racehub/om-bootstrap "0.3.5" :exclusions [om]]
+                 [racehub/om-bootstrap "0.3.6" :exclusions [om]]
                  [prismatic/om-tools "0.3.10" :exclusions [om]]]
 
   :plugins [[lein-cljsbuild "1.0.4"]
