@@ -57,7 +57,7 @@
                                         :optimizations :none
                                         :pretty-print  true}}}}
 
-  :clean-targets ^{:protect false} ["resources/public/js/out"]
+  :clean-targets ^{:protect false} ["resources/public/js/out" "target"]
 
   :profiles {:dev {:source-paths ["env/dev/clj"]
 
