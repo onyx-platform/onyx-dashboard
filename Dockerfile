@@ -4,6 +4,6 @@ MAINTAINER Lucas Bradstreet <lucasbradstreet@gmail.com>
 
 COPY /target/onyx-dashboard.jar /
 
-EXPOSE 8888
+EXPOSE 3000
 
 CMD ["java", "-server", "-jar", "/onyx-dashboard.jar"]
