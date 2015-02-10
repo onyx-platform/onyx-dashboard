@@ -9,6 +9,8 @@
 
   :test-paths ["spec/clj"]
 
+  :java-opts ["-Xmx3g" "-server"]
+
   :main onyx-dashboard.system
 
   :dependencies [[org.clojure/clojure "1.6.0"]
