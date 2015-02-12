@@ -48,17 +48,6 @@
                                  (dom/td (str (:id task)))
                                  (dom/td (str peer-id)))))))))
 
-(defcomponent peer-table [peers owner]
-  (render [_]
-          (if (empty? peers) 
-            (dom/div "No peers are currently running")
-            (t/table {:striped? true :bordered? false :condensed? true :hover? true}
-                     (dom/thead (dom/tr (dom/th "ID")))
-                     (dom/tbody
-                       (for [peer peers] 
-                         (dom/tr {:class "peer-entry"}
-                                 (dom/td (str (:id peer))))))))))
-
 (defcomponent job-management [{:keys [id status] :as job} owner]
   (render [_]
           (let [api-ch (om/get-shared owner :api-ch)
@@ -88,6 +77,11 @@
                                                     (dom/i {:class "fa fa-times-circle-o"
                                                             :style {:padding-right "10px"}} " Kill")))))))))))
 
+(defn displayed-job-status [{:keys [status tasks] :as job}]
+  (case status 
+    :incomplete (if (empty? tasks) :incomplete :running)
+    status))
+
 (defcomponent job-overview-panel [job owner]
   (render [_]
           (p/panel
@@ -96,7 +90,7 @@
              :bs-style "primary"}
             (g/grid {} 
                     (g/row {} 
-                           (str "Job status is " (:status job)))
+                           (str "Job status is " (displayed-job-status job)))
                     (g/row {} 
                            (str "Task Scheduler is " (:task-scheduler job)))))))
 
