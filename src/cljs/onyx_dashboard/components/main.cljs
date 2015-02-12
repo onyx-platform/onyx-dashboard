@@ -23,51 +23,51 @@
   (render-state [_ {:keys [api-chan]}]
                 (let [{:keys [selected-job jobs]} deployment
                       job (and selected-job jobs (jobs selected-job))] 
-                  (dom/div
-                   (g/row {}
-                          (r/page-header {:class "page-header, main-header"}
-                                         (g/grid {}
-                                                 (g/col {:xs 4 :md 2}
-                                                        (dom/a {:href "https://github.com/MichaelDrogalis/onyx"}
-                                                               (dom/img {:class "logo" 
-                                                                         :src "/img/high-res.png" 
-                                                                         :height "50%" 
-                                                                         :width "50%"})))
-                                                 (g/col {:xs 12 :md 8}
-                                                        (dom/div {:style {:font-size "50px" :margin-top "25px"
-                                                                          :margin-left "150px"}}
-                                                                 "Onyx Dashboard")))))
-                    (g/grid {}
-                            (g/row {}
-                                   (g/col {:xs 6 :md 4}
-                                          (dom/div {:class "left-nav-deployment"} 
-                                                   (om/build select-deployment app {}))
+                  (g/grid {}
+                          (g/row {}
+                                 (r/page-header {:class "page-header, main-header"}
+                                                (g/grid {}
+                                                        (g/col {:xs 4 :md 2}
+                                                               (dom/a {:href "https://github.com/MichaelDrogalis/onyx"}
+                                                                      (dom/img {:class "logo" 
+                                                                                :src "/img/high-res.png" 
+                                                                                :height "50%" 
+                                                                                :width "50%"})))
+                                                        (g/col {:xs 12 :md 8}
+                                                               (dom/div {:style {:font-size "50px" 
+                                                                                 :margin-top "25px"
+                                                                                 :margin-left "150px"}}
+                                                                        "Onyx Dashboard")))))
+                          (g/row {}
+                                 (g/col {:xs 6 :md 4}
+                                        (dom/div {:class "left-nav-deployment"} 
+                                                 (om/build select-deployment app {}))
 
-                                          (if (:id deployment) 
-                                            (dom/div {} 
-                                                     (om/build deployment-indicator 
-                                                               {:deployment deployment
-                                                                :last-entry ((:entries deployment) (:message-id-max deployment))} 
-                                                               {})))
+                                        (if (:id deployment) 
+                                          (dom/div {} 
+                                                   (om/build deployment-indicator 
+                                                             {:deployment deployment
+                                                              :last-entry ((:entries deployment) (:message-id-max deployment))} 
+                                                             {})))
 
-                                          (if (:id deployment)
-                                            (dom/div {} 
-                                                     (om/build job-selector deployment {})))
-                                          
-                                          (if (:id deployment) 
-                                            (dom/div {} 
-                                                     (om/build deployment-peers deployment {})))
+                                        (if (:id deployment)
+                                          (dom/div {} 
+                                                   (om/build job-selector deployment {})))
 
-                                          (dom/div {}
-                                                   (if job 
-                                                     (om/build job-management 
-                                                               job
-                                                               {:react-key (str "management-" (:id job))}))))
-                                   (g/col {:xs 12 :md 8}
-                                          (dom/div 
-                                            (if job 
-                                              (om/build job-info job {:react-key (str "job-info-" (:id job))}))
-                                            (om/build log-entries-pager 
-                                                      {:entries (:entries deployment)
-                                                       :job-filter (:id job)} 
-                                                      {:react-key (str "log-" (:id deployment) "-filter-" (:id job))})))))))))
+                                        (if (:id deployment) 
+                                          (dom/div {} 
+                                                   (om/build deployment-peers deployment {})))
+
+                                        (dom/div {}
+                                                 (if job 
+                                                   (om/build job-management 
+                                                             job
+                                                             {:react-key (str "management-" (:id job))}))))
+                                 (g/col {:xs 12 :md 8}
+                                        (dom/div 
+                                          (if job 
+                                            (om/build job-info job {:react-key (str "job-info-" (:id job))}))
+                                          (om/build log-entries-pager 
+                                                    {:entries (:entries deployment)
+                                                     :job-filter (:id job)} 
+                                                    {:react-key (str "log-" (:id deployment) "-filter-" (:id job))}))))))))
