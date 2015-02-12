@@ -36,15 +36,6 @@
 (def entries-per-page 20)
 (def num-pages-to-show 10)
 
-(defn pagination-info [entries start-index]
-  (let [num-pages (Math/ceil (/ (count entries) entries-per-page))] 
-    {:displayed-entries (take entries-per-page
-                              (keep entries 
-                                    (reverse (range 0 
-                                                    (inc start-index)))))
-     :current-page (- num-pages (Math/ceil (* num-pages (/ start-index (count entries)))))
-     :num-pages num-pages}))
-
 (defcomponent log-entry-modal [log-entry owner {:keys [entry-ch]}]
   (render [_]
           (md/modal {:header (dom/h4 "Log Entry " (:message-id log-entry))
@@ -58,6 +49,15 @@
                                  (dom/tr (dom/td (str k)) 
                                          (dom/td (pr-str v)))))))))
 
+(defn pagination-info [entries start-index]
+  (let [num-pages (Math/ceil (/ (count entries) entries-per-page))] 
+    {:displayed-entries (take entries-per-page
+                              (keep entries 
+                                    (reverse (range 0 
+                                                    (inc start-index)))))
+     :current-page (- num-pages (Math/ceil (* num-pages (/ start-index (count entries)))))
+     :num-pages num-pages}))
+
 (defcomponent log-entries-pager [{:keys [job-filter entries] :as log} owner]
   (init-state [_]
               {:entry-index nil
@@ -69,17 +69,15 @@
                          (om/set-state! owner :visible-entry entry))
                        (recur)))
   (render-state [_ {:keys [entry-index visible-entry entry-ch]}]
-                (let [filtered-entries (if job-filter
-                                         (into {} 
-                                               (filter (comp (partial = job-filter)
-                                                             :job
-                                                             :args
-                                                             val) 
-                                                       entries))
-                                         entries)] 
+                (let [filtered-entries (vec
+                                         (sort-by :message-id
+                                                  (cond->> (vals entries)
+                                                    job-filter (filter (comp (partial = job-filter)
+                                                                             :job
+                                                                             :args)))))] 
                   (if (empty? filtered-entries)
                     (dom/div {} "")
-                    (let [max-id (apply max (keep :message-id (vals filtered-entries)))
+                    (let [max-id (dec (count filtered-entries))
                           current-index (or entry-index max-id)
                           {:keys [num-pages current-page displayed-entries]} (pagination-info filtered-entries current-index)
                           pagination-start (max (- current-page 
