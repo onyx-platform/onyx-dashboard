@@ -101,7 +101,7 @@
                      (assoc :up-to-date? false)
                      (assoc :up? true)
                      (update-in [:message-id-max] max (:message-id msg))
-                     (assoc-in [:entries (:message-id msg)] msg))))
+                     (assoc-in [:entries (:message-id msg)] (dissoc msg :tracking-id)))))
     state))
 
 (defmethod msg-controller :deployment/no-pulse [[_ msg] state]

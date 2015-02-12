@@ -50,3 +50,7 @@ body {
     margin-bottom: 0px;
 }
 
+.modal {
+	display: block;
+}
+
