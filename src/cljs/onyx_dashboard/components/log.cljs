@@ -14,8 +14,7 @@
 
 (defcomponent log-entry-row [entry owner {:keys [entry-ch] :as opts}]
   (render [_] 
-          (dom/tr {:key (str "entry-" (:message-id entry))
-                   :title (str (om/value entry))}
+          (dom/tr {:key (str "entry-" (:message-id entry))}
                   (dom/td {:on-click (fn [e] 
                                        (put! entry-ch {:id (:message-id entry)})
                                        true)}
