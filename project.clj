@@ -86,7 +86,7 @@
                                 {:source-paths ["env/dev/cljs"]}}}}
 
              :uberjar {:source-paths ["env/prod/clj"]
-                       :hooks [leiningen.cljsbuild]
+                       ;:hooks [leiningen.cljsbuild]
                        :env {:production true}
                        :omit-source true
                        :aot :all
