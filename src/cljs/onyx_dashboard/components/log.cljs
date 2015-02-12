@@ -26,6 +26,7 @@
                                    entries)))))
 
 (def entries-per-page 20)
+(def num-pages-to-show 10)
 
 (defn pagination-info [entries start-index]
   (let [num-pages (Math/ceil (/ (count entries) entries-per-page))] 
@@ -35,6 +36,7 @@
                                                     (inc start-index)))))
      :current-page (- num-pages (Math/ceil (* num-pages (/ start-index (count entries)))))
      :num-pages num-pages}))
+
 
 (defcomponent log-entries-pager [{:keys [job-filter entries] :as log} owner]
   (init-state [_]
@@ -52,7 +54,15 @@
                     (dom/div {} "")
                     (let [max-id (apply max (keep :message-id (vals filtered-entries)))
                           current-index (or entry-index max-id)
-                          {:keys [num-pages current-page displayed-entries]} (pagination-info filtered-entries current-index)]
+                          {:keys [num-pages current-page displayed-entries]} (pagination-info filtered-entries current-index)
+                          pagination-start (max (- current-page 
+                                                   (/ num-pages-to-show 2)) 
+                                                0)
+                          pages-window (take num-pages-to-show (range pagination-start num-pages))
+                          pages-to-show (cond-> pages-window
+                                          (not= 0 (first pages-window)) (conj 0)
+                                          (not= (dec num-pages) 
+                                                (last pages-window)) (concat [(dec num-pages)]))]
                       (p/panel {:header (om/build section-header-collapsible 
                                                   {:text (str "Raw Cluster Activity" 
                                                               (if job-filter (str " - Job " job-filter)))}
@@ -65,31 +75,34 @@
                                                 (pg/previous 
                                                   (if (zero? current-page) 
                                                     {:disabled? true}
-                                                    {:on-click (fn [_]
+                                                    {:on-click (fn [e]
                                                                  (om/set-state! owner 
                                                                                 :entry-index 
                                                                                 (let [new-index (min max-id 
                                                                                                      (+ current-index entries-per-page))]
                                                                                   (if (= new-index max-id)
                                                                                     nil
-                                                                                    new-index))))}))
-                                                (for [pg (range 0 num-pages)]
+                                                                                    new-index)))
+                                                                 (.preventDefault e))}))
+                                                (for [pg pages-to-show]
                                                   (pg/page (if (= current-page pg) 
                                                              {:active? true}
-                                                             {:on-click (fn [_]
+                                                             {:on-click (fn [e]
                                                                           (om/set-state! owner 
                                                                                          :entry-index 
                                                                                          (let [new-index (max 0 
                                                                                                               (min max-id 
                                                                                                                    (- max-id 
                                                                                                                       (* pg entries-per-page))))]
-                                                                                           (if (= new-index max-id) nil new-index))))}) 
+                                                                                           (if (= new-index max-id) nil new-index)))
+                                                                          (.preventDefault e))}) 
                                                            (str (inc pg))))
                                                 (pg/next 
                                                   (if (= current-page (dec num-pages))
                                                     {:disabled? true}
-                                                    {:on-click (fn [_]
+                                                    {:on-click (fn [e]
                                                                  (om/set-state! owner 
                                                                                 :entry-index 
                                                                                 (max 0 
-                                                                                     (- current-index entries-per-page))))}))))))))))
+                                                                                     (- current-index entries-per-page)))
+                                                                 (.preventDefault e))}))))))))))
