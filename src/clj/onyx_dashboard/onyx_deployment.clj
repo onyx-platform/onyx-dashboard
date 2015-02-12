@@ -34,7 +34,10 @@
   (zk/children client (zk-onyx/pulse-path deployment-id)))
 
 (defn refresh-deployments-watch [send-all-fn! zk-client deployments]
-  (if-let [children (zk/children zk-client zk-onyx/root-path :watcher (fn [_] (refresh-deployments-watch send-all-fn! zk-client)))]
+  (if-let [children (zk/children zk-client 
+                                 zk-onyx/root-path 
+                                 :watcher 
+                                 (fn [_] (refresh-deployments-watch send-all-fn! zk-client deployments)))]
     (do 
       (->> children
            (map (juxt identity 
@@ -170,8 +173,8 @@
               (log-notifications send-fn! new-replica diff log entry tracking-id)
               (send-log-entry send-fn! tracking-id entry)
               (recur new-replica position false new-incomplete-jobs))))
-        (let [has-pulse? (empty? (f-check-pulses))] 
-          (when-not has-pulse?
+        (let [has-no-pulse? (empty? (f-check-pulses))] 
+          (when has-no-pulse?
             (send-fn! [:deployment/no-pulse {:tracking-id tracking-id}]))
           (send-fn! [:deployment/up-to-date {:tracking-id tracking-id :last-id last-id}])
           (recur replica last-id true incomplete-jobs))))))
