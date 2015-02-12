@@ -70,7 +70,7 @@
                                      (put! api-ch [:kill-job id])))] 
             (dom/div
               (p/panel
-                {:header (om/build section-header-collapsible {:text "Catalog"} {})
+                {:header (om/build section-header-collapsible {:text "Job Management"} {})
                  :collapsible? true
                  :bs-style "primary"}
                 (g/grid {} 
@@ -91,7 +91,7 @@
 (defcomponent job-overview-panel [job owner]
   (render [_]
           (p/panel
-            {:header (om/build section-header-collapsible {:text "Catalog"} {})
+            {:header (om/build section-header-collapsible {:text "Job Status"} {})
              :collapsible? true
              :bs-style "primary"}
             (g/grid {} 
