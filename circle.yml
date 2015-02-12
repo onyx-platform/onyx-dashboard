@@ -12,14 +12,13 @@ dependencies:
                 - lein deps
 
         post:
-                #- lein cljx once
                 - lein cljsbuild once
 test:
         override: 
                 - lein test:
                     timeout: 1800
                 # TODO: make this happen as build task
-                - lein clean && lein with-profile uberjar cljsbuild once app && lein with-profile uberjar uberjar
+                - lein clean && lein with-profile uberjar cljsbuild once uberjar && lein with-profile uberjar uberjar
                 - docker build -t onyx/onyx-dashboard:$CIRCLE_SHA1 . | tee docker-build.log
                 - docker tag $(tail -1 docker-build.log | cut -d ' ' -f 3) onyx/onyx-dashboard:latest
                 - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS

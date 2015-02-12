@@ -50,7 +50,7 @@
   :cljsbuild {:builds {:app {:source-paths ["src/cljs"]
                              :compiler {:output-to     "resources/public/js/app.js"
                                         :output-dir    "resources/public/js/out"
-                                        :source-map    true
+                                        :source-map "resources/public/js/app.map"
                                         :main onyx-dashboard.dev
                                         :asset-path "js/out"
                                         ;:preamble      ["react/react.min.js"]
@@ -58,7 +58,9 @@
                                         :optimizations :none
                                         :pretty-print  true}}}}
 
-  :clean-targets ^{:protect false} ["resources/public/js/out" "resources/public/js/app.js" "target"]
+  :clean-targets ^{:protect false} ["resources/public/js/advanced" 
+                                    "resources/public/js/out" 
+                                    "target"]
 
   :profiles {:dev {:source-paths ["env/dev/clj"]
 
@@ -84,12 +86,14 @@
                                 {:source-paths ["env/dev/cljs"]}}}}
 
              :uberjar {:source-paths ["env/prod/clj"]
-                       ;:hooks [leiningen.cljsbuild]
+                       :hooks [leiningen.cljsbuild]
                        :env {:production true}
                        :omit-source true
                        :aot :all
-                       :cljsbuild {:builds {:app
-                                            {:source-paths ["env/prod/cljs"]
-                                             :compiler
-                                             {:optimizations :advanced
-                                              :pretty-print false}}}}}})
+                       :cljsbuild {:builds 
+                                   {:uberjar {:source-paths ["src/cljs" "env/prod/cljs"]
+                                              :compiler {:output-to "resources/public/js/app.js"
+                                                         :output-dir "resources/public/js/advanced"
+                                                         :source-map "resources/public/js/app.js.map"
+                                                         :optimizations :advanced
+                                                         :pretty-print false}}}}}})
