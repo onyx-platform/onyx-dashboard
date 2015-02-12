@@ -1,6 +1,6 @@
 (ns onyx-dashboard.http.server
   (:require [clojure.core.async :refer [chan timeout thread <!! alts!!]]
-            [onyx-dashboard.dev :refer [is-dev? inject-devmode-html browser-repl start-figwheel]]
+            [onyx-dashboard.dev :refer [is-dev? inject-devmode-html #_browser-repl start-figwheel]]
             [org.httpkit.server :as http-kit-server]
             [com.stuartsierra.component :as component]
             [clojure.java.io :as io]

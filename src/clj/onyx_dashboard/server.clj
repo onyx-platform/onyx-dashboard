@@ -1,6 +1,6 @@
 (ns onyx-dashboard.server
   (:require [clojure.java.io :as io]
-            [onyx-dashboard.dev :refer [is-dev? inject-devmode-html browser-repl start-figwheel]]
+            [onyx-dashboard.dev :refer [is-dev? inject-devmode-html #_browser-repl start-figwheel]]
             [compojure.core :refer [GET defroutes]]
             [compojure.route :refer [resources]]
             [net.cgrand.enlive-html :refer [deftemplate]]

@@ -2,7 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.tools.namespace.repl :refer [refresh]]
             [com.stuartsierra.component :as component]
-            [onyx-dashboard.dev :refer [is-dev? inject-devmode-html browser-repl start-figwheel]]
+            [onyx-dashboard.dev :refer [is-dev? inject-devmode-html #_browser-repl start-figwheel]]
             [onyx-dashboard.http.sente :refer [sente]]
             [onyx-dashboard.http.server :refer [new-http-server]]
             [onyx.system :refer [onyx-client]]

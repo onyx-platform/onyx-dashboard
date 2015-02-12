@@ -13,3 +13,5 @@ pom.xml.asc
 /.repl
 *.log
 *.log.*
+
+resources/public/js/out.js.map
