@@ -66,7 +66,10 @@
                                  (g/col {:xs 12 :md 8}
                                         (dom/div 
                                           (if job 
-                                            (om/build job-info job {:react-key (str "job-info-" (:id job))}))
+                                            (om/build job-info   
+                                                      (if (:up? deployment) job (dissoc job :tasks :peers))
+                                                      {:react-key (str "job-info-" (:id job))}))
+
                                           (om/build log-entries-pager 
                                                     {:entries (:entries deployment)
                                                      :job-filter (:id job)} 
