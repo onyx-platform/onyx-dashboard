@@ -1,7 +1,7 @@
 (defproject onyx-dashboard "0.5.2.0-SNAPSHOT"
   :version-spec "0.5.2.~{:env/circle_build_num}-SNAPSHOT"
   :description "Dashboard for the Onyx distributed computation system"
-  :url "http://example.com/FIXM://github.com/lbradstreet/onyx-dashboard"
+  :url "http://github.com/lbradstreet/onyx-dashboard"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
