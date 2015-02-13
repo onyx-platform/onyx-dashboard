@@ -47,18 +47,12 @@
 
   :uberjar-name "onyx-dashboard.jar"
 
-  ; :aliases {"uberjar" ["do" "clean," 
-  ;                      ;"with-profile" "uberjar" "cljsbuild" "once" "uberjar," 
-  ;                      "with-profile" "uberjar"" uberjar"]}
-
   :cljsbuild {:builds {:app {:source-paths ["src/cljs"]
                              :compiler {:output-to     "resources/public/js/app.js"
                                         :output-dir    "resources/public/js/out"
                                         :source-map "resources/public/js/app.map"
                                         :main onyx-dashboard.dev
                                         :asset-path "js/out"
-                                        ;:preamble      ["react/react.min.js"]
-                                        ;:externs       ["react/externs/react.js"]
                                         :optimizations :none
                                         :pretty-print  true}}}}
 
