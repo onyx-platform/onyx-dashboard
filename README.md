@@ -5,9 +5,18 @@
 A dashboard for the Onyx distributed computation system
 (https://github.com/MichaelDrogalis/onyx). 
 
+## Versioning
+
+Version numbers will kept in sync with [Onyx]
+(https://github.com/MichaelDrogalis/onyx). For example, to use a version
+compatible with Onyx 0.5.2, use a version fo the dashboard beginning with
+0.5.2. The fourth version number will be reserved for dashboard versioning, in
+order to provide releases out of band with Onyx.
+
 ## Development
 
-Setup environment variables for `HORNETQ_PORT`, `HORNETQ_HOST`, and `ZOOKEEPER_ADDR` in your lein user profiles.clj like so:
+Setup environment variables for `HORNETQ_PORT`, `HORNETQ_HOST`, and
+`ZOOKEEPER_ADDR` in your lein user profiles.clj like so:
 
 ```
 {:user {:env {:hornetq-port 5445
@@ -17,12 +26,12 @@ Setup environment variables for `HORNETQ_PORT`, `HORNETQ_HOST`, and `ZOOKEEPER_A
 
 or by setting the environment variables in your shell.
 
-Then open a terminal and type `lein figwheel` to start the Figwheel build
+Then open a terminal and run `lein figwheel` to start the Figwheel build
 (https://github.com/bhauman/lein-figwheel).
 
 and run `lein repl` to start your repl.
 
-In the REPL, type
+In the REPL, run
 
 ```clojure
 (user/go)
@@ -30,9 +39,26 @@ In the REPL, type
 
 Then point your browser at http://localhost:3000/
 
+## Deployment
+
+Configure environment variables for `HORNETQ_PORT`, `HORNETQ_HOST`, and `ZOOKEEPER_ADDR`.
+
+e.g. `HORNETQ_PORT=5445 HORNETQ_HOST="54.44.41.99" ZOOKEEPER_ADDR="54.44.229.123:2181,54.44.240.52:2181"` 
+
+Then run the Onyx Dashboard in one of several ways:
+
+* Build and run the uberjar ``` lein clean && lein with-profile uberjar
+  uberjar``. Then run it via `java -jar target/onyx-dashboard.jar`.
+* OR/ Use the development instructions above.
+* OR/ Download and run a copy of the uberjar found at XXX.
+* Run a copy using docker, using our repository at
+  [Dockerhub](https://registry.hub.docker.com/u/onyx/onyx-dashboard/) ensuring
+  to set the environment variables described above via docker `-e`.
+
+
 ## License
 
-Copyright © 2014 Lucas Bradstreet
+Copyright © 2014 Lucas Bradstreet & Michael Drogalis
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
