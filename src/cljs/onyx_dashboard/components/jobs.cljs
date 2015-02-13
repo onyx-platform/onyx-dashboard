@@ -108,13 +108,13 @@
             (om/build job-overview-panel job)
             (om/build task-panel job {})
             (p/panel
-              {:header (om/build section-header-collapsible {:text "Catalog"} {})
-               :collapsible? true
-               :bs-style "primary"}
-              (om/build clojure-block {:input pretty-catalog}))
-
-            (p/panel
               {:header (om/build section-header-collapsible {:text "Workflow"} {})
                :collapsible? true
                :bs-style "primary"}
-              (om/build clojure-block {:input pretty-workflow})))))
+              (om/build clojure-block {:input pretty-workflow}))
+
+            (p/panel
+              {:header (om/build section-header-collapsible {:text "Catalog"} {})
+               :collapsible? true
+               :bs-style "primary"}
+              (om/build clojure-block {:input pretty-catalog})))))
