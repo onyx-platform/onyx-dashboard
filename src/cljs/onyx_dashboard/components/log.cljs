@@ -18,7 +18,7 @@
                   (dom/td {:on-click (fn [e] 
                                        (put! entry-ch {:id (:message-id entry)})
                                        true)}
-                          (dom/i {:class "fa fa-plus-square-o"})) 
+                          (dom/i {:class "fa fa-external-link"})) 
                   (dom/td (str (:message-id entry)))
                   (dom/td (str (:id (:args entry))))
                   (dom/td (str (:fn entry)))
