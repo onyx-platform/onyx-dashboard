@@ -90,9 +90,9 @@
              :bs-style "primary"}
             (g/grid {} 
                     (g/row {} 
-                           (str "Job status is " (displayed-job-status job)))
+                           (str "Job status is: " (displayed-job-status job)))
                     (g/row {} 
-                           (str "Task Scheduler is " (:task-scheduler job)))))))
+                           (str "Task Scheduler is: " (name (:task-scheduler job))))))))
 
 (defcomponent task-panel [{:keys [tasks] :as job} owner]
   (render [_]
