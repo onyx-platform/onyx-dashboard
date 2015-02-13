@@ -79,8 +79,8 @@
 
 (defn displayed-job-status [{:keys [status tasks] :as job}]
   (case status 
-    :incomplete (if (empty? tasks) :incomplete :running)
-    status))
+    :incomplete (if (empty? tasks) "pending" "running")
+    (name status)))
 
 (defcomponent job-overview-panel [job owner]
   (render [_]
