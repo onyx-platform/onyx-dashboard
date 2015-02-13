@@ -1,7 +1,7 @@
-(defproject onyx-dashboard "0.1.0-SNAPSHOT"
-  :version-spec "0.1.~{:env/circle_build_num}"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+(defproject onyx-dashboard "0.5.2.0-SNAPSHOT"
+  :version-spec "0.5.2.~{:env/circle_build_num}-SNAPSHOT"
+  :description "Dashboard for the Onyx distributed computation system"
+  :url "http://example.com/FIXM://github.com/lbradstreet/onyx-dashboard"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
@@ -47,6 +47,10 @@
 
   :uberjar-name "onyx-dashboard.jar"
 
+  ; :aliases {"uberjar" ["do" "clean," 
+  ;                      ;"with-profile" "uberjar" "cljsbuild" "once" "uberjar," 
+  ;                      "with-profile" "uberjar"" uberjar"]}
+
   :cljsbuild {:builds {:app {:source-paths ["src/cljs"]
                              :compiler {:output-to     "resources/public/js/app.js"
                                         :output-dir    "resources/public/js/out"
@@ -60,6 +64,7 @@
 
   :clean-targets ^{:protect false} ["resources/public/js/advanced" 
                                     "resources/public/js/out" 
+                                    "resources/public/js/app.js" 
                                     "target"]
 
   :profiles {:dev {:source-paths ["env/dev/clj"]
@@ -86,7 +91,7 @@
                                 {:source-paths ["env/dev/cljs"]}}}}
 
              :uberjar {:source-paths ["env/prod/clj"]
-                       ;:hooks [leiningen.cljsbuild]
+                       :hooks [leiningen.cljsbuild]
                        :env {:production true}
                        :omit-source true
                        :aot :all
