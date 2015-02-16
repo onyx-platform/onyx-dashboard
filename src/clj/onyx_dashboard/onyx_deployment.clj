@@ -38,17 +38,16 @@
                                  zk-onyx/root-path 
                                  :watcher 
                                  (fn [_] (refresh-deployments-watch send-all-fn! zk-client deployments)))]
-    (do 
-      (->> children
-           (map (juxt identity 
-                      (partial zk-deployment-entry-stat zk-client)))
-           (map (fn [[child stat]]
-                  (vector child
-                          {:created-at (java.util.Date. (:ctime stat))
-                           :modified-at (java.util.Date. (:mtime stat))})))
-           (into {})
-           (reset! deployments)
-           (distribute-deployment-listing send-all-fn!)))
+    (->> children
+         (map (juxt identity 
+                    (partial zk-deployment-entry-stat zk-client)))
+         (map (fn [[child stat]]
+                (vector child
+                        {:created-at (java.util.Date. (:ctime stat))
+                         :modified-at (java.util.Date. (:mtime stat))})))
+         (into {})
+         (reset! deployments)
+         (distribute-deployment-listing send-all-fn!))
     (do
       (println (format "Could not find deployments at %s. Retrying in 1s." zk-onyx/root-path))
       (Thread/sleep 1000)

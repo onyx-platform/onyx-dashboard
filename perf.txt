@@ -1,0 +1,10 @@
+ started  #inst "2015-02-08T07:14:06.769-00:00"
+ socket.cljs:70 Figwheel: socket connection established
+  #inst "2015-02-08T07:15:29.186-00:00"
+ core.cljs:57 Fresh!
+
+
+ started  #inst "2015-02-08T07:18:01.124-00:00"
+ socket.js:116 Figwheel: socket connection established
+  #inst "2015-02-08T07:19:24.423-00:00"
+  core.cljs:57 Fresh!
