@@ -46,16 +46,12 @@ e.g. `HORNETQ_PORT=5445 HORNETQ_HOST="54.44.41.99" ZOOKEEPER_ADDR="54.44.229.123
 
 Then run the Onyx Dashboard in one of several ways:
 
-* Download and run the [uberjar
-  version](https://s3.amazonaws.com/onyx-dashboard/onyx-dashboard-0.5.2.0.jar).
+* Download the [uberjar
+version](https://github.com/lbradstreet/onyx-dashboard/releases).
   Then run it via `java -jar FILENAME`.
-* Build and run the uberjar ``` lein clean && lein with-profile uberjar uberjar``. 
+* Or build and run the uberjar ``` lein clean && lein with-profile uberjar uberjar``. 
 Then run it via `java -jar target/onyx-dashboard.jar`.
-* Use the development instructions above.
-<!--* Run a copy using docker, using our repository at
-  [Dockerhub](https://registry.hub.docker.com/u/onyx/onyx-dashboard/) ensuring
-  to set the environment variables described above via docker `-e`.-->
-
+* Or use the development instructions above.
 
 ## License
 
