@@ -2,8 +2,7 @@
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/lbradstreet/onyx-dashboard?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-A dashboard for the Onyx distributed computation system
-(https://github.com/MichaelDrogalis/onyx). 
+A dashboard for the [Onyx](https://github.com/MichaelDrogalis/onyx) distributed computation system.
 
 ## Versioning
 
