@@ -49,7 +49,7 @@ Then run the Onyx Dashboard in one of several ways:
 * Download the [uberjar
 version](https://github.com/lbradstreet/onyx-dashboard/releases).
   Then run it via `java -jar FILENAME`.
-* Or build and run the uberjar ``` lein clean && lein with-profile uberjar uberjar``. 
+* Or build and run the uberjar `lein clean && lein with-profile uberjar uberjar`. 
 Then run it via `java -jar target/onyx-dashboard.jar`.
 * Or use the development instructions above.
 
