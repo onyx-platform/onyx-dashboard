@@ -9,7 +9,7 @@
 
   :test-paths ["spec/clj"]
 
-  :java-opts ["-Xmx3g" "-server"]
+  :java-opts ["-Xmx2g" "-server"]
 
   :main onyx-dashboard.system
 
@@ -21,7 +21,7 @@
                  [com.taoensso/timbre "3.3.1"]
                  [cljs-uuid "0.0.4"]
                  [ring "1.3.2"]
-                 [com.mdrogalis/onyx "0.5.2-20150207.184249-1"]
+                 [com.mdrogalis/onyx "0.5.2"]
                  [com.cognitect/transit-clj "0.8.259"]
                  [com.cognitect/transit-cljs "0.8.205"]
                  [cljsjs/moment "2.9.0-0"]
