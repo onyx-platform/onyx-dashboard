@@ -2,8 +2,7 @@
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/lbradstreet/onyx-dashboard?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-A dashboard for the Onyx distributed computation system
-(https://github.com/MichaelDrogalis/onyx). 
+A dashboard for the [Onyx](https://github.com/MichaelDrogalis/onyx) distributed computation system.
 
 ## Versioning
 
@@ -18,10 +17,10 @@ order to provide releases out of band with Onyx.
 Setup environment variables for `HORNETQ_PORT`, `HORNETQ_HOST`, and
 `ZOOKEEPER_ADDR` in your lein user profiles.clj like so:
 
-```
+```clojure
 {:user {:env {:hornetq-port 5445
-	      :hornetq-host "54.44.41.99"
-	      :zookeeper-addr "54.44.229.123:2181,54.44.240.52:2181"}
+              :hornetq-host "54.44.41.99"
+              :zookeeper-addr "54.44.229.123:2181,54.44.240.52:2181"}
 ```
 
 or by setting the environment variables in your shell.
