@@ -17,7 +17,7 @@ order to provide releases out of band with Onyx.
 Setup environment variables for `HORNETQ_PORT`, `HORNETQ_HOST`, and
 `ZOOKEEPER_ADDR` in your lein user profiles.clj like so:
 
-```
+```clojure
 {:user {:env {:hornetq-port 5445
 	      :hornetq-host "54.44.41.99"
 	      :zookeeper-addr "54.44.229.123:2181,54.44.240.52:2181"}
