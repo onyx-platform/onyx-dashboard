@@ -1,5 +1,4 @@
-(defproject onyx-dashboard "0.5.2.0"
-  :version-spec "0.5.2.~{:env/circle_build_num}"
+(defproject onyx-dashboard "0.5.2.1-SNAPSHOT"
   :description "Dashboard for the Onyx distributed computation system"
   :url "http://github.com/lbradstreet/onyx-dashboard"
   :license {:name "Eclipse Public License"
@@ -40,7 +39,7 @@
                  [prismatic/om-tools "0.3.10" :exclusions [om]]]
 
   :plugins [[lein-cljsbuild "1.0.4"]
-            [lein-version-spec "0.0.4"]
+            ;[lein-version-spec "0.0.4"]
             [lein-environ "1.0.0"]]
 
   :min-lein-version "2.5.0"
