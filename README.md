@@ -51,9 +51,9 @@ Then run the Onyx Dashboard in one of several ways:
   uberjar``. Then run it via `java -jar target/onyx-dashboard.jar`.
 * OR/ Use the development instructions above.
 * OR/ Download and run a copy of the uberjar found at XXX.
-* Run a copy using docker, using our repository at
+<!--* Run a copy using docker, using our repository at
   [Dockerhub](https://registry.hub.docker.com/u/onyx/onyx-dashboard/) ensuring
-  to set the environment variables described above via docker `-e`.
+  to set the environment variables described above via docker `-e`.-->
 
 
 ## License
