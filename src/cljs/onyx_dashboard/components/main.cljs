@@ -4,7 +4,8 @@
             [om-tools.core :refer-macros [defcomponent]]
             [om-bootstrap.grid :as g]
             [om-bootstrap.random :as r]
-            [onyx-dashboard.components.deployment :refer [select-deployment deployment-indicator deployment-peers]]
+            [onyx-dashboard.components.deployment :refer [select-deployment deployment-indicator 
+                                                          deployment-peers deployment-log-dump]]
             [onyx-dashboard.components.jobs :refer [job-selector job-info job-management]]
             [onyx-dashboard.components.log :refer [log-entries-pager]]
             [onyx-dashboard.controllers.api :refer [api-controller]]
@@ -50,7 +51,8 @@
                                               (if job 
                                                 (om/build job-management 
                                                           job
-                                                          {:react-key (str "management-" (:id job))})))))
+                                                          {:react-key (str "management-" (:id job))}))
+                                              (om/build deployment-log-dump deployment))))
                                    (g/col {:xs 11 :md 8}
                                           (if (:id deployment) 
                                             (dom/div 

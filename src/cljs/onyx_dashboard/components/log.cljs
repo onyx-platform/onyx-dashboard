@@ -7,7 +7,6 @@
             [om-bootstrap.modal :as md]
             [om-bootstrap.button :as b]
             [om-bootstrap.table :as t]
-            [shoreleave.browser.blob :as blob]
             [cljsjs.moment]
             [cljs.core.async :as async :refer [<! >! put! chan]]
             [onyx-dashboard.components.ui-elements :refer [section-header-collapsible]])
@@ -63,15 +62,7 @@
   (or (= job-id (:job args))
       (= job-id (:id args))))
 
-(defcomponent save-log-to-file [entries owner]
-  (render [_]
-          (dom/a {:on-click (fn [_]
-                              (js/window.open 
-                                (blob/object-url! 
-                                  (blob/blob [(pr-str (vec (sort-by :message-id (vals entries))))] 
-                                             "application/octet-stream"))
-                                "download"))} 
-                 "Save raw log file - please submit with Onyx bug reports where possible")))
+
 
 (defcomponent log-entries-pager [{:keys [job-filter entries] :as log} owner]
   (init-state [_]
@@ -125,9 +116,6 @@
 
                                  (dom/div
                                    (om/build log-entries-table displayed-entries {:opts {:entry-ch entry-ch}})
-
-                                   (if-not job-filter 
-                                     (om/build save-log-to-file entries))
 
                                    (pg/pagination {}
                                                   (pg/previous 

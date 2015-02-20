@@ -5,6 +5,8 @@
             [om-bootstrap.panel :as p]
             [om-bootstrap.button :as b]
             [om-bootstrap.table :as t]
+            [om-bootstrap.grid :as g]
+            [shoreleave.browser.blob :as blob]
             [onyx-dashboard.components.ui-elements :refer [section-header-collapsible]]
             [cljs.core.async :as async :refer [put!]]
             [cljsjs.moment]))
@@ -47,15 +49,85 @@
 
 (defcomponent deployment-peers [deployment owner]
   (render [_] 
-          (dom/div
-            (p/panel
-              {:header (om/build section-header-collapsible {:text "Deployment Peers"} {})
-               :collapsible? true
-               :bs-style "primary"}
-              (if (and (:id deployment) 
-                       (:up? deployment)) 
-                (om/build peer-table (:peers deployment) {})
-                (dom/div "Deployment has no pulse."))))))
+          (p/panel
+            {:header (om/build section-header-collapsible {:text "Deployment Peers"} {})
+             :collapsible? true
+             :bs-style "primary"}
+            (if (and (:id deployment) 
+                     (:up? deployment)) 
+              (om/build peer-table (:peers deployment) {})
+              (dom/div "Deployment has no pulse.")))))
+
+(defn strip-catalog [catalog task-rename]
+  (mapv (fn [entry]
+          (-> entry 
+              (update-in [:onyx/name] task-rename)
+              (select-keys [:onyx/name :onyx/type :onyx/ident 
+                            :onyx/medium :onyx/consumption 
+                            :onyx/batch-size]))) 
+          catalog))
+
+(defn replace-in-workflow [workflow translation]
+  (mapv (fn [[from to]]
+          [(translation from) (translation to)])
+        workflow))
+
+(defn workflow->task-rename-map [workflow]
+  (zipmap (distinct (flatten workflow)) 
+          (map (comp keyword str) (range))))
+
+(defn publicise-jobs [jobs]
+  (mapv (fn [{:keys [workflow catalog] :as job}]
+          (let [task-rename (workflow->task-rename-map workflow)] 
+            (-> job
+                (dissoc :pretty-workflow
+                        :pretty-catalog
+                        :tracking-id)
+                (update-in [:workflow] replace-in-workflow task-rename)
+                (update-in [:catalog] strip-catalog task-rename))))
+        (vals jobs)))
+
+(defn entries->log-dump [entries]
+  (vec (sort-by :message-id (vals entries))))
+
+(defn serialize [v]
+  (vector (pr-str v)))
+
+(defcomponent deployment-log-dump [{:keys [entries jobs] :as deployment} owner]
+  (render [_] 
+          (p/panel
+            {:header "Deployment Log Dump" 
+             :collapsible? true
+             :bs-style "primary"}
+
+            (t/table {:striped? true :bordered? false :condensed? true :hover? true}
+                     (dom/thead (dom/tr (dom/th "Type") (dom/th)))
+                     (dom/tbody
+                       (dom/tr 
+                         (dom/td "Raw")
+                         (dom/td
+                           (dom/a {:on-click (fn [_]
+                                               (js/window.open 
+                                                 (blob/object-url! 
+                                                   (blob/blob (serialize {:jobs jobs
+                                                                          :log (entries->log-dump entries)})
+                                                              "application/octet-stream"))
+                                                 "download"))} 
+                                  "Save"))) 
+                       (dom/tr 
+                         (dom/td "Stripped of catalog parameterisations")
+                         (dom/td
+                           (dom/a {:on-click (fn [_]
+                                               (js/window.open 
+                                                 (blob/object-url! 
+                                                   (blob/blob (serialize {:jobs (publicise-jobs jobs)
+                                                                          :log (entries->log-dump entries)})
+                                                              "application/octet-stream"))
+                                                 "download"))} 
+                                  "Save")))))
+            "WARNING: We make a best effort attempt to strip catalog parameterisation and task names. " 
+            "If these may include private information, please inspect the :jobs value "
+            "in the dump before making it public.")))
 
 
 (defcomponent select-deployment [{:keys [deployments deployment]} owner]
