@@ -31,6 +31,7 @@
                  [fipp "0.5.2"]
                  [environ "1.0.0"]
                  [http-kit "2.1.19"]
+                 [shoreleave/shoreleave-browser "0.3.0"]
                  ; make this explicit to fix uberjar?
                  [potemkin "0.3.11"]
                  [org.omcljs/om "0.8.8"]

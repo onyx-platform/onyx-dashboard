@@ -7,6 +7,7 @@
             [om-bootstrap.modal :as md]
             [om-bootstrap.button :as b]
             [om-bootstrap.table :as t]
+            [shoreleave.browser.blob :as blob]
             [cljsjs.moment]
             [cljs.core.async :as async :refer [<! >! put! chan]]
             [onyx-dashboard.components.ui-elements :refer [section-header-collapsible]])
@@ -58,6 +59,19 @@
      :current-page (- num-pages (Math/ceil (* num-pages (/ start-index (count entries)))))
      :num-pages num-pages}))
 
+(defn entry-about-job? [job-id {:keys [args] :as entry}]
+  (or (= job-id (:job args))
+      (= job-id (:id args))))
+
+(defcomponent save-log-to-file [entries owner]
+  (render [_]
+          (dom/a {:on-click (fn [_]
+                              (js/window.open 
+                                (blob/object-url! 
+                                  (blob/blob [(pr-str (vec (sort-by :message-id (vals entries))))] "text/plain"))
+                                "_blank"))} 
+                 "View raw log file - please include with Onyx bug reports")))
+
 (defcomponent log-entries-pager [{:keys [job-filter entries] :as log} owner]
   (init-state [_]
               {:entry-index nil
@@ -69,45 +83,45 @@
                          (om/set-state! owner :visible-entry entry))
                        (recur)))
   (render-state [_ {:keys [entry-index visible-entry entry-ch]}]
-                (let [filtered-entries (vec
-                                         (sort-by :message-id
-                                                  (cond->> (vals entries)
-                                                    job-filter (filter (comp (partial = job-filter)
-                                                                             :job
-                                                                             :args)))))] 
-                  (if (empty? filtered-entries)
-                    (dom/div {} "")
-                    (let [max-id (dec (count filtered-entries))
-                          current-index (or entry-index max-id)
-                          {:keys [num-pages current-page displayed-entries]} (pagination-info filtered-entries current-index)
-                          pagination-start (max (- current-page 
-                                                   (/ num-pages-to-show 2)) 
-                                                0)
-                          pages-window (take num-pages-to-show (range pagination-start num-pages))
-                          pages-to-show (cond-> pages-window
-                                          (not= 0 (first pages-window)) (conj 0)
-                                          (not= (dec num-pages) 
-                                                (last pages-window)) (concat [(dec num-pages)]))
-                          change-index (fn [index e]
-                                         (om/set-state! owner :entry-index index)    
-                                         (.preventDefault e)) 
-                          previous-handler (partial change-index 
-                                                    (let [new-index (min max-id 
-                                                                         (+ current-index entries-per-page))]
-                                                      (if (= new-index max-id)
-                                                        nil
-                                                        new-index)))
-                          next-handler (partial change-index
-                                                (max 0 (- current-index entries-per-page)))]
-                      (dom/div
-                        (if visible-entry 
-                          (om/build log-entry-modal (entries visible-entry) {:opts {:entry-ch entry-ch}}))
-                        (p/panel {:header (om/build section-header-collapsible 
-                                                    {:text (str "Raw Cluster Activity" 
-                                                                (if job-filter (str " - Job " job-filter)))}
-                                                    {})
-                                  :collapsible? true
-                                  :bs-style "primary"}
+                (let [filtered-entries (vec (cond->> (vals entries)
+                                              job-filter (filter (partial entry-about-job? job-filter))
+                                              true (sort-by :message-id)))] 
+                  (p/panel {:header (om/build section-header-collapsible 
+                                              {:text (str "Raw Cluster Activity" 
+                                                          (if job-filter (str " - Job " job-filter)))}
+                                              {})
+                            :collapsible? true
+                            :bs-style "primary"}
+                           (if (empty? filtered-entries)
+                             (dom/div "No log entries found.")
+                             (let [max-id (dec (count filtered-entries))
+                                   current-index (or entry-index max-id)
+                                   {:keys [num-pages current-page displayed-entries]} (pagination-info filtered-entries current-index)
+                                   pagination-start (max (- current-page 
+                                                            (/ num-pages-to-show 2)) 
+                                                         0)
+                                   pages-window (take num-pages-to-show (range pagination-start num-pages))
+                                   pages-to-show (cond-> pages-window
+                                                   (not= 0 (first pages-window)) (conj 0)
+                                                   (not= (dec num-pages) 
+                                                         (last pages-window)) (concat [(dec num-pages)]))
+                                   change-index (fn [index e]
+                                                  (om/set-state! owner :entry-index index)    
+                                                  (.preventDefault e)) 
+                                   previous-handler (partial change-index 
+                                                             (let [new-index (min max-id 
+                                                                                  (+ current-index entries-per-page))]
+                                                               (if (= new-index max-id)
+                                                                 nil
+                                                                 new-index)))
+                                   next-handler (partial change-index
+                                                         (max 0 (- current-index entries-per-page)))]
+                               (dom/div
+
+                                 (if visible-entry 
+                                   (om/build log-entry-modal (entries visible-entry) {:opts {:entry-ch entry-ch}}))
+
+
                                  (dom/div
                                    (om/build log-entries-table displayed-entries {:opts {:entry-ch entry-ch}})
                                    (pg/pagination {}
@@ -128,4 +142,6 @@
                                                   (pg/next 
                                                     (if (= current-page (dec num-pages))
                                                       {:disabled? true}
-                                                      {:on-click next-handler})))))))))))
+                                                      {:on-click next-handler}))))
+                                 (if-not job-filter 
+                                   (om/build save-log-to-file entries)))))))))
