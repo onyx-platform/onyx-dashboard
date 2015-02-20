@@ -110,7 +110,7 @@
                   :download filename} 
                  "Save")))
 
-(defcomponent deployment-log-dump [{:keys [entries jobs id] :as deployment} owner]
+(defcomponent deployment-log-dump [{:keys [entries jobs id status] :as deployment} owner]
   (init-state [_] 
               {:download-type nil :download-ch (chan)})
   (will-mount [_]
@@ -122,12 +122,14 @@
                 (dom/div
                   (case download-type 
                     :raw-dump (om/build download-with-filename 
-                                        {:data {:jobs jobs
+                                        {:data {:deployment-status status
+                                                :jobs jobs
                                                 :log (entries->log-dump entries)}
                                          :filename (str "dump_" id "_raw.edn")}
                                         {:opts {:parent-ch download-ch}})
                     :stripped-dump (om/build download-with-filename 
-                                             {:data {:jobs (publicise-jobs jobs)
+                                             {:data {:deployment-status status
+                                                     :jobs (publicise-jobs jobs)
                                                      :log (entries->log-dump entries)}
                                               :filename (str "dump_" id "_stripped.edn")}
                                              {:opts {:parent-ch download-ch}})
