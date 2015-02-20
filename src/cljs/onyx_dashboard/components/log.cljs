@@ -71,7 +71,7 @@
                                   (blob/blob [(pr-str (vec (sort-by :message-id (vals entries))))] 
                                              "application/octet-stream"))
                                 "download"))} 
-                 "Save raw log file - please submit with Onyx bug reports where possible.")))
+                 "Save raw log file - please submit with Onyx bug reports where possible")))
 
 (defcomponent log-entries-pager [{:keys [job-filter entries] :as log} owner]
   (init-state [_]
@@ -125,6 +125,10 @@
 
                                  (dom/div
                                    (om/build log-entries-table displayed-entries {:opts {:entry-ch entry-ch}})
+
+                                   (if-not job-filter 
+                                     (om/build save-log-to-file entries))
+
                                    (pg/pagination {}
                                                   (pg/previous 
                                                     (if (zero? current-page) 
@@ -144,5 +148,6 @@
                                                     (if (= current-page (dec num-pages))
                                                       {:disabled? true}
                                                       {:on-click next-handler}))))
-                                 (if-not job-filter 
-                                   (om/build save-log-to-file entries)))))))))
+
+
+                                 )))))))
