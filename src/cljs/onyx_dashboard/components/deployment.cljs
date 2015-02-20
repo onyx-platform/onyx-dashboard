@@ -5,9 +5,13 @@
             [om-bootstrap.panel :as p]
             [om-bootstrap.button :as b]
             [om-bootstrap.table :as t]
+            [om-bootstrap.grid :as g]
+            [shoreleave.browser.blob :as blob]
             [onyx-dashboard.components.ui-elements :refer [section-header-collapsible]]
             [cljs.core.async :as async :refer [put!]]
-            [cljsjs.moment]))
+            [cljsjs.moment]
+            [cljs.core.async :as async :refer [<! >! put! chan]])
+  (:require-macros [cljs.core.async.macros :as asyncm :refer [go-loop]]))
 
 (defcomponent peer-table [peers owner]
   (render [_]
@@ -47,15 +51,107 @@
 
 (defcomponent deployment-peers [deployment owner]
   (render [_] 
-          (dom/div
-            (p/panel
-              {:header (om/build section-header-collapsible {:text "Deployment Peers"} {})
-               :collapsible? true
-               :bs-style "primary"}
-              (if (and (:id deployment) 
-                       (:up? deployment)) 
-                (om/build peer-table (:peers deployment) {})
-                (dom/div "Deployment has no pulse."))))))
+          (p/panel
+            {:header (om/build section-header-collapsible {:text "Deployment Peers"} {})
+             :collapsible? true
+             :bs-style "primary"}
+            (if (and (:id deployment) 
+                     (:up? deployment)) 
+              (om/build peer-table (:peers deployment) {})
+              (dom/div "Deployment has no pulse.")))))
+
+(defn strip-catalog [catalog task-rename]
+  (mapv (fn [entry]
+          (-> entry 
+              (update-in [:onyx/name] task-rename)
+              (select-keys [:onyx/name :onyx/type :onyx/ident 
+                            :onyx/medium :onyx/consumption 
+                            :onyx/batch-size]))) 
+          catalog))
+
+(defn replace-in-workflow [workflow translation]
+  (mapv (fn [[from to]]
+          [(translation from) (translation to)])
+        workflow))
+
+(defn workflow->task-rename-map [workflow]
+  (zipmap (distinct (flatten workflow)) 
+          (map (comp keyword str) (range))))
+
+(defn publicise-jobs [jobs]
+  (mapv (fn [{:keys [workflow catalog] :as job}]
+          (let [task-rename (workflow->task-rename-map workflow)] 
+            (-> job
+                (dissoc :pretty-workflow
+                        :pretty-catalog
+                        :tracking-id)
+                (update-in [:workflow] replace-in-workflow task-rename)
+                (update-in [:catalog] strip-catalog task-rename))))
+        (vals jobs)))
+
+(defn entries->log-dump [entries]
+  (vec (sort-by :message-id (vals entries))))
+
+(defn serialize [v]
+  (vector (pr-str v)))
+
+(defcomponent download-with-filename 
+  "Gross hack to enable blobs to be saved with a particular filename.
+  Unfortunately, the only way to provide a filename is with a link that gets clicked.
+  window.open on the blob object-url doens't currently work"
+  [{:keys [data filename]} owner {:keys [parent-ch]}]
+  (did-mount [_]
+             (.click (om/get-node owner))
+             (put! parent-ch :done))
+  (render [_]
+          (dom/a {:href (blob/object-url! 
+                          (blob/blob (serialize data)
+                                     "application/octet-stream"))
+                  :download filename} 
+                 "Save")))
+
+(defcomponent deployment-log-dump [{:keys [entries jobs id] :as deployment} owner]
+  (init-state [_] 
+              {:download-type nil :download-ch (chan)})
+  (will-mount [_]
+              (go-loop []
+                       (let [msg (<! (om/get-state owner :download-ch))]
+                         (if (= msg :done)
+                           (om/set-state! owner :download-type nil)))))
+  (render-state [_ {:keys [download-type download-ch]}] 
+                (dom/div
+                  (case download-type 
+                    :raw-dump (om/build download-with-filename 
+                                        {:data {:jobs jobs
+                                                :log (entries->log-dump entries)}
+                                         :filename (str "dump_" id "_raw.edn")}
+                                        {:opts {:parent-ch download-ch}})
+                    :stripped-dump (om/build download-with-filename 
+                                             {:data {:jobs (publicise-jobs jobs)
+                                                     :log (entries->log-dump entries)}
+                                              :filename (str "dump_" id "_stripped.edn")}
+                                             {:opts {:parent-ch download-ch}})
+                    (dom/div))
+                  (p/panel
+                    {:header "Deployment Log Dump" 
+                     :collapsible? true
+                     :bs-style "primary"}
+                    (t/table {:striped? true :bordered? false :condensed? true :hover? true}
+                             (dom/thead (dom/tr (dom/th "Type") (dom/th)))
+                             (dom/tbody
+                               (dom/tr 
+                                 (dom/td "Raw")
+                                 (dom/td
+                                   (dom/a {:on-click (fn [_] (om/set-state! owner :download-type :raw-dump))} 
+                                          "Save"))) 
+                               (dom/tr 
+                                 (dom/td "Stripped of catalog parameterisations")
+                                 (dom/td
+                                   (dom/a {:on-click (fn [_] (om/set-state! owner :download-type :stripped-dump))}
+                                          "Save")))))
+                    "WARNING: We make a best effort attempt to strip catalog parameterisation and task names. " 
+                    "If these may include private information, please inspect the :jobs value "
+                    "in the dump before making it public."))))
 
 
 (defcomponent select-deployment [{:keys [deployments deployment]} owner]

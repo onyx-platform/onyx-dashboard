@@ -10,7 +10,7 @@
 (def is-dev? true)
 
 (figwheel/watch-and-reload
-  :websocket-url "ws://localhost:3449/figwheel-ws"
+  :websocket-url "ws://localhost:3428/figwheel-ws"
   :jsload-callback (fn []
                      (core/main is-dev?)))
 

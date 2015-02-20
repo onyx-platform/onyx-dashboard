@@ -1,4 +1,4 @@
-(defproject onyx-dashboard "0.5.2.1"
+(defproject onyx-dashboard "0.5.2.2"
   :description "Dashboard for the Onyx distributed computation system"
   :url "http://github.com/lbradstreet/onyx-dashboard"
   :license {:name "Eclipse Public License"
@@ -31,6 +31,7 @@
                  [fipp "0.5.2"]
                  [environ "1.0.0"]
                  [http-kit "2.1.19"]
+                 [shoreleave/shoreleave-browser "0.3.0"]
                  ; make this explicit to fix uberjar?
                  [potemkin "0.3.11"]
                  [org.omcljs/om "0.8.8"]
@@ -74,7 +75,7 @@
                    :plugins [[lein-figwheel "0.2.3-SNAPSHOT"]]
 
                    :figwheel {:http-server-root "public"
-                              :server-port 3449
+                              :server-port 3428
                               :css-dirs ["resources/public/css"]}
 
                    :env {:is-dev true}
