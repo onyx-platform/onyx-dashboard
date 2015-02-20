@@ -37,7 +37,7 @@
                  :bs-style (if (or crashed? (not (:up-to-date? deployment)))  "danger" "primary")}
                 (dom/div 
                   (if crashed? 
-                    (dom/div "Log replay crashed. Cluster probably died if the dashboard is using the same version of Onyx."
+                    (dom/div "Log replay crashed. Cluster probably crashed, assuming the dashboard is using the same version of Onyx."
                              (dom/pre {} 
                                       (:error (:status deployment)))))
                   (dom/div 
