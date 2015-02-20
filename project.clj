@@ -74,7 +74,7 @@
                    :plugins [[lein-figwheel "0.2.3-SNAPSHOT"]]
 
                    :figwheel {:http-server-root "public"
-                              :server-port 3449
+                              :server-port 3428
                               :css-dirs ["resources/public/css"]}
 
                    :env {:is-dev true}
