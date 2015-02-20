@@ -40,35 +40,26 @@
                                    (g/col {:xs 6 :md 4}
                                           (dom/div {:class "left-nav-deployment"} 
                                                    (om/build select-deployment app {}))
-
                                           (if (:id deployment) 
-                                            (dom/div {} 
-                                                     (om/build deployment-indicator 
-                                                               {:deployment deployment
-                                                                :last-entry ((:entries deployment) (:message-id-max deployment))} 
-                                                               {})))
-
-                                          (if (:id deployment)
-                                            (dom/div {} 
-                                                     (om/build job-selector deployment {})))
-
-                                          (if (:id deployment) 
-                                            (dom/div {} 
-                                                     (om/build deployment-peers deployment {})))
-
-                                          (dom/div {}
-                                                   (if job 
-                                                     (om/build job-management 
-                                                               job
-                                                               {:react-key (str "management-" (:id job))}))))
+                                            (dom/div 
+                                              (om/build deployment-indicator 
+                                                        {:deployment deployment
+                                                         :last-entry ((:entries deployment) (:message-id-max deployment))})
+                                              (om/build job-selector deployment {})
+                                              (om/build deployment-peers deployment {})
+                                              (if job 
+                                                (om/build job-management 
+                                                          job
+                                                          {:react-key (str "management-" (:id job))})))))
                                    (g/col {:xs 11 :md 8}
-                                          (dom/div 
-                                            (if job 
-                                              (om/build job-info   
-                                                        (if (:up? deployment) job (dissoc job :tasks :peers))
-                                                        {:react-key (str "job-info-" (:id job))}))
+                                          (if (:id deployment) 
+                                            (dom/div 
+                                              (if job 
+                                                (om/build job-info   
+                                                          (if (:up? deployment) job (dissoc job :tasks :peers))
+                                                          {:react-key (str "job-info-" (:id job))}))
 
-                                            (om/build log-entries-pager 
-                                                      {:entries (:entries deployment)
-                                                       :job-filter (:id job)} 
-                                                      {:react-key (str "log-" (:id deployment) "-filter-" (:id job))})))))))))
+                                              (om/build log-entries-pager 
+                                                        {:entries (:entries deployment)
+                                                         :job-filter (:id job)} 
+                                                        {:react-key (str "log-" (:id deployment) "-filter-" (:id job))}))))))))))
