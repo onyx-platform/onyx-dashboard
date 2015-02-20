@@ -4,6 +4,10 @@
 
 A dashboard for the [Onyx](https://github.com/MichaelDrogalis/onyx) distributed computation system.
 
+## Design and User Guide
+
+A description and user guide disguised as a blog post can be found [here](http://lbradstreet.github.io/clojure/onyx/distributed-systems/2015/02/18/onyx-dashboard.html).
+
 ## Versioning
 
 Version numbers will kept in sync with [Onyx]
