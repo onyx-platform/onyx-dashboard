@@ -68,9 +68,10 @@
           (dom/a {:on-click (fn [_]
                               (js/window.open 
                                 (blob/object-url! 
-                                  (blob/blob [(pr-str (vec (sort-by :message-id (vals entries))))] "text/plain"))
-                                "_blank"))} 
-                 "View raw log file - please include with Onyx bug reports")))
+                                  (blob/blob [(pr-str (vec (sort-by :message-id (vals entries))))] 
+                                             "application/octet-stream"))
+                                "download"))} 
+                 "Save raw log file - please submit with Onyx bug reports where possible.")))
 
 (defcomponent log-entries-pager [{:keys [job-filter entries] :as log} owner]
   (init-state [_]
