@@ -1,8 +1,10 @@
 # onyx-dashboard
 
+A dashboard for the [Onyx](https://github.com/MichaelDrogalis/onyx) distributed computation system.
+
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MichaelDrogalis/onyx?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-A dashboard for the [Onyx](https://github.com/MichaelDrogalis/onyx) distributed computation system.
+[![Circle CI](https://circleci.com/gh/lbradstreet/onyx-dashboard.svg?style=svg)]
 
 ## Design and User Guide
 
