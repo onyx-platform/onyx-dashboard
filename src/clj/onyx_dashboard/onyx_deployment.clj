@@ -90,16 +90,19 @@
 (defmethod log-notifications :deployment/submitted-job [send-fn! replica diff log entry tracking-id]
   (let [job-id (:id (:args entry))
         catalog (extensions/read-chunk log :catalog job-id)
-        workflow (extensions/read-chunk log :workflow job-id)]
-    (send-fn! [:deployment/submitted-job {:tracking-id tracking-id
-                                          :id job-id
-                                          :entry entry
-                                          :task-scheduler (:task-scheduler (:args entry))
-                                          :catalog catalog
-                                          :workflow workflow
-                                          :pretty-catalog (with-out-str (fipp (into [] catalog)))
-                                          :pretty-workflow (with-out-str (fipp (into [] workflow)))
-                                          :created-at (:created-at entry)}])))
+        workflow (extensions/read-chunk log :workflow job-id)
+        flow-conditions (extensions/read-chunk log :flow-conditions job-id)]
+    (send-fn! [:deployment/submitted-job (cond-> {:tracking-id tracking-id
+                                                  :id job-id
+                                                  :entry entry
+                                                  :task-scheduler (:task-scheduler (:args entry))
+                                                  :catalog catalog
+                                                  :workflow workflow
+                                                  :pretty-catalog (with-out-str (fipp (into [] catalog)))
+                                                  :pretty-workflow (with-out-str (fipp (into [] workflow)))
+                                                  :created-at (:created-at entry)}
+                                           flow-conditions (assoc :flow-conditions flow-conditions
+                                                                  :pretty-flow-conditions (with-out-str (fipp (into [] flow-conditions)))))])))
 
 ; (defmethod log-notifications :deployment/peer-instant-joined [send-fn! replica diff _ entry tracking-id]
 ;     (when-let [peer (:instant-join diff)]

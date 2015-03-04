@@ -102,7 +102,7 @@
              :bs-style "primary"}
             (om/build task-table tasks {}))))
 
-(defcomponent job-info [{:keys [pretty-catalog pretty-workflow] :as job} owner]
+(defcomponent job-info [{:keys [pretty-catalog pretty-workflow pretty-flow-conditions] :as job} owner]
   (render [_]
           (dom/div
             (om/build job-overview-panel job)
@@ -117,4 +117,11 @@
               {:header (om/build section-header-collapsible {:text "Catalog"} {})
                :collapsible? true
                :bs-style "primary"}
-              (om/build clojure-block {:input pretty-catalog})))))
+              (om/build clojure-block {:input pretty-catalog}))
+            
+            (if pretty-flow-conditions 
+              (p/panel
+                {:header (om/build section-header-collapsible {:text "Flow Conditions"} {})
+                 :collapsible? true
+                 :bs-style "primary"}
+                (om/build clojure-block {:input pretty-flow-conditions}))))))

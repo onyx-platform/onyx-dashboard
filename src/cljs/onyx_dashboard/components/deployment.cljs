@@ -84,7 +84,10 @@
             (-> job
                 (dissoc :pretty-workflow
                         :pretty-catalog
+                        :pretty-flow-conditions
                         :tracking-id)
+                ; FIXME remove flow conditions until we have implemented publicising
+                (dissoc :flow-conditions) 
                 (update-in [:workflow] replace-in-workflow task-rename)
                 (update-in [:catalog] strip-catalog task-rename))))
         (vals jobs)))
@@ -96,7 +99,7 @@
   (vector (pr-str v)))
 
 (defcomponent download-with-filename 
-  "Gross hack to enable blobs to be saved with a particular filename.
+  "Gross hack to enable blobs to be saved with a particular filename.g 
   Unfortunately, the only way to provide a filename is with a link that gets clicked.
   window.open on the blob object-url doens't currently work"
   [{:keys [data filename]} owner {:keys [parent-ch]}]
