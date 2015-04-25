@@ -170,7 +170,7 @@
         (let [entry (extensions/read-log-entry log position)]
           (if-let [new-replica (apply-log-entry send-fn! tracking-id entry replica)] 
             (let [diff (extensions/replica-diff entry replica new-replica)
-                  new-incomplete-jobs (set (common/incomplete-jobs new-replica))]
+                  new-incomplete-jobs #{}]
               (send-job-statuses send-fn! tracking-id incomplete-jobs new-incomplete-jobs)
               (log-notifications send-fn! new-replica diff log entry tracking-id)
               (send-log-entry send-fn! tracking-id entry)
