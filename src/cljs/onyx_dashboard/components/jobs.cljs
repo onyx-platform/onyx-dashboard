@@ -124,4 +124,9 @@
                 {:header (om/build section-header-collapsible {:text "Flow Conditions"} {})
                  :collapsible? true
                  :bs-style "primary"}
-                (om/build clojure-block {:input pretty-flow-conditions}))))))
+                (om/build clojure-block {:input pretty-flow-conditions})))
+
+            (p/panel
+              {:header (om/build section-header-collapsible {:text "Metrics"} {})
+               :collapsible? true
+               :bs-style "primary"}))))
