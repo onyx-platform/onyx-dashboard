@@ -6,6 +6,9 @@
             [onyx-dashboard.http.sente :refer [sente]]
             [onyx-dashboard.http.server :refer [new-http-server]]
             [onyx.system :refer [onyx-client]]
+            [onyx.messaging.core-async]
+            [onyx.messaging.netty-tcp]
+            [onyx.messaging.aeron]
             [compojure.core :refer [GET defroutes]]
             [compojure.route :refer [resources]]
             [compojure.handler :refer [api]]
@@ -23,7 +26,8 @@
                                  v)))))
 
 (defn get-system []
-  (let [env-config {:zookeeper/address (env-throw :zookeeper-addr)}]
+  (let [env-config {:zookeeper/address (env-throw :zookeeper-addr)
+                    :onyx.messaging/impl :core.async}]
     (component/system-map
       :sente (component/using (sente) [])
       :http (component/using (new-http-server env-config) [:sente]))))

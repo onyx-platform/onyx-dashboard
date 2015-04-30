@@ -11,8 +11,7 @@
             [taoensso.timbre :as timbre :refer [info error spy]]))
 
 (defn kill-job [peer-config deployment-id {:keys [id] :as job-info}]
-  (onyx.api/kill-job (assoc peer-config :onyx/id deployment-id)
-                     id))
+  (onyx.api/kill-job (assoc peer-config :onyx/id deployment-id) id))
 
 (defn start-job [peer-config deployment-id {:keys [catalog workflow task-scheduler] :as job-info}]
   (onyx.api/submit-job (assoc peer-config :onyx/id deployment-id)
@@ -165,7 +164,7 @@
     (loop [replica (:replica subscription)
            last-id nil
            up-to-date? false
-           incomplete-jobs #{}]
+           incomplete-jobs (:jobs replica)]
       (if-let [position (first (alts!! (vector ch (timeout freshness-timeout))))]
         (let [entry (extensions/read-log-entry log position)]
           (if-let [new-replica (apply-log-entry send-fn! tracking-id entry replica)] 
@@ -186,7 +185,7 @@
   (start [component]
     (info "Start log subscription")
     (let [sub-ch (chan 100)
-          subscription (onyx.api/subscribe-to-log peer-config sub-ch)] 
+          subscription (onyx.api/subscribe-to-log peer-config sub-ch)]
       (assoc component :subscription subscription :subscription-ch sub-ch)))
 
   (stop [component]
@@ -205,7 +204,7 @@
                                   (:onyx/id peer-config))]
       (assoc component 
              :subscription subscription
-             :tracking-fut (future 
+             :tracking-fut (future
                              (track-deployment (partial send-fn! user-id)
                                                (:onyx/id peer-config)
                                                (:subscription subscription)
