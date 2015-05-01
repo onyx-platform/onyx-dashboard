@@ -4,6 +4,7 @@
             [om-tools.core :refer-macros [defcomponent]]
             [om-bootstrap.panel :as p]
             [om-bootstrap.grid :as g]
+            [om-bootstrap.button :as b]
             [om-bootstrap.table :as t]
             [cljsjs.moment]
             [onyx-dashboard.components.code :refer [clojure-block]]
@@ -47,6 +48,78 @@
                                  (dom/td (str (:name task)))
                                  (dom/td (str (:id task)))
                                  (dom/td (str peer-id)))))))))
+
+(defcomponent metrics-table [{:keys [metrics job]} owner]
+  (render
+   [_]
+   (let [task-mapping (get metrics (:id job))]
+     (dom/div
+      (p/panel {:header "10 second window"}
+               (t/table {:striped? true :bordered? false :condensed? true :hover? true}
+                        (dom/thead
+                         (dom/tr
+                          (dom/th "Task")
+                          (dom/th "Throughput")
+                          (dom/th "Latency 50%")
+                          (dom/th "Latency 90%")
+                          (dom/th "Latency 99%")))
+                        (dom/tbody
+                         (for [task (keys task-mapping)]
+                           (let [throughput (vals (get (:throughput (get task-mapping task)) "10s"))
+                                 latency-50 (vals (get (get (:latency (get task-mapping task)) "10s") 0.5))
+                                 latency-90 (vals (get (get (:latency (get task-mapping task)) "10s") 0.90))
+                                 latency-99 (vals (get (get (:latency (get task-mapping task)) "10s") 0.99))
+                                 peers (count latency-50)]
+                             (dom/tr {:class "task-entry"}
+                                     (dom/td (name task))
+                                     (dom/td (apply + (if (seq throughput) throughput [0])) " segs")
+                                     (dom/td (.toFixed (/ (apply + (if (seq latency-50) latency-50 [0])) peers) 1) " ms")
+                                     (dom/td (.toFixed (/ (apply + (if (seq latency-90) latency-90 [0])) peers) 1) " ms")
+                                     (dom/td (.toFixed (/ (apply + (if (seq latency-99) latency-99 [0])) peers) 1) " ms")))))))
+      (p/panel {:header "30 second window"}
+               (t/table {:striped? true :bordered? false :condensed? true :hover? true}
+                        (dom/thead
+                         (dom/tr
+                          (dom/th "Task")
+                          (dom/th "Throughput")
+                          (dom/th "Latency 50%")
+                          (dom/th "Latency 90%")
+                          (dom/th "Latency 99%")))
+                        (dom/tbody
+                         (for [task (keys task-mapping)]
+                           (let [throughput (vals (get (:throughput (get task-mapping task)) "30s"))
+                                 latency-50 (vals (get (get (:latency (get task-mapping task)) "30s") 0.5))
+                                 latency-90 (vals (get (get (:latency (get task-mapping task)) "30s") 0.90))
+                                 latency-99 (vals (get (get (:latency (get task-mapping task)) "30s") 0.99))
+                                 peers (count latency-50)]
+                             (dom/tr {:class "task-entry"}
+                                     (dom/td (name task))
+                                     (dom/td (apply + (if (seq throughput) throughput [0])) " segs")
+                                     (dom/td (.toFixed (/ (apply + (if (seq latency-50) latency-50 [0])) peers) 1) " ms")
+                                     (dom/td (.toFixed (/ (apply + (if (seq latency-90) latency-90 [0])) peers) 1) " ms")
+                                     (dom/td (.toFixed (/ (apply + (if (seq latency-99) latency-99 [0])) peers) 1) " ms")))))))
+      (p/panel {:header "60 second window"}
+               (t/table {:striped? true :bordered? false :condensed? true :hover? true}
+                        (dom/thead
+                         (dom/tr
+                          (dom/th "Task")
+                          (dom/th "Throughput")
+                          (dom/th "Latency 50%")
+                          (dom/th "Latency 90%")
+                          (dom/th "Latency 99%")))
+                        (dom/tbody
+                         (for [task (keys task-mapping)]
+                           (let [throughput (vals (get (:throughput (get task-mapping task)) "60s"))
+                                 latency-50 (vals (get (get (:latency (get task-mapping task)) "60s") 0.5))
+                                 latency-90 (vals (get (get (:latency (get task-mapping task)) "60s") 0.90))
+                                 latency-99 (vals (get (get (:latency (get task-mapping task)) "60s") 0.99))
+                                 peers (count latency-50)]
+                             (dom/tr {:class "task-entry"}
+                                     (dom/td (name task))
+                                     (dom/td (apply + (if (seq throughput) throughput [0])) " segs")
+                                     (dom/td (.toFixed (/ (apply + (if (seq latency-50) latency-50 [0])) peers) 1) " ms")
+                                     (dom/td (.toFixed (/ (apply + (if (seq latency-90) latency-90 [0])) peers) 1) " ms")
+                                     (dom/td (.toFixed (/ (apply + (if (seq latency-99) latency-99 [0])) peers) 1) " ms")))))))))))
 
 (defcomponent job-management [{:keys [id status] :as job} owner]
   (render [_]
@@ -102,31 +175,33 @@
              :bs-style "primary"}
             (om/build task-table tasks {}))))
 
-(defcomponent job-info [{:keys [pretty-catalog pretty-workflow pretty-flow-conditions] :as job} owner]
+(defcomponent job-info [{:keys [job metrics] :as data} owner]
   (render [_]
-          (dom/div
-            (om/build job-overview-panel job)
-            (om/build task-panel job {})
-            (p/panel
+          (let [{:keys [pretty-catalog pretty-workflow pretty-flow-conditions]} job]
+            (dom/div
+             (om/build job-overview-panel job)
+             (om/build task-panel job {})
+             (p/panel
               {:header (om/build section-header-collapsible {:text "Workflow"} {})
                :collapsible? true
                :bs-style "primary"}
               (om/build clojure-block {:input pretty-workflow}))
 
-            (p/panel
+             (p/panel
               {:header (om/build section-header-collapsible {:text "Catalog"} {})
                :collapsible? true
                :bs-style "primary"}
               (om/build clojure-block {:input pretty-catalog}))
-            
-            (if pretty-flow-conditions 
-              (p/panel
+             
+             (if pretty-flow-conditions 
+               (p/panel
                 {:header (om/build section-header-collapsible {:text "Flow Conditions"} {})
                  :collapsible? true
                  :bs-style "primary"}
                 (om/build clojure-block {:input pretty-flow-conditions})))
 
-            (p/panel
+             (p/panel
               {:header (om/build section-header-collapsible {:text "Metrics"} {})
                :collapsible? true
-               :bs-style "primary"}))))
+               :bs-style "primary"}
+              (om/build metrics-table data))))))

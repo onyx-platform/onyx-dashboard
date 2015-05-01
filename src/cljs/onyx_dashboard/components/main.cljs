@@ -12,7 +12,7 @@
             [cljs.core.async :as async :refer [<! >! put! chan]])
   (:require-macros [cljs.core.async.macros :as asyncm :refer [go-loop]]))
 
-(defcomponent main-component [{:keys [deployment] :as app} owner]
+(defcomponent main-component [{:keys [deployment metrics] :as app} owner]
   (did-mount [_] 
              (let [api-ch (om/get-shared owner :api-ch)
                    chsk-send! (om/get-shared owner :chsk-send!)] 
@@ -58,7 +58,9 @@
                                             (dom/div 
                                               (if job 
                                                 (om/build job-info   
-                                                          (if (:up? deployment) job (dissoc job :tasks :peers))
+                                                          (if (:up? deployment)
+                                                            {:job job :metrics metrics}
+                                                            {:job (dissoc job :tasks :peers)})
                                                           {:react-key (str "job-info-" (:id job))}))
 
                                               (om/build log-entries-pager 

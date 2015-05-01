@@ -63,39 +63,47 @@
   (doseq [uid (:any @connected-uids)]
     (send-fn! uid msg)))
 
+(defn metrics-handler [send-f request]
+  (http-kit-server/with-channel request channel
+    (http-kit-server/on-receive
+     channel
+     (fn [data] (send-f [:metrics/event (read-string data)])))))
+
 (defrecord HttpServer [peer-config]
   component/Lifecycle
   (start [{:keys [sente] :as component}]
     (println "Starting HTTP Server")
-    (defroutes routes
-      (GET  "/" [] (page))
-      (GET  "/chsk" req ((:ring-ajax-get-or-ws-handshake sente) req))
-      (POST "/chsk" req ((:ring-ajax-post sente) req))
-      (resources "/")
-      (resources "/react" {:root "react"})
-      (route/not-found "Page not found"))
+    (let [send-f (partial send-mult-fn 
+                          (:chsk-send! sente) 
+                          (:connected-uids sente))]
+      (defroutes routes
+        (GET  "/" [] (page))
+        (GET  "/chsk" req ((:ring-ajax-get-or-ws-handshake sente) req))
+        (GET  "/metrics" req (partial metrics-handler send-f))
+        (POST "/chsk" req ((:ring-ajax-post sente) req))
+        (resources "/")
+        (resources "/react" {:root "react"})
+        (route/not-found "Page not found"))
 
-    (let [deployments (atom {})
-          tracking (atom {})
-          event-handler-fut (start-event-handler sente peer-config deployments tracking)
-          handler (ring.middleware.defaults/wrap-defaults routes ring-defaults-config)
-          server (http-kit-server/run-server handler {:port 3000})
-          uri (format "http://localhost:%s/" (:local-port (meta server)))]
-      (println "Http-kit server is running at" uri)
+      (let [deployments (atom {})
+            tracking (atom {})
+            event-handler-fut (start-event-handler sente peer-config deployments tracking)
+            handler (ring.middleware.defaults/wrap-defaults routes ring-defaults-config)
+            server (http-kit-server/run-server handler {:port 3000})
+            uri (format "http://localhost:%s/" (:local-port (meta server)))]
+        (println "Http-kit server is running at" uri)
 
-      ; TODO: no way to currently stop this watch
-      ; Should be in component and stoppable
-      (od/refresh-deployments-watch (partial send-mult-fn 
-                                             (:chsk-send! sente) 
-                                             (:connected-uids sente)) 
-                                    (zk/connect (:zookeeper/address peer-config))
-                                    deployments)
+                                        ; TODO: no way to currently stop this watch
+                                        ; Should be in component and stoppable
+        (od/refresh-deployments-watch send-f 
+                                      (zk/connect (:zookeeper/address peer-config))
+                                      deployments)
 
-      (assoc component 
-             :server server 
-             :event-handler-fut event-handler-fut 
-             :deployments deployments 
-             :tracking tracking)))
+        (assoc component 
+          :server server 
+          :event-handler-fut event-handler-fut 
+          :deployments deployments 
+          :tracking tracking))))
   (stop [{:keys [server tracking deployments] :as component}]
     (println "Stopping HTTP Server")
     (swap! tracking od/stop-all-tracking!)
