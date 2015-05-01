@@ -1,6 +1,7 @@
 (ns onyx-dashboard.http.sente
   (:require [clojure.core.async :refer [close!]]
             [com.stuartsierra.component :as component]
+            [taoensso.sente.server-adapters.http-kit]
             [taoensso.sente.packers.transit :as sente-transit]
             [taoensso.sente :refer [make-channel-socket!]]))
 
@@ -16,7 +17,9 @@
   component/Lifecycle
   (start [component]
     (println "Starting Sente")
-    (let [x (make-channel-socket! {:user-id-fn user-id-fn :packer packer})]
+    (let [x (make-channel-socket!
+             taoensso.sente.server-adapters.http-kit/http-kit-adapter
+             {:user-id-fn user-id-fn :packer packer})]
       (assoc component
         :ring-ajax-post (:ajax-post-fn x)
         :ring-ajax-get-or-ws-handshake (:ajax-get-or-ws-handshake-fn x)

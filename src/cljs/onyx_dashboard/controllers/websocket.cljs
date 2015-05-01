@@ -120,6 +120,13 @@
     (assoc-in state [:deployment :up?] false)
     state))
 
+(defmethod msg-controller :metrics/event [[_ msg] state]
+  (cond (and (= (:metric msg) :throughput))
+        (assoc-in state [:metrics (:job-id msg) (:task-name msg) (:metric msg) (:window msg) (:peer-id msg)] (:value msg))
+        (and (= (:metric msg) :latency))
+        (assoc-in state [:metrics (:job-id msg) (:task-name msg) (:metric msg) (:window msg) (:quantile msg) (:peer-id msg)] (:value msg))
+        :else state))
+
 (defmethod msg-controller :default [[type msg] state]
   (println "Unhandled msg type:" type "msg:" msg)
   state)
