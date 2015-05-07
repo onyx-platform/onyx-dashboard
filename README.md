@@ -43,9 +43,9 @@ Then point your browser at http://localhost:3000/
 
 ## Deployment
 
-Configure environment variables for `HORNETQ_PORT`, `HORNETQ_HOST`, and `ZOOKEEPER_ADDR`.
+Configure an environment variable `ZOOKEEPER_ADDR`.
 
-e.g. `HORNETQ_PORT=5445 HORNETQ_HOST="54.44.41.99" ZOOKEEPER_ADDR="54.44.229.123:2181,54.44.240.52:2181"` 
+e.g. `ZOOKEEPER_ADDR="54.44.229.123:2181,54.44.240.52:2181"` 
 
 Then run the Onyx Dashboard in one of several ways:
 
