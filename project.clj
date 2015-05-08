@@ -1,4 +1,4 @@
-(defproject onyx-dashboard "0.6.0.0-alpha2"
+(defproject onyx-dashboard "0.6.0.1-SNAPSHOT"
   :description "Dashboard for the Onyx distributed computation system"
   :url "http://github.com/lbradstreet/onyx-dashboard"
   :license {:name "Eclipse Public License"
