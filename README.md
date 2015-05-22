@@ -23,7 +23,7 @@ order to provide releases out of band with Onyx.
 Setup an environment variable for `ZOOKEEPER_ADDR` in your lein user profiles.clj like so:
 
 ```clojure
-{:user {:env {:zookeeper-addr "54.44.229.123:2181,54.44.240.52:2181"}
+{:user {:env {:zookeeper-addr "54.44.229.123:2181,54.44.240.52:2181"}}}
 ```
 
 or by setting the environment variable in your shell.
