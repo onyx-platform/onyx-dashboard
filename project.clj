@@ -1,4 +1,4 @@
-(defproject onyx-dashboard "0.6.0.0-alpha2"
+(defproject onyx-dashboard "0.6.0.0-beta1"
   :description "Dashboard for the Onyx distributed computation system"
   :url "http://github.com/lbradstreet/onyx-dashboard"
   :license {:name "Eclipse Public License"
@@ -20,7 +20,7 @@
                  [com.taoensso/timbre "3.3.1"]
                  [cljs-uuid "0.0.4"]
                  [ring "1.3.2"]
-                 [com.mdrogalis/onyx "0.6.0-alpha2"]
+                 [com.mdrogalis/onyx "0.6.0-beta1"]
                  [com.cognitect/transit-clj "0.8.259"]
                  [com.cognitect/transit-cljs "0.8.205"]
                  [cljsjs/moment "2.9.0-0"]
@@ -31,9 +31,14 @@
                  [fipp "0.5.2"]
                  [environ "1.0.0"]
                  [http-kit "2.1.19"]
-                 [shoreleave/shoreleave-browser "0.3.0"]
+
                  ; make this explicit to fix uberjar?
                  [potemkin "0.3.11"]
+                 ; pin encore as sente brings in a different version to
+                 ; onyx's nippy
+                 [com.taoensso/encore "1.30.0"]
+
+                 [shoreleave/shoreleave-browser "0.3.0"]
                  [org.omcljs/om "0.8.8"]
                  [ankha "0.1.5.1-479897" :exclude [om]]
                  [racehub/om-bootstrap "0.4.0" :exclusions [om]]
