@@ -76,14 +76,12 @@
 
 (defmulti log-notifications 
   (fn [send-fn! replica diff log entry tracking-id]
-    ((:fn entry) {:complete-task :job/completed-task
-                  :seal-task :job/completed-task
-                  :volunteer-for-task :job/peer-assigned
+    ((:fn entry) {:signal-ready :job/peer-assigned
                   :accept-join-cluster :deployment/peer-joined
                   :notify-join-cluster :deployment/peer-notify-joined-accepted
-                  ;:prepare-join-cluster :deployment/peer-instant-joined
                   :leave-cluster :deployment/peer-left
                   :submit-job :deployment/submitted-job
+                  :seal-output :deployment/completed-job
                   :kill-job :deployment/kill-job})))
 
 (defmethod log-notifications :deployment/submitted-job [send-fn! replica diff log entry tracking-id]
@@ -102,13 +100,6 @@
                                                   :created-at (:created-at entry)}
                                            flow-conditions (assoc :flow-conditions flow-conditions
                                                                   :pretty-flow-conditions (with-out-str (fipp (into [] flow-conditions)))))])))
-
-; (defmethod log-notifications :deployment/peer-instant-joined [send-fn! replica diff _ entry tracking-id]
-;     (when-let [peer (:instant-join diff)]
-;       (send-fn! [:deployment/peer-instant-joined {:tracking-id tracking-id
-;                                                   :log entry
-;                                                   :replica replica
-;                                                   :id peer}])))
 
 (defmethod log-notifications :deployment/peer-notify-joined-accepted [send-fn! replica diff _ entry tracking-id]
   (when-let [peer (:accepted-joiner diff)]
@@ -135,17 +126,16 @@
                                      :peer-id peer-id
                                      :task (select-keys task [:id :name])}])))))
 
+(defmethod log-notifications :deployment/completed-job [send-fn! replica diff log entry tracking-id]
+  (when (and (:job-completed? diff) (:job diff))
+    (send-fn! [:deployment/completed-job {:tracking-id tracking-id
+                                          :entry entry
+                                          :id (:job diff)}])))
+
 (defmethod log-notifications :deployment/kill-job [send-fn! replica diff log entry tracking-id]
   (send-fn! [:deployment/kill-job {:tracking-id tracking-id
                                    :entry entry
                                    :id (:job (:args entry))}]))
-
-(defmethod log-notifications :job/completed-task [send-fn! replica diff log entry tracking-id]
-  (let [task (extensions/read-chunk log :task (:task (:args entry)))]
-    (send-fn! [:job/completed-task {:tracking-id tracking-id
-                                    :job-id (:job (:args entry))
-                                    :peer-id (:id (:args entry))
-                                    :task (select-keys task [:id :name])}])))
 
 (defmethod log-notifications :default [send-fn! replica diff log entry tracking-id])
 
