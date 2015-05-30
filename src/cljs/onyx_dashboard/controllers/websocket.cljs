@@ -24,6 +24,12 @@
     (assoc-in state [:deployment :jobs id] (assoc msg :status :submitted)) 
     state))
 
+(defmethod msg-controller :deployment/completed-job 
+  [[_ {:keys [id] :as msg}] state]
+  (if (and (is-tracking? msg state) id)
+    (assoc-in state [:deployment :jobs id :status] :completed)
+    state))
+
 (defmethod msg-controller :job/peer-assigned 
   [[_ {:keys [peer-id task job-id] :as msg}] state]
   ;(println "Peer assigned " msg)
@@ -38,12 +44,6 @@
     (update-in state [:deployment :peers] union #{id}) 
     state))
 
-; (defmethod msg-controller :deployment/peer-instant-joined [[_ {:keys [id] :as msg}] state]
-;   ;(println "Peer instant joined " msg)
-;   (if (is-tracking? msg state)
-;     (update-in state [:deployment :peers] union #{id}) 
-;     state))
-
 (defmethod msg-controller :deployment/peer-notify-joined-accepted 
   [[_ {:keys [id] :as msg}] state]
   ;(println "Peer immediate notify joined " msg)
@@ -56,7 +56,6 @@
           (map (fn [job-info]
                  (update-in job-info [:tasks] dissoc peer-id))
                (vals jobs))))
-
 
 (defmethod msg-controller :deployment/log-replay-crash 
   [[_ {:keys [id] :as msg}] state]
@@ -72,13 +71,6 @@
     (-> state 
         (update-in [:deployment :peers] disj id)
         (update-in [:deployment :jobs] remove-dead-peer id)) 
-    state))
-
-(defmethod msg-controller :job/completed-task 
-  [[_ {:keys [peer-id job-id task] :as msg}] state]
-  ;(println "Completed task " msg)
-  (if (is-tracking? msg state)
-    (update-in state [:deployment :jobs job-id :tasks] dissoc peer-id) 
     state))
 
 (defmethod msg-controller :deployment/kill-job 

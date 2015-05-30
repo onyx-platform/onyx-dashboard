@@ -1,6 +1,6 @@
 # onyx-dashboard
 
-A dashboard for the [Onyx](https://github.com/MichaelDrogalis/onyx) distributed computation system, version 0.6.0-alpha2.
+A dashboard for the [Onyx](https://github.com/MichaelDrogalis/onyx) distributed computation system, version 0.6.0-RC1.
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MichaelDrogalis/onyx?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -13,7 +13,7 @@ A description and user guide disguised as a blog post can be found [here](http:/
 ## Versioning
 
 Version numbers will kept in sync with [Onyx]
-(https://github.com/MichaelDrogalis/onyx). For example, to use a version
+(https://github.com/onyx-platform/onyx). For example, to use a version
 compatible with Onyx 0.6.0, use a version fo the dashboard beginning with
 0.6.0. The fourth version number will be reserved for dashboard versioning, in
 order to provide releases out of band with Onyx.
@@ -23,7 +23,7 @@ order to provide releases out of band with Onyx.
 Setup an environment variable for `ZOOKEEPER_ADDR` in your lein user profiles.clj like so:
 
 ```clojure
-{:user {:env {:zookeeper-addr "54.44.229.123:2181,54.44.240.52:2181"}
+{:user {:env {:zookeeper-addr "54.44.229.123:2181,54.44.240.52:2181"}}}
 ```
 
 or by setting the environment variable in your shell.
