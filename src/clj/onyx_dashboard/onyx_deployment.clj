@@ -5,7 +5,7 @@
             [onyx.api]
             [onyx.log.zookeeper :as zk-onyx]
             [onyx.log.commands.common :as common]
-            [zookeeper :as zk]
+            [onyx.log.curator :as zk]
             [clojure.core.async :refer [chan timeout thread <!! alts!!]]
             [com.stuartsierra.component :as component]
             [taoensso.timbre :as timbre :refer [info error spy]]))

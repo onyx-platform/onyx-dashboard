@@ -1,4 +1,4 @@
-(defproject org.onyxplatform/onyx-dashboard "0.6.0.0-RC1"
+(defproject org.onyxplatform/onyx-dashboard "0.6.0.0-SNAPSHOT"
   :description "Dashboard for the Onyx distributed computation system"
   :url "http://github.com/lbradstreet/onyx-dashboard"
   :license {:name "Eclipse Public License"
@@ -20,7 +20,7 @@
                  [com.taoensso/timbre "3.3.1"]
                  [cljs-uuid "0.0.4"]
                  [ring "1.3.2"]
-                 [org.onyxplatform/onyx "0.6.0-RC1"]
+                 [org.onyxplatform/onyx "0.6.0-SNAPSHOT"]
                  [com.cognitect/transit-clj "0.8.259"]
                  [com.cognitect/transit-cljs "0.8.205"]
                  [cljsjs/moment "2.9.0-0"]
