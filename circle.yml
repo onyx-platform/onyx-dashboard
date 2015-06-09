@@ -30,5 +30,4 @@ deployment:
                         - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
                         - docker push onyx/onyx-dashboard:$CIRCLE_SHA1
                         - docker push onyx/onyx-dashboard:latest
-                        - aws s3 cp target/onyx-dashboard-*.jar s3://onyx-releases/onyx-dashboard/
-
+                        - aws s3 cp target/onyx-dashboard.jar s3://onyx-releases/onyx-dashboard/onyx-dashboard-`lein project-version`.jar

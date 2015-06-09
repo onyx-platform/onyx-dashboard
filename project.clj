@@ -1,4 +1,4 @@
-(defproject org.onyxplatform/onyx-dashboard "0.6.0.0"
+(defproject org.onyxplatform/onyx-dashboard "0.6.0.1-SNAPSHOT"
   :description "Dashboard for the Onyx distributed computation system"
   :url "http://github.com/lbradstreet/onyx-dashboard"
   :license {:name "Eclipse Public License"
@@ -79,7 +79,8 @@
                                   :timeout 90000
                                   :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
 
-                   :plugins [[lein-figwheel "0.2.3-SNAPSHOT"]]
+                   :plugins [[lein-figwheel "0.2.3-SNAPSHOT"]
+                             [lein-project-version "0.1.0"]]
 
                    :figwheel {:http-server-root "public"
                               :server-port 3428
