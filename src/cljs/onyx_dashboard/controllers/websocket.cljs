@@ -13,8 +13,7 @@
 
 (defmethod msg-controller :deployment/up-to-date 
   [[_ {:keys [tracking-id last-id] :as msg}] state]
-  (if (and (is-tracking? msg state)
-           (= last-id (:message-id-max (:deployment state))))
+  (if (is-tracking? msg state) 
     (assoc-in state [:deployment :up-to-date?] true)
     state))
 

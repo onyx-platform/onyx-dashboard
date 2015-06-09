@@ -152,23 +152,21 @@
 (defn track-deployment [send-fn! deployment-id subscription ch f-check-pulses tracking-id]
   (let [log (:log (:env subscription))]
     (loop [replica (:replica subscription)
-           last-id nil
            up-to-date? false
            incomplete-jobs (:jobs replica)]
-      (if-let [position (first (alts!! (vector ch (timeout freshness-timeout))))]
-        (let [entry (extensions/read-log-entry log position)]
-          (if-let [new-replica (apply-log-entry send-fn! tracking-id entry replica)] 
-            (let [diff (extensions/replica-diff entry replica new-replica)
-                  new-incomplete-jobs #{}]
-              (send-job-statuses send-fn! tracking-id incomplete-jobs new-incomplete-jobs)
-              (log-notifications send-fn! new-replica diff log entry tracking-id)
-              (send-log-entry send-fn! tracking-id entry)
-              (recur new-replica position false new-incomplete-jobs))))
+      (if-let [entry (first (alts!! (vector ch (timeout freshness-timeout))))]
+        (if-let [new-replica (apply-log-entry send-fn! tracking-id entry replica)] 
+          (let [diff (extensions/replica-diff entry replica new-replica)
+                new-incomplete-jobs #{}]
+            (send-job-statuses send-fn! tracking-id incomplete-jobs new-incomplete-jobs)
+            (log-notifications send-fn! new-replica diff log entry tracking-id)
+            (send-log-entry send-fn! tracking-id entry)
+            (recur new-replica false new-incomplete-jobs)))
         (let [has-no-pulse? (empty? (f-check-pulses))] 
           (when has-no-pulse?
             (send-fn! [:deployment/no-pulse {:tracking-id tracking-id}]))
-          (send-fn! [:deployment/up-to-date {:tracking-id tracking-id :last-id last-id}])
-          (recur replica last-id true incomplete-jobs))))))
+          (send-fn! [:deployment/up-to-date {:tracking-id tracking-id}])
+          (recur replica true incomplete-jobs))))))
 
 (defrecord LogSubscription [peer-config]
   component/Lifecycle
