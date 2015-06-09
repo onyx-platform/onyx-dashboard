@@ -162,7 +162,8 @@
 (defcomponent select-deployment [{:keys [deployments deployment]} owner]
   (render [_] 
           (dom/div {:class "btn-group btn-group-justified" :role "group"} 
-                   (apply (partial b/dropdown {:bs-style "default" 
+                   (apply (partial b/dropdown {:id "ddl-deployment"
+                                               :bs-style "default" 
                                                :title (or (:id deployment) "Select Deployment")})
                           (for [[id info] (reverse (sort-by (comp :created-at val) 
                                                             deployments))]
