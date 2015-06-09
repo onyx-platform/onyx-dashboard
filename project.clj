@@ -6,7 +6,7 @@
 
   :source-paths ["src/clj"]
 
-  :test-paths ["spec/clj"]
+  :test-paths ["spec/clj" "test"]
 
   :java-opts ["-Xmx2g" "-server"]
 
@@ -20,7 +20,7 @@
                  [com.taoensso/timbre "3.3.1"]
                  [cljs-uuid "0.0.4"]
                  [ring "1.3.2"]
-                 [org.onyxplatform/onyx "0.6.0-SNAPSHOT"]
+                 [org.onyxplatform/onyx "0.6.0"]
                  [com.cognitect/transit-clj "0.8.259"]
                  [com.cognitect/transit-cljs "0.8.205"]
                  [cljsjs/moment "2.9.0-0"]
@@ -31,14 +31,14 @@
                  [fipp "0.5.2"]
                  [environ "1.0.0"]
                  [http-kit "2.1.19"]
-                 [zookeeper-clj "0.9.1"]
 
                  ; make this explicit to fix uberjar?
                  [potemkin "0.3.11"]
                  ; pin encore as sente brings in a different version to
                  ; onyx's nippy
-                 [com.taoensso/encore "1.30.0"]
+                 [com.taoensso/encore "1.36.0"]
 
+                 [org.clojure/core.cache "0.6.4"]
                  [shoreleave/shoreleave-browser "0.3.0"]
                  [org.omcljs/om "0.8.8"]
                  [ankha "0.1.5.1-479897" :exclude [om]]
@@ -70,6 +70,7 @@
   :profiles {:dev {:source-paths ["env/dev/clj"]
 
                    :dependencies [[figwheel "0.2.3-SNAPSHOT"]
+                                  [clj-webdriver "0.6.1"]
                                   [com.cemerick/piggieback "0.1.5"]
                                   ;[weasel "0.5.0"]
                                   [leiningen "2.5.1"]]
