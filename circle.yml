@@ -10,7 +10,8 @@ dependencies:
                     timeout: 900
                             #- lein version-spec
                 - lein deps
-
+        pre:
+                - sudo pip install awscli
         post:
                 - lein cljsbuild once
 test:
@@ -29,4 +30,5 @@ deployment:
                         - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
                         - docker push onyx/onyx-dashboard:$CIRCLE_SHA1
                         - docker push onyx/onyx-dashboard:latest
+                        - aws s3 cp target/onyx-dashboard-*.jar s3://onyx-releases/onyx-dashboard/
 

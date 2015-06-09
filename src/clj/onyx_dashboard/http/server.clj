@@ -14,7 +14,7 @@
             [compojure.route :as route]
             [com.stuartsierra.component :as component]
             [onyx-dashboard.onyx-deployment :as od]
-            [zookeeper :as zk]
+            [onyx.log.curator :as zk]
             [taoensso.timbre :as timbre :refer [info error spy]]))
 
 (deftemplate page
@@ -90,24 +90,22 @@
             event-handler-fut (start-event-handler sente peer-config deployments tracking)
             handler (ring.middleware.defaults/wrap-defaults routes ring-defaults-config)
             server (http-kit-server/run-server handler {:port 3000})
-            uri (format "http://localhost:%s/" (:local-port (meta server)))]
+            uri (format "http://localhost:%s/" (:local-port (meta server)))
+            refresh-fut (future (od/refresh-deployments-watch send-f 
+                                                              (zk/connect (:zookeeper/address peer-config))
+                                                              deployments))]
         (println "Http-kit server is running at" uri)
-
-                                        ; TODO: no way to currently stop this watch
-                                        ; Should be in component and stoppable
-        (od/refresh-deployments-watch send-f 
-                                      (zk/connect (:zookeeper/address peer-config))
-                                      deployments)
-
         (assoc component 
-          :server server 
-          :event-handler-fut event-handler-fut 
-          :deployments deployments 
-          :tracking tracking))))
+               :server server 
+               :refresh-fut refresh-fut
+               :event-handler-fut event-handler-fut 
+               :deployments deployments 
+               :tracking tracking))))
   (stop [{:keys [server tracking deployments] :as component}]
     (println "Stopping HTTP Server")
     (swap! tracking od/stop-all-tracking!)
     (future-cancel (:event-handler-fut component))
+    (future-cancel (:refresh-fut component))
     (server :timeout 100)
     (assoc component :server nil :event-handler-fut nil :deployments nil :tracking nil)))
 
