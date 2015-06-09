@@ -14,7 +14,7 @@
             [compojure.route :as route]
             [com.stuartsierra.component :as component]
             [onyx-dashboard.onyx-deployment :as od]
-            [zookeeper :as zk]
+            [onyx.log.curator :as zk]
             [taoensso.timbre :as timbre :refer [info error spy]]))
 
 (deftemplate page
