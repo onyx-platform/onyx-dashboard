@@ -10,7 +10,8 @@ dependencies:
                     timeout: 900
                             #- lein version-spec
                 - lein deps
-
+        pre:
+                - sudo pip install awscli
         post:
                 - lein cljsbuild once
 test:
