@@ -12,7 +12,7 @@
 
   :main onyx-dashboard.system
 
-  :dependencies [[org.clojure/clojure "1.6.0"]
+  :dependencies [[org.clojure/clojure "1.7.0-beta2"]
                  [org.clojure/clojurescript "0.0-2816"]
                  [prismatic/schema "0.3.7"]
                  [com.stuartsierra/component "0.2.2"]
@@ -25,7 +25,7 @@
                  [com.cognitect/transit-cljs "0.8.205"]
                  [cljsjs/moment "2.9.0-0"]
                  [ring/ring-defaults "0.1.3"]
-                 [compojure "1.3.1"]
+                 [compojure "1.3.4"]
                  [enlive "1.1.5"]
                  [fence "0.2.0"]
                  [fipp "0.5.2"]
@@ -66,6 +66,8 @@
                                     "resources/public/js/out" 
                                     "resources/public/js/app.js" 
                                     "target"]
+  
+  :hooks  [leiningen.cljsbuild]
 
   :profiles {:dev {:source-paths ["env/dev/clj"]
 
@@ -86,7 +88,8 @@
                               :server-port 3428
                               :css-dirs ["resources/public/css"]}
 
-                   :env {:is-dev true}
+                   :env {:zookeeper-addr "127.0.0.1:2188"
+                         :is-dev true}
 
                    :cljsbuild {:builds
                                {:app
