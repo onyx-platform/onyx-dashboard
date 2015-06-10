@@ -13,7 +13,7 @@
   :main onyx-dashboard.system
 
   :dependencies [[org.clojure/clojure "1.7.0-beta2"]
-                 [org.clojure/clojurescript "0.0-2816"]
+                 [org.clojure/clojurescript "0.0-3308"]
                  [prismatic/schema "0.3.7"]
                  [com.stuartsierra/component "0.2.2"]
                  [com.taoensso/sente "1.4.1"]
@@ -41,11 +41,11 @@
                  [org.clojure/core.cache "0.6.4"]
                  [shoreleave/shoreleave-browser "0.3.0"]
                  [org.omcljs/om "0.8.8"]
-                 [ankha "0.1.5.1-479897" :exclude [om]]
+                 [ankha "0.1.5.1-479897" :exclusions [om com.cemerick/austin]]
                  [racehub/om-bootstrap "0.4.0" :exclusions [om]]
                  [prismatic/om-tools "0.3.10" :exclusions [om]]]
 
-  :plugins [[lein-cljsbuild "1.0.4"]
+  :plugins [[lein-cljsbuild "1.0.6"]
             ;[lein-version-spec "0.0.4"]
             [lein-environ "1.0.0"]]
 
@@ -71,17 +71,18 @@
 
   :profiles {:dev {:source-paths ["env/dev/clj"]
 
-                   :dependencies [[figwheel "0.2.3-SNAPSHOT"]
+                   :dependencies [[figwheel "0.3.3"]
                                   [clj-webdriver "0.6.1"]
-                                  [com.cemerick/piggieback "0.1.5"]
+                                  ;[com.cemerick/piggieback "0.2.1"]
                                   ;[weasel "0.5.0"]
                                   [leiningen "2.5.1"]]
 
                    :repl-options {:init-ns onyx-dashboard.system
                                   :timeout 90000
-                                  :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
+                                  ;:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]
+                                  }
 
-                   :plugins [[lein-figwheel "0.2.3-SNAPSHOT"]
+                   :plugins [[lein-figwheel "0.3.3"]
                              [lein-project-version "0.1.0"]]
 
                    :figwheel {:http-server-root "public"
@@ -91,7 +92,8 @@
                    :env {:zookeeper-addr "127.0.0.1:2188"
                          :is-dev true}
 
-                   :cljsbuild {:builds
+                   :cljsbuild {:test-commands {}
+                               :builds
                                {:app
                                 {:source-paths ["env/dev/cljs"]}}}}
 

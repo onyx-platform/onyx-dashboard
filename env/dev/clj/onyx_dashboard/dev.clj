@@ -1,7 +1,7 @@
 (ns onyx-dashboard.dev
   (:require [environ.core :refer [env]]
             [net.cgrand.enlive-html :refer [set-attr prepend append html]]
-            [cemerick.piggieback :as piggieback]
+            ;[cemerick.piggieback :as piggieback]
             ;[weasel.repl.websocket :as weasel]
             [leiningen.core.main :as lein]))
 
