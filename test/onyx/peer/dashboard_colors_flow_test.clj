@@ -298,6 +298,19 @@
   (webdriver/wait-until #(= 2 (count (webdriver/find-elements {:css "tr.job-entry"}))))
   (webdriver/click (second (webdriver/find-elements {:css "tr.job-entry"}))))
 
+(defn check-job-text []
+  (let [[workflow-text catalog-text lifecycles-text] 
+        (map webdriver/text 
+             (webdriver/find-elements {:css "div.ace_content"}))]
+    (is (= (clojure.string/replace workflow-text "\n" "")
+           (str workflow)))
+
+    (is (not (empty? catalog-text)))
+    (is (not (empty? lifecycles-text)))
+    
+    #_(is (= (clojure.string/replace catalog-text "\n" "")
+           (str catalog)))))
+
 (deftest load-site
   (testing "Load site and run checks"
     (run-test-fixture :chrome 
@@ -305,6 +318,7 @@
                         (webdriver/to (str "http://localhost:" 3000))
                         (load-last-deployment)
                         (load-job)
+                        (check-job-text)
 
                         (doseq [v-peer v-peers]
                           (onyx.api/shutdown-peer v-peer))
