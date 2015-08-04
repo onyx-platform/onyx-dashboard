@@ -1,6 +1,6 @@
 # onyx-dashboard
 
-A dashboard for the [Onyx](https://github.com/MichaelDrogalis/onyx) distributed computation system, version 0.6.0-RC1.
+A dashboard for the [Onyx](https://github.com/MichaelDrogalis/onyx) distributed computation system, version 0.7.0.
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MichaelDrogalis/onyx?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -14,8 +14,8 @@ A description and user guide disguised as a blog post can be found [here](http:/
 
 Version numbers will kept in sync with [Onyx]
 (https://github.com/onyx-platform/onyx). For example, to use a version
-compatible with Onyx 0.6.0, use a version fo the dashboard beginning with
-0.6.0. The fourth version number will be reserved for dashboard versioning, in
+compatible with Onyx 0.7.0, use a version fo the dashboard beginning with
+0.7.0. The fourth version number will be reserved for dashboard versioning, in
 order to provide releases out of band with Onyx.
 
 ## Development
@@ -58,7 +58,7 @@ Then run it via `java -jar target/onyx-dashboard.jar`.
 
 ## License
 
-Copyright © 2014 Lucas Bradstreet & Michael Drogalis
+Copyright © 2015 Lucas Bradstreet & Michael Drogalis
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
