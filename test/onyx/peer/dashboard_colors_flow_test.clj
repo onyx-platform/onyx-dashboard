@@ -298,6 +298,8 @@
   (webdriver/click (second (webdriver/find-elements {:css "tr.job-entry"}))))
 
 (defn check-job-text []
+  ;; remove this sleep - should perform a wait-until
+  (Thread/sleep 4000)
   (let [[workflow-text catalog-text lifecycles-text] 
         (map webdriver/text 
              (webdriver/find-elements {:css "div.ace_content"}))]
