@@ -15,7 +15,6 @@
 
     (try
       (f)
-
       (finally
         (component/stop system)
         (webdriver/quit)))))
@@ -70,7 +69,7 @@
 
 (def catalog
   [{:onyx/name :colors-in
-    :onyx/ident :core.async/read-from-chan
+    :onyx/plugin :onyx.plugin.core-async/input
     :onyx/type :input
     :onyx/medium :core.async
     :onyx/batch-size batch-size
@@ -96,7 +95,7 @@
     :onyx/batch-size batch-size}
 
    {:onyx/name :red-out
-    :onyx/ident :core.async/write-to-chan
+    :onyx/plugin :onyx.plugin.core-async/output
     :onyx/type :output
     :onyx/medium :core.async
     :onyx/batch-size batch-size
@@ -104,7 +103,7 @@
     :onyx/doc "Writes segments to a core.async channel"}
 
    {:onyx/name :blue-out
-    :onyx/ident :core.async/write-to-chan
+    :onyx/plugin :onyx.plugin.core-async/output
     :onyx/type :output
     :onyx/medium :core.async
     :onyx/batch-size batch-size
@@ -112,7 +111,7 @@
     :onyx/doc "Writes segments to a core.async channel"}
 
    {:onyx/name :green-out
-    :onyx/ident :core.async/write-to-chan
+    :onyx/plugin :onyx.plugin.core-async/output
     :onyx/type :output
     :onyx/medium :core.async
     :onyx/batch-size batch-size
