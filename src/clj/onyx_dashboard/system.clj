@@ -16,8 +16,7 @@
             [clojure.core.async :refer [<!! chan]]
             [ring.middleware.reload :as reload]
             [environ.core :refer [env]]
-            [clojure.string :refer [upper-case]]
-            [ring.adapter.jetty :refer [run-jetty]])
+            [clojure.string :refer [upper-case]])
   (:gen-class))
 
 (defn env-throw [v]
