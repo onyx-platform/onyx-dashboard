@@ -1,33 +1,35 @@
 machine:
-        java:
-                version: oraclejdk8
-        services:
-                - docker
+  java:
+    version: oraclejdk8
+  services:
+    - docker
 
 dependencies:
-        override:
-                - echo Y | lein upgrade 2.5.1:
-                    timeout: 900
-                            #- lein version-spec
-                - lein deps
-        pre:
-                - sudo pip install awscli
-        post:
-                - lein cljsbuild once
+  override:
+    - echo '{:user {:plugins [[lein-voom "0.1.0-20150822_000839-g763d315"]]}}' > ~/.lein/profiles.clj
+    - lein voom build-deps
+    - echo Y | lein upgrade 2.5.1:
+        timeout: 900
+    - lein deps
+  pre:
+    - sudo pip install awscli
+  post:
+    - lein cljsbuild once
+
 test:
-        override: 
-                - lein test:
-                    timeout: 1800
-                - lein clean && lein with-profile uberjar uberjar
-                - cp target/onyx-dashboard.jar $CIRCLE_ARTIFACTS
+  override:
+     - lein test:
+         timeout: 1800
+     - lein clean && lein with-profile uberjar uberjar
+     - cp target/onyx-dashboard.jar $CIRCLE_ARTIFACTS
 
 deployment:
-        production:
-                branch: master
-                commands:
-                        - docker build -t onyx/onyx-dashboard:$CIRCLE_SHA1 . | tee docker-build.log
-                        - docker tag $(tail -1 docker-build.log | cut -d ' ' -f 3) onyx/onyx-dashboard:latest
-                        - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
-                        - docker push onyx/onyx-dashboard:$CIRCLE_SHA1
-                        - docker push onyx/onyx-dashboard:latest
-                        - aws s3 cp target/onyx-dashboard.jar s3://onyx-releases/onyx-dashboard/onyx-dashboard-`lein project-version`.jar
+  production:
+    branch: master
+    commands:
+      - docker build -t onyx/onyx-dashboard:$CIRCLE_SHA1 . | tee docker-build.log
+      - docker tag $(tail -1 docker-build.log | cut -d ' ' -f 3) onyx/onyx-dashboard:latest
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - docker push onyx/onyx-dashboard:$CIRCLE_SHA1
+      - docker push onyx/onyx-dashboard:latest
+      - aws s3 cp target/onyx-dashboard.jar s3://onyx-releases/onyx-dashboard/onyx-dashboard-`lein project-version`.jar
