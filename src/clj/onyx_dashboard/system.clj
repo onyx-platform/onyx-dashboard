@@ -6,8 +6,6 @@
             [onyx-dashboard.http.sente :refer [sente]]
             [onyx-dashboard.http.server :refer [new-http-server]]
             [onyx.system :refer [onyx-client]]
-            [onyx.messaging.core-async]
-            [onyx.messaging.netty-tcp]
             [onyx.messaging.aeron]
             [compojure.core :refer [GET defroutes]]
             [compojure.route :refer [resources]]
