@@ -18,3 +18,4 @@ pom.xml.asc
 resources/public/js/out.js.map
 
 resources/public/js/app.js.map
+.DS_Store
