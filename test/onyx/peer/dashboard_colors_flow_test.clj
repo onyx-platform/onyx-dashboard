@@ -31,9 +31,8 @@
    {:zookeeper/address "127.0.0.1:2188"
     :onyx.peer/job-scheduler :onyx.job-scheduler/greedy
     :onyx.peer/zookeeper-timeout 60000
-    :onyx.messaging/impl :netty
+    :onyx.messaging/impl :aeron
     :onyx.messaging/peer-port-range [40200 40260]
-    :onyx.messaging/peer-ports [40199]
     :onyx.messaging/bind-addr "localhost"}})
 
 (def env-config (assoc (:env-config config) :onyx/id id))

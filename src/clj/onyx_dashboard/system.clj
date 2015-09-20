@@ -26,8 +26,7 @@
                                  v)))))
 
 (defn get-system []
-  (let [env-config {:zookeeper/address (env-throw :zookeeper-addr)
-                    :onyx.messaging/impl :core.async}]
+  (let [env-config {:zookeeper/address (env-throw :zookeeper-addr)}]
     (component/system-map
       :sente (component/using (sente) [])
       :http (component/using (new-http-server env-config) [:sente]))))
