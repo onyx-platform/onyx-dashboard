@@ -1,4 +1,4 @@
-(defproject org.onyxplatform/onyx-dashboard "0.7.4-SNAPSHOT"
+(defproject org.onyxplatform/onyx-dashboard "0.7.5-SNAPSHOT"
   :description "Dashboard for the Onyx distributed computation system"
   :url "http://github.com/lbradstreet/onyx-dashboard"
   :license {:name "Eclipse Public License"
@@ -84,6 +84,9 @@
                                   }
 
                    :plugins [[lein-figwheel "0.3.3"]
+                             [lein-set-version "0.4.1"]
+                             [lein-update-dependency "0.1.2"]
+                             [lein-pprint "1.1.1"]
                              [lein-project-version "0.1.0"]]
 
                    :figwheel {:http-server-root "public"
