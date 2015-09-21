@@ -9,7 +9,7 @@ cd "$(dirname "$0")/.."
 
 new_version=$1
 release_branch=$2
-current_version=`lein pprint :version`
+current_version=$(lein pprint :version | sed s/\"//g)
 
 grep "$current_version" README.MD || (echo "Version string $1 was not found in README" && exit 1)
 
