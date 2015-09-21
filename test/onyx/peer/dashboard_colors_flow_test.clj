@@ -288,12 +288,12 @@
     (is (= (into #{} blue) blue-expectatations))))
 
 (defn load-last-deployment []
-  (webdriver/wait-until #(not (empty? (webdriver/text "div.container"))))
+  (webdriver/wait-until #(not (empty? (webdriver/text "div.container"))) 15000)
   (webdriver/click "button#ddl-deployment")
   (webdriver/click "ul.dropdown-menu > li:last-child"))
 
 (defn load-job []
-  (webdriver/wait-until #(= 2 (count (webdriver/find-elements {:css "tr.job-entry"}))))
+  (webdriver/wait-until #(= 2 (count (webdriver/find-elements {:css "tr.job-entry"}))) 15000)
   (webdriver/click (second (webdriver/find-elements {:css "tr.job-entry"}))))
 
 (defn check-job-text []
