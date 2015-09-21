@@ -2,7 +2,7 @@
 
 A dashboard for the [Onyx](https://github.com/onyx-platform/onyx) distributed computation system, version 0.7.5.3-SNAPSHOT.
 
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MichaelDrogalis/onyx?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/onyx-platform/onyx?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 [![Circle CI](https://circleci.com/gh/onyx-platform/onyx-dashboard.svg?style=svg)](https://circleci.com/gh/onyx-platform/onyx-dashboard)
 
