@@ -1,10 +1,10 @@
 # onyx-dashboard
 
-A dashboard for the [Onyx](https://github.com/MichaelDrogalis/onyx) distributed computation system, version 0.7.5-SNAPSHOT.
+A dashboard for the [Onyx](https://github.com/onyx-platform/onyx) distributed computation system, version 0.7.5-SNAPSHOT.
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MichaelDrogalis/onyx?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[![Circle CI](https://circleci.com/gh/lbradstreet/onyx-dashboard.svg?style=svg)]
+[![Circle CI](https://circleci.com/gh/onyx-platform/onyx-dashboard.svg?style=svg)]
 
 ## Design and User Guide
 
@@ -14,7 +14,7 @@ A description and user guide disguised as a blog post can be found [here](http:/
 
 Version numbers will kept in sync with [Onyx]
 (https://github.com/onyx-platform/onyx). For example, to use a version
-compatible with Onyx 0.7.5-SNAPSHOT, use a version fo the dashboard beginning with
+compatible with Onyx 0.7.5-SNAPSHOT, use a version of the dashboard beginning with
 0.7.5-SNAPSHOT. The fourth version number will be reserved for dashboard versioning, in
 order to provide releases out of band with Onyx.
 
