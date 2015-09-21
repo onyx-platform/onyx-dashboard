@@ -4,7 +4,7 @@ A dashboard for the [Onyx](https://github.com/onyx-platform/onyx) distributed co
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MichaelDrogalis/onyx?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[![Circle CI](https://circleci.com/gh/onyx-platform/onyx-dashboard.svg?style=svg)]
+[![Circle CI](https://circleci.com/gh/onyx-platform/onyx-dashboard.svg?style=svg)](https://circleci.com/gh/onyx-platform/onyx-dashboard)
 
 ## Design and User Guide
 
