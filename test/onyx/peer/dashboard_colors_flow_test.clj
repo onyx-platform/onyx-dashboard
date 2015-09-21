@@ -9,7 +9,7 @@
 
 (defn run-test-fixture
   [browser-type f]
-  (let [system (component/start (sys/get-system))]
+  (let [system (component/start (sys/get-system "peer-config.edn"))]
     (webdriver/set-driver! {:browser browser-type})
     (webdriver/implicit-wait 20000)
 
@@ -26,14 +26,7 @@
    {:zookeeper/address "127.0.0.1:2188"
     :zookeeper/server? true
     :zookeeper.server/port 2188}
-
-   :peer-config
-   {:zookeeper/address "127.0.0.1:2188"
-    :onyx.peer/job-scheduler :onyx.job-scheduler/greedy
-    :onyx.peer/zookeeper-timeout 60000
-    :onyx.messaging/impl :aeron
-    :onyx.messaging/peer-port-range [40200 40260]
-    :onyx.messaging/bind-addr "localhost"}})
+   :peer-config (read-string (slurp "peer-config.edn"))})
 
 (def env-config (assoc (:env-config config) :onyx/id id))
 
@@ -288,12 +281,12 @@
     (is (= (into #{} blue) blue-expectatations))))
 
 (defn load-last-deployment []
-  (webdriver/wait-until #(not (empty? (webdriver/text "div.container"))) 15000)
+  (webdriver/wait-until #(not (empty? (webdriver/text "div.container"))))
   (webdriver/click "button#ddl-deployment")
   (webdriver/click "ul.dropdown-menu > li:last-child"))
 
 (defn load-job []
-  (webdriver/wait-until #(= 2 (count (webdriver/find-elements {:css "tr.job-entry"}))) 15000)
+  (webdriver/wait-until #(= 2 (count (webdriver/find-elements {:css "tr.job-entry"}))))
   (webdriver/click (second (webdriver/find-elements {:css "tr.job-entry"}))))
 
 (defn check-job-text []
@@ -326,4 +319,3 @@
                         (onyx.api/shutdown-peer-group peer-group)
 
                         (onyx.api/shutdown-env env)))))
-

@@ -20,10 +20,10 @@ order to provide releases out of band with Onyx.
 
 ## Development
 
-Setup an environment variable for `ZOOKEEPER_ADDR` in your lein user profiles.clj like so:
+Setup an environment variable for `PEER_CONFIG` in your lein user profiles.clj like so:
 
 ```clojure
-{:user {:env {:zookeeper-addr "54.44.229.123:2181,54.44.240.52:2181"}}}
+{:user {:env {:peer-config "path-to-peerconfig.edn"}}}
 ```
 
 or by setting the environment variable in your shell.
@@ -43,9 +43,19 @@ Then point your browser at http://localhost:3000/
 
 ## Deployment
 
-Configure an environment variable `ZOOKEEPER_ADDR`.
+Configure an environment variable `PEER_CONFIG`.
 
-e.g. `ZOOKEEPER_ADDR="54.44.229.123:2181,54.44.240.52:2181"` 
+e.g. `PEER_CONFIG="peer-config.edn"` 
+
+Where peer-config.edn contains the peer-config used by your peers e.g.
+
+```
+{:zookeeper/address "127.0.0.1:2188"
+ :onyx.peer/job-scheduler :onyx.job-scheduler/greedy
+ :onyx.messaging/impl :aeron
+ :onyx.messaging/peer-port-range [40200 40260]
+ :onyx.messaging/bind-addr "localhost"}
+```
 
 Then run the Onyx Dashboard in one of several ways:
 

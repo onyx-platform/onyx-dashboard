@@ -23,11 +23,12 @@
                                  (clojure.string/replace (upper-case (name v)) "-" "_")
                                  v)))))
 
-(defn get-system []
-  (let [env-config {:zookeeper/address (env-throw :zookeeper-addr)}]
+(defn get-system [& [peer-config]]
+  (let [peer-config-filename (or peer-config (env-throw :peer-config))
+        peer-config (read-string (slurp peer-config-filename))]
     (component/system-map
       :sente (component/using (sente) [])
-      :http (component/using (new-http-server env-config) [:sente]))))
+      :http (component/using (new-http-server peer-config) [:sente]))))
 
 (defn -main [& [port]]
   (component/start (get-system))
