@@ -54,6 +54,19 @@
    [_]
    (let [task-mapping (get metrics (:id job))]
      (dom/div
+       (p/panel {:header "1 second window"}
+                (t/table {:striped? true :bordered? false :condensed? true :hover? true}
+                         (dom/thead
+                           (dom/tr
+                             (dom/th "Task")
+                             (dom/th "Throughput")))
+                         (dom/tbody
+                           (for [task (keys task-mapping)]
+                             (let [throughput (vals (get (:throughput (get task-mapping task)) "1s"))]
+                               (dom/tr {:class "task-entry"}
+                                       (dom/td (name task))
+                                       (dom/td (apply + (if (seq throughput) throughput [0])) " segs")))))))
+
       (p/panel {:header "10 second window"}
                (t/table {:striped? true :bordered? false :condensed? true :hover? true}
                         (dom/thead
@@ -66,9 +79,9 @@
                         (dom/tbody
                          (for [task (keys task-mapping)]
                            (let [throughput (vals (get (:throughput (get task-mapping task)) "10s"))
-                                 latency-50 (vals (get (get (:latency (get task-mapping task)) "10s") 0.5))
-                                 latency-90 (vals (get (get (:latency (get task-mapping task)) "10s") 0.90))
-                                 latency-99 (vals (get (get (:latency (get task-mapping task)) "10s") 0.99))
+                                 latency-50 (vals (get (get (:batch-latency (get task-mapping task)) "10s") 0.5))
+                                 latency-90 (vals (get (get (:batch-latency (get task-mapping task)) "10s") 0.90))
+                                 latency-99 (vals (get (get (:batch-latency (get task-mapping task)) "10s") 0.99))
                                  peers (count latency-50)]
                              (dom/tr {:class "task-entry"}
                                      (dom/td (name task))
@@ -76,50 +89,19 @@
                                      (dom/td (.toFixed (/ (apply + (if (seq latency-50) latency-50 [0])) peers) 1) " ms")
                                      (dom/td (.toFixed (/ (apply + (if (seq latency-90) latency-90 [0])) peers) 1) " ms")
                                      (dom/td (.toFixed (/ (apply + (if (seq latency-99) latency-99 [0])) peers) 1) " ms")))))))
-      (p/panel {:header "30 second window"}
-               (t/table {:striped? true :bordered? false :condensed? true :hover? true}
-                        (dom/thead
-                         (dom/tr
-                          (dom/th "Task")
-                          (dom/th "Throughput")
-                          (dom/th "Latency 50%")
-                          (dom/th "Latency 90%")
-                          (dom/th "Latency 99%")))
-                        (dom/tbody
-                         (for [task (keys task-mapping)]
-                           (let [throughput (vals (get (:throughput (get task-mapping task)) "30s"))
-                                 latency-50 (vals (get (get (:latency (get task-mapping task)) "30s") 0.5))
-                                 latency-90 (vals (get (get (:latency (get task-mapping task)) "30s") 0.90))
-                                 latency-99 (vals (get (get (:latency (get task-mapping task)) "30s") 0.99))
-                                 peers (count latency-50)]
-                             (dom/tr {:class "task-entry"}
-                                     (dom/td (name task))
-                                     (dom/td (apply + (if (seq throughput) throughput [0])) " segs")
-                                     (dom/td (.toFixed (/ (apply + (if (seq latency-50) latency-50 [0])) peers) 1) " ms")
-                                     (dom/td (.toFixed (/ (apply + (if (seq latency-90) latency-90 [0])) peers) 1) " ms")
-                                     (dom/td (.toFixed (/ (apply + (if (seq latency-99) latency-99 [0])) peers) 1) " ms")))))))
+      
       (p/panel {:header "60 second window"}
                (t/table {:striped? true :bordered? false :condensed? true :hover? true}
                         (dom/thead
                          (dom/tr
                           (dom/th "Task")
-                          (dom/th "Throughput")
-                          (dom/th "Latency 50%")
-                          (dom/th "Latency 90%")
-                          (dom/th "Latency 99%")))
+                          (dom/th "Throughput")))
                         (dom/tbody
                          (for [task (keys task-mapping)]
-                           (let [throughput (vals (get (:throughput (get task-mapping task)) "60s"))
-                                 latency-50 (vals (get (get (:latency (get task-mapping task)) "60s") 0.5))
-                                 latency-90 (vals (get (get (:latency (get task-mapping task)) "60s") 0.90))
-                                 latency-99 (vals (get (get (:latency (get task-mapping task)) "60s") 0.99))
-                                 peers (count latency-50)]
+                           (let [throughput (vals (get (:throughput (get task-mapping task)) "60s"))]
                              (dom/tr {:class "task-entry"}
                                      (dom/td (name task))
-                                     (dom/td (apply + (if (seq throughput) throughput [0])) " segs")
-                                     (dom/td (.toFixed (/ (apply + (if (seq latency-50) latency-50 [0])) peers) 1) " ms")
-                                     (dom/td (.toFixed (/ (apply + (if (seq latency-90) latency-90 [0])) peers) 1) " ms")
-                                     (dom/td (.toFixed (/ (apply + (if (seq latency-99) latency-99 [0])) peers) 1) " ms")))))))))))
+                                     (dom/td (apply + (if (seq throughput) throughput [0])) " segs")))))))))))
 
 (defcomponent job-management [{:keys [id status] :as job} owner]
   (render [_]

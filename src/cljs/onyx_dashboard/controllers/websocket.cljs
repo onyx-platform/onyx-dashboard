@@ -114,7 +114,7 @@
 (defmethod msg-controller :metrics/event [[_ msg] state]
   (cond (and (= (:metric msg) :throughput))
         (assoc-in state [:metrics (:job-id msg) (:task-name msg) (:metric msg) (:window msg) (:peer-id msg)] (:value msg))
-        (and (= (:metric msg) :latency))
+        (and (= (:metric msg) :batch-latency))
         (assoc-in state [:metrics (:job-id msg) (:task-name msg) (:metric msg) (:window msg) (:quantile msg) (:peer-id msg)] (:value msg))
         :else state))
 
