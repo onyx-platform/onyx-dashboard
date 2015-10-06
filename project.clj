@@ -1,4 +1,4 @@
-(defproject org.onyxplatform/onyx-dashboard "0.7.5.3-SNAPSHOT"
+(defproject org.onyxplatform/onyx-dashboard "0.7.10-SNAPSHOT"
   :description "Dashboard for the Onyx distributed computation system"
   :url "http://github.com/lbradstreet/onyx-dashboard"
   :license {:name "Eclipse Public License"
@@ -17,10 +17,11 @@
                  [prismatic/schema "0.4.0"]
                  [com.stuartsierra/component "0.2.3"]
                  [com.taoensso/sente "1.5.0" :exclusions [com.taoensso/timbre]]
+                 ;[com.taoensso/timbre "4.1.2"]
                  [cljs-uuid "0.0.4"]
                  [ring "1.3.2"]
                  ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
-                 [org.onyxplatform/onyx "0.7.11-20150930_063434-g76b6f9a"]
+                 [org.onyxplatform/onyx "0.7.10"]
                  [com.cognitect/transit-clj "0.8.275"]
                  [com.cognitect/transit-cljs "0.8.220"]
                  [cljsjs/moment "2.9.0-0"]
@@ -93,7 +94,7 @@
                               :server-port 3428
                               :css-dirs ["resources/public/css"]}
 
-                   :env {:zookeeper-addr "127.0.0.1:2188"
+                   :env {:peer-config "peer-config.edn"
                          :is-dev true}
 
                    :cljsbuild {:test-commands {}
