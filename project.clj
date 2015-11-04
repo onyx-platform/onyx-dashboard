@@ -16,7 +16,7 @@
                  [org.clojure/clojurescript "0.0-3308"]
                  [prismatic/schema "0.4.0"]
                  [com.stuartsierra/component "0.2.3"]
-                 [com.taoensso/sente "1.5.0" :exclusions [com.taoensso/timbre]]
+                 [com.taoensso/sente "1.5.0" :exclusions [com.taoensso/timbre com.taoensso/encore]]
                  ;[com.taoensso/timbre "4.1.2"]
                  [cljs-uuid "0.0.4"]
                  [ring "1.3.2"]
