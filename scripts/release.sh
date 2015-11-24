@@ -9,20 +9,14 @@ cd "$(dirname "$0")/.."
 
 new_version=$1
 release_branch=$2
-current_version=$(lein pprint :version | sed s/\"//g)
-
-if [[ "$new_version" == *.0 ]]
-then
-    new_version="$new_version.0"
-fi
+current_version=`lein pprint :version`
 
 # Update to release version.
 git checkout master
 lein set-version $new_version
-sed -i.bak "s/$current_version/$new_version/g" README.md
-git add README.md project.clj
+sed -i '' "s/$current_version/$new_version/g" README.md
 
-git commit -m "Release version $new_version."
+git commit -am "Release version $new_version."
 git tag $new_version
 git push origin $new_version
 git push origin master
@@ -35,9 +29,5 @@ git push origin $release_branch
 # Prepare next release cycle.
 git checkout master
 lein set-version
-
-next_release_version=$(lein pprint :version | sed s/\"//g)
-sed -i '' "s/$new_version/$next_release_version/g" README.md
-
 git commit -m "Prepare for next release cycle." project.clj README.md
 git push origin master
