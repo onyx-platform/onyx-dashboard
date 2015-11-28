@@ -23,9 +23,9 @@
 
 (def config 
   {:env-config
-   {:zookeeper/address "127.0.0.1:2181"
+   {:zookeeper/address "127.0.0.1:2188"
     :zookeeper/server? true
-    :zookeeper.server/port 2181}
+    :zookeeper.server/port 2188}
    :peer-config (read-string (slurp "peer-config.edn"))})
 
 (def env-config (assoc (:env-config config) :onyx/id id))
