@@ -52,7 +52,7 @@
 (defcomponent deployment-peers [deployment owner]
   (render [_] 
           (p/panel
-            {:header (om/build section-header-collapsible {:text "Deployment Peers"} {})
+            {:header (om/build section-header-collapsible {:text (str "Cluster Peers (" (count (:peers deployment)) ")")} {})
              :collapsible? true
              :bs-style "primary"}
             (if (and (:id deployment) 

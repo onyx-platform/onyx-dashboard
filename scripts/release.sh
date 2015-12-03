@@ -18,6 +18,16 @@ new_version=$1
 version_type=$(echo "$1"|sed s/".*-"//g)
 version_base=$(echo "$1"|sed s/"-.*"//g)
 
+biggest_tag=$(git tag|tail -1)
+if [[ $biggest_tag > $version_base || $biggest_tag == $version_base && $version_type != "" ]]; then
+	echo $version_base" version base is smaller than greatest tag" $biggest_tag
+	echo "enter Y to override and release anyway."
+	read answer
+	if [[ $answer != "Y" ]]; then
+		exit 1
+	fi
+  fi
+
 release_branch=$2
 current_version=`lein pprint :version | sed s/\"//g`
 
@@ -57,11 +67,14 @@ git push origin master
 
 # Merge artifacts into release branch.
 git checkout -b $release_branch || git checkout $release_branch
+git pull || true
 git merge -m "Merge branch 'master' into $release_branch" master -X theirs
 git push -u origin $release_branch
 
 # Prepare next release cycle.
 git checkout master
 lein set-version
+snapshot_version=`lein pprint :version | sed s/\"//g`
+sed -i.bak "s/$new_plugin_version/$snapshot_version/g" README.md
 git commit -m "Prepare for next release cycle." project.clj README.md
 git push origin master
