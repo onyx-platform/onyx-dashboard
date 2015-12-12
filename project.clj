@@ -21,7 +21,7 @@
                  [cljs-uuid "0.0.4"]
                  [ring "1.3.2"]
                  ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
-                 [org.onyxplatform/onyx "0.8.3-20151211_164939-g9a500cf"]
+                 [org.onyxplatform/onyx "0.8.3-20151212_014953-g36da75c"]
                  [com.cognitect/transit-clj "0.8.275"]
                  [com.cognitect/transit-cljs "0.8.220"]
                  [cljsjs/moment "2.9.0-0"]
