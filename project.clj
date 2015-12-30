@@ -14,6 +14,7 @@
 
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "0.0-3308"]
+                 [org.clojure/core.async "0.2.374"]
                  [prismatic/schema "0.4.0"]
                  [com.stuartsierra/component "0.2.3"]
                  [com.taoensso/sente "1.5.0" :exclusions [com.taoensso/timbre com.taoensso/encore]]
