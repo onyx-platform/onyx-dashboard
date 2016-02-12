@@ -1,4 +1,4 @@
-(defproject org.onyxplatform/onyx-dashboard "0.8.10.0-alpha2"
+(defproject org.onyxplatform/onyx-dashboard "0.8.10.0"
   :description "Dashboard for the Onyx distributed computation system"
   :url "http://github.com/lbradstreet/onyx-dashboard"
   :license {:name "Eclipse Public License"
@@ -22,7 +22,7 @@
                  [cljs-uuid "0.0.4"]
                  [ring "1.3.2"]
                  ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
-                 [org.onyxplatform/onyx "0.8.10-alpha2"]
+                 [org.onyxplatform/onyx "0.8.10"]
                  [com.cognitect/transit-clj "0.8.275"]
                  [com.cognitect/transit-cljs "0.8.220"]
                  [cljsjs/moment "2.9.0-0"]
