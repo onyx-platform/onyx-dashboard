@@ -28,9 +28,9 @@
     :zookeeper.server/port 2188}
    :peer-config (read-string (slurp "peer-config.edn"))})
 
-(def env-config (assoc (:env-config config) :onyx/id id))
+(def env-config (assoc (:env-config config) :onyx/tenancy-id id))
 
-(def peer-config (assoc (:peer-config config) :onyx/id id))
+(def peer-config (assoc (:peer-config config) :onyx/tenancy-id id))
 
 (def env (onyx.api/start-env env-config))
 

@@ -11,10 +11,10 @@
             [taoensso.timbre :as timbre :refer [info error spy]]))
 
 (defn kill-job [peer-config deployment-id {:keys [id] :as job-info}]
-  (onyx.api/kill-job (assoc peer-config :onyx/id deployment-id) id))
+  (onyx.api/kill-job (assoc peer-config :onyx/tenancy-id deployment-id) id))
 
 (defn start-job [peer-config deployment-id {:keys [catalog workflow task-scheduler] :as job-info}]
-  (onyx.api/submit-job (assoc peer-config :onyx/id deployment-id)
+  (onyx.api/submit-job (assoc peer-config :onyx/tenancy-id deployment-id)
                        {:catalog catalog
                         :workflow workflow
                         :task-scheduler task-scheduler}))
@@ -189,12 +189,12 @@
     (let [subscription (component/start (map->LogSubscription {:peer-config peer-config}))
           f-check-pulses (partial deployment-pulses 
                                   (zk/connect (:zookeeper/address peer-config)) 
-                                  (:onyx/id peer-config))]
+                                  (:onyx/tenancy-id peer-config))]
       (assoc component 
              :subscription subscription
              :tracking-fut (future
                              (track-deployment (partial send-fn! user-id)
-                                               (:onyx/id peer-config)
+                                               (:onyx/tenancy-id peer-config)
                                                (:subscription subscription)
                                                (:subscription-ch subscription)
                                                f-check-pulses
@@ -227,6 +227,6 @@
                (stop-tracking! user-id)
                (assoc user-id (component/start 
                                 (new-track-deployment-manager send-fn! 
-                                                              (assoc peer-config :onyx/id deployment-id)
+                                                              (assoc peer-config :onyx/tenancy-id deployment-id)
                                                               user-id
                                                               tracking-id)))))))
