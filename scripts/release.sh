@@ -80,5 +80,5 @@ git checkout master
 lein set-version
 snapshot_version=`lein pprint :version | sed s/\"//g`
 sed -i.bak "s/$new_plugin_version/$snapshot_version/g" README.md
-git commit -m "Prepare for next release cycle." project.clj README.md
+git commit -m "Prepare for next release cycle." project.clj README.md RELEASES.MD
 git push origin master
