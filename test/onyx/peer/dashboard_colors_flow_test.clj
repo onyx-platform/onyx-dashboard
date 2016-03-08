@@ -7,9 +7,13 @@
             [onyx.plugin.core-async :refer [take-segments!]]
             [onyx.api]))
 
+(def id (java.util.UUID/randomUUID))
+
 (defn run-test-fixture
   [browser-type f]
-  (let [system (component/start (sys/get-system "peer-config.edn"))]
+  (let [system (component/start (sys/get-system "127.0.0.1:2188" 
+                                                (str id)
+                                                "onyx.job-scheduler/greedy"))]
     (webdriver/set-driver! {:browser browser-type})
     (webdriver/implicit-wait 20000)
 
@@ -19,14 +23,15 @@
         (component/stop system)
         (webdriver/quit)))))
 
-(def id (java.util.UUID/randomUUID))
-
 (def config 
-  {:env-config
-   {:zookeeper/address "127.0.0.1:2188"
-    :zookeeper/server? true
-    :zookeeper.server/port 2188}
-   :peer-config (read-string (slurp "peer-config.edn"))})
+  {:env-config {:zookeeper/address "127.0.0.1:2188"
+                :zookeeper/server? true
+                :zookeeper.server/port 2188}
+   :peer-config {:zookeeper/address "127.0.0.1:2188"
+                 :onyx.peer/job-scheduler :onyx.job-scheduler/greedy
+                 :onyx.messaging/impl :aeron
+                 :onyx.messaging/peer-port 40200
+                 :onyx.messaging/bind-addr "localhost"}})
 
 (def env-config (assoc (:env-config config) :onyx/tenancy-id id))
 
@@ -295,11 +300,10 @@
     (is (= (clojure.string/replace workflow-text "\n" "")
            (str workflow)))
 
+    (Thread/sleep 100000)
+
     (is (not (empty? catalog-text)))
-    (is (not (empty? lifecycles-text)))
-    
-    #_(is (= (clojure.string/replace catalog-text "\n" "")
-           (str catalog)))))
+    (is (not (empty? lifecycles-text)))))
 
 (deftest load-site
   (testing "Load site and run checks"

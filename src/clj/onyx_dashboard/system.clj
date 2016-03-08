@@ -14,23 +14,25 @@
             [clojure.core.async :refer [<!! chan]]
             [ring.middleware.reload :as reload]
             [environ.core :refer [env]]
+            [onyx.static.validation :refer [validate-peer-config]]
             [clojure.string :refer [upper-case]])
   (:gen-class))
 
-(defn env-throw [v]
-  (or (env v)
-      (throw (Exception. (format "Please set %s environment variable via shell, or via env map %s" 
-                                 (clojure.string/replace (upper-case (name v)) "-" "_")
-                                 v)))))
+(defn get-system 
+  ([zookeeper-addr onyx-id job-scheduler]
+   (get-system {:zookeeper/address zookeeper-addr
+                :onyx.peer/job-scheduler (keyword job-scheduler)
+                :onyx.messaging/impl :aeron
+                :onyx/tenancy-id onyx-id
+                ;; Doesn't matter for the dashboard
+                :onyx.messaging/bind-addr "localhost"}))
+  ([peer-config]
+   (validate-peer-config peer-config)
+   (component/system-map
+     :sente (component/using (sente) [])
+     :http (component/using (new-http-server peer-config) [:sente]))))
 
-(defn get-system [& [peer-config]]
-  (let [peer-config-filename (or peer-config (env-throw :peer-config))
-        peer-config (read-string (slurp peer-config-filename))]
-    (component/system-map
-      :sente (component/using (sente) [])
-      :http (component/using (new-http-server peer-config) [:sente]))))
-
-(defn -main [& [port]]
-  (component/start (get-system))
+(defn -main [zookeeper-addr onyx-id job-scheduler]
+  (component/start (get-system zookeeper-addr onyx-id job-scheduler))
   ;; block forever
   (<!! (chan)))

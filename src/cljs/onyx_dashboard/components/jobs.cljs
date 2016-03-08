@@ -162,7 +162,7 @@
           (let [{:keys [pretty-catalog pretty-workflow pretty-flow-conditions]} job]
             (dom/div
              (om/build job-overview-panel job)
-             (om/build task-panel job {})
+             ;(om/build task-panel job {})
              (p/panel
               {:header (om/build section-header-collapsible {:text "Workflow"} {})
                :collapsible? true
@@ -182,8 +182,8 @@
                  :bs-style "primary"}
                 (om/build clojure-block {:input pretty-flow-conditions})))
 
-             (p/panel
-              {:header (om/build section-header-collapsible {:text "Metrics"} {})
-               :collapsible? true
-               :bs-style "primary"}
-              (om/build metrics-table data))))))
+             (comment (p/panel
+                        {:header (om/build section-header-collapsible {:text "Metrics"} {})
+                         :collapsible? true
+                         :bs-style "primary"}
+                        (om/build metrics-table data)))))))
