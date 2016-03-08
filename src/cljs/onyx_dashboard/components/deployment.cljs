@@ -64,7 +64,7 @@
   (mapv (fn [entry]
           (-> entry 
               (update-in [:onyx/name] task-rename)
-              (select-keys [:onyx/name :onyx/type :onyx/ident 
+              (select-keys [:onyx/name :onyx/type :onyx/tenancy-ident 
                             :onyx/medium :onyx/consumption 
                             :onyx/batch-size]))) 
           catalog))
