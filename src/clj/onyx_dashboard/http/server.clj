@@ -89,7 +89,8 @@
             tracking (atom {})
             event-handler-fut (start-event-handler sente peer-config deployments tracking)
             handler (ring.middleware.defaults/wrap-defaults routes ring-defaults-config)
-            server (http-kit-server/run-server handler {:port 3000})
+            port (Integer. (or (System/getenv "PORT") "3000"))
+            server (http-kit-server/run-server handler {:port port})
             uri (format "http://localhost:%s/" (:local-port (meta server)))
             refresh-fut (future (od/refresh-deployments-watch send-f 
                                                               (zk/connect (:zookeeper/address peer-config))
