@@ -108,10 +108,12 @@
                        :env {:production true}
                        :omit-source true
                        :aot :all
-                       :cljsbuild {:builds 
-                                   {:uberjar {:source-paths ["src/cljs" "env/prod/cljs"]
-                                              :compiler {:output-to "resources/public/js/app.js"
-                                                         :output-dir "resources/public/js/advanced"
-                                                         :source-map "resources/public/js/app.js.map"
-                                                         :optimizations :advanced
-                                                         :pretty-print false}}}}}})
+                       :cljsbuild ^:replace
+                       {:builds
+                        {:uberjar {:source-paths ["src/cljs" "env/prod/cljs"]
+                                   :compiler {:output-to "resources/public/js/app.js"
+                                              :output-dir "resources/public/js/advanced"
+                                              :source-map "resources/public/js/app.js.map"
+                                              :main onyx-dashboard.dev
+                                              :optimizations :advanced
+                                              :pretty-print false}}}}}})
