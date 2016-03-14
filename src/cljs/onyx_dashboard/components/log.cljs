@@ -38,9 +38,9 @@
 
 (defcomponent log-entry-modal [log-entry owner {:keys [entry-ch]}]
   (render [_]
+          (.log js/console "log entry" (str log-entry))
           (md/modal {:header (dom/h4 "Log Entry " (:message-id log-entry))
-                     :footer (dom/div (b/button {:on-click (fn [e]
-                                                             (put! entry-ch {:id nil}))} 
+                     :footer (dom/div (b/button {:on-click (fn [e] (put! entry-ch {}))} 
                                                 "Close"))
                      :visible? true}
                     (t/table {:striped? false :bordered? false :condensed? true :hover? false}
@@ -62,21 +62,20 @@
   (or (= job-id (:job args))
       (= job-id (:id args))))
 
-
-
-(defcomponent log-entries-pager [{:keys [job-filter entries] :as log} owner]
+(defcomponent log-entries-pager [{:keys [job-filter replica-states] :as log} owner]
   (init-state [_]
               {:entry-index nil
                :visible-entry nil
                :entry-ch (chan)})
   (will-mount [_]
               (go-loop []
-                       (let [entry (:id (<! (om/get-state owner :entry-ch)))]
-                         (om/set-state! owner :visible-entry entry))
+                       (let [message-id (:id (<! (om/get-state owner :entry-ch)))]
+                         (om/set-state! owner :visible-entry message-id))
                        (recur)))
   (render-state [_ {:keys [entry-index visible-entry entry-ch]}]
-                (let [filtered-entries (vec (cond->> (vals entries)
-                                              job-filter (filter (partial entry-about-job? job-filter))
+                (let [filtered-entries (vec (cond->> (vals replica-states)
+                                              true (map :entry)
+                                              job-filter (filter #(entry-about-job? job-filter %))
                                               true (sort-by :message-id)))] 
                   (p/panel {:header (om/build section-header-collapsible 
                                               {:text (str "Raw Cluster Activity" 
@@ -111,7 +110,7 @@
                                (dom/div
 
                                  (if visible-entry 
-                                   (om/build log-entry-modal (entries visible-entry) {:opts {:entry-ch entry-ch}}))
+                                   (om/build log-entry-modal (:entry (replica-states visible-entry)) {:opts {:entry-ch entry-ch}}))
 
 
                                  (dom/div

@@ -1,5 +1,6 @@
 (ns onyx-dashboard.controllers.websocket
-  (:require [clojure.set :refer [union]]))
+  (:require [clojure.set :refer [union]]
+	    [timothypratley.patchin :as p]))
 
 (defmulti msg-controller (fn [[type _] _] type))
 
@@ -7,103 +8,49 @@
   [[_ msg] state]
   (assoc-in state [:deployments] msg))
 
-(defn is-tracking? [msg state]
-  (= (:tracking-id msg)
+(defn is-tracking? [tracking-id state]
+  (= tracking-id
      (get-in state [:deployment :tracking-id])))
 
 (defmethod msg-controller :deployment/up-to-date 
   [[_ {:keys [tracking-id last-id] :as msg}] state]
-  (if (is-tracking? msg state) 
+  (if (is-tracking? tracking-id state) 
     (assoc-in state [:deployment :up-to-date?] true)
     state))
 
 (defmethod msg-controller :deployment/submitted-job 
-  [[_ {:keys [id] :as msg}] state]
-  (if (is-tracking? msg state)
-    (assoc-in state [:deployment :jobs id] (assoc msg :status :submitted)) 
+  [[_ {:keys [tracking-id job] :as msg}] state]
+  (if (is-tracking? tracking-id state)
+    (assoc-in state [:deployment :jobs (:id job)] job) 
     state))
-
-(defmethod msg-controller :deployment/completed-job 
-  [[_ {:keys [id] :as msg}] state]
-  (if (and (is-tracking? msg state) id)
-    (assoc-in state [:deployment :jobs id :status] :completed)
-    state))
-
-(defmethod msg-controller :job/peer-assigned 
-  [[_ {:keys [peer-id task job-id] :as msg}] state]
-  ;(println "Peer assigned " msg)
-  (if (is-tracking? msg state)
-    (assoc-in state [:deployment :jobs job-id :tasks peer-id] task)
-    state))
-
-(defmethod msg-controller :deployment/peer-joined 
-  [[_ {:keys [id] :as msg}] state]
-  ;(println "Peer joined " msg)
-  (if (is-tracking? msg state)
-    (update-in state [:deployment :peers] union #{id}) 
-    state))
-
-(defmethod msg-controller :deployment/peer-notify-joined-accepted 
-  [[_ {:keys [id] :as msg}] state]
-  ;(println "Peer immediate notify joined " msg)
-  (if (is-tracking? msg state)
-    (update-in state [:deployment :peers] union #{id}) 
-    state))
-
-(defn remove-dead-peer [jobs peer-id]
-  (zipmap (keys jobs) 
-          (map (fn [job-info]
-                 (update-in job-info [:tasks] dissoc peer-id))
-               (vals jobs))))
 
 (defmethod msg-controller :deployment/log-replay-crash 
-  [[_ {:keys [id] :as msg}] state]
+  [[_ {:keys [tracking-id] :as msg}] state]
   ;(println "Log replay crashed" msg)
-  (if (is-tracking? msg state)
+  (if (is-tracking? tracking-id state)
     (assoc-in state [:deployment :status] {:status :crashed :error (:error msg)})
     state))
 
-(defmethod msg-controller :deployment/peer-left 
-  [[_ {:keys [id] :as msg}] state]
-  ;(println "Peer left" msg)
-  (if (is-tracking? msg state)
-    (-> state 
-        (update-in [:deployment :peers] disj id)
-        (update-in [:deployment :jobs] remove-dead-peer id)) 
-    state))
-
 (defmethod msg-controller :deployment/kill-job 
-  [[_ {:keys [id] :as msg}] state]
-  ;; Managed to create a kill-job entry with a nil job. Should fix this upstream
-  ;; {:entry {:args {:job nil}, :fn :kill-job, :message-id 63, :created-at 1423218732944}}}
-  (if (and (is-tracking? msg state) id)
-    (assoc-in state [:deployment :jobs id :status] :killed)
+  [[_ {:keys [id tracking-id] :as msg}] state]
+  (if (is-tracking? tracking-id state)
+    state
+    ;(assoc-in state [:deployment :jobs id :status] :killed)
     state))
 
-(defn update-statuses [state job-ids status]
-  (reduce (fn [st job-id]
-            (assoc-in state [:deployment :jobs job-id :status] status))
-          state
-          job-ids))
-
-(defmethod msg-controller :deployment/job-statuses 
-  [[_ {:keys [finished-jobs incomplete-jobs] :as msg}] state]
-  (if (is-tracking? msg state)
-    (-> state
-        (update-statuses finished-jobs :finished)
-        (update-statuses incomplete-jobs :incomplete))
-    state))
-
-(defmethod msg-controller :deployment/log-entry [[_ msg] state]
-  (if (is-tracking? msg state)
+(defmethod msg-controller :deployment/log-entry [[_ {:keys [tracking-id entry diff]}] state]
+  (if (is-tracking? tracking-id state)
     (update-in state 
                [:deployment] 
                (fn [deployment]
-                 (-> deployment
-                     (assoc :up-to-date? false)
-                     (assoc :up? true)
-                     (update-in [:message-id-max] max (:message-id msg))
-                     (assoc-in [:entries (:message-id msg)] (dissoc msg :tracking-id)))))
+                 (let [previous-replica-state (get-in deployment [:replica-states (:message-id-max deployment)] {})] 
+                   (-> deployment
+                       (assoc :up-to-date? false)
+                       (assoc :up? true)
+                       (update :message-id-max max (:message-id entry))
+                       (assoc-in [:replica-states (:message-id entry)] {:entry entry 
+                                                                        :diff diff 
+                                                                        :replica (p/patch previous-replica-state diff)})))))
     state))
 
 (defmethod msg-controller :deployment/no-pulse [[_ msg] state]
@@ -111,12 +58,12 @@
     (assoc-in state [:deployment :up?] false)
     state))
 
-(defmethod msg-controller :metrics/event [[_ msg] state]
-  (cond (and (= (:metric msg) :throughput))
-        (assoc-in state [:metrics (:job-id msg) (:task-name msg) (:metric msg) (:window msg) (:peer-id msg)] (:value msg))
-        (and (= (:metric msg) :batch-latency))
-        (assoc-in state [:metrics (:job-id msg) (:task-name msg) (:metric msg) (:window msg) (:quantile msg) (:peer-id msg)] (:value msg))
-        :else state))
+; (defmethod msg-controller :metrics/event [[_ msg] state]
+;   (cond (and (= (:metric msg) :throughput))
+;         (assoc-in state [:metrics (:job-id msg) (:task-name msg) (:metric msg) (:window msg) (:peer-id msg)] (:value msg))
+;         (and (= (:metric msg) :batch-latency))
+;         (assoc-in state [:metrics (:job-id msg) (:task-name msg) (:metric msg) (:window msg) (:quantile msg) (:peer-id msg)] (:value msg))
+;         :else state))
 
 (defmethod msg-controller :default [[type msg] state]
   (println "Unhandled msg type:" type "msg:" msg)

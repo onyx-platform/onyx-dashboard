@@ -7,22 +7,25 @@
             [om-bootstrap.table :as t]
             [om-bootstrap.grid :as g]
             [shoreleave.browser.blob :as blob]
+            [lib-onyx.replica-query :as rq]
             [onyx-dashboard.components.ui-elements :refer [section-header-collapsible]]
+            [onyx-dashboard.state-query :as sq]
             [cljs.core.async :as async :refer [put!]]
             [cljsjs.moment]
             [cljs.core.async :as async :refer [<! >! put! chan]])
   (:require-macros [cljs.core.async.macros :as asyncm :refer [go-loop]]))
 
-(defcomponent peer-table [peers owner]
+(defcomponent peer-table [host-peers owner]
   (render [_]
-          (if (empty? peers) 
+          (if (empty? host-peers) 
             (dom/div "No peers are currently running")
             (t/table {:striped? true :bordered? false :condensed? true :hover? true}
                      (dom/thead (dom/tr (dom/th "ID")))
                      (dom/tbody
-                       (for [peer-id peers] 
+                       (for [[host peers] host-peers] 
                          (dom/tr {:class "peer-entry"}
-                                 (dom/td (str peer-id)))))))))
+                                 (dom/td host)
+                                 (dom/td (count peers)))))))))
 
 (defcomponent deployment-indicator [{:keys [deployment last-entry]} owner]
   (render [_] 
@@ -37,7 +40,7 @@
                  :bs-style (if (or crashed? (not (:up-to-date? deployment)))  "danger" "primary")}
                 (dom/div 
                   (if crashed? 
-                    (dom/div "Log replay crashed. Cluster probably crashed, assuming the dashboard is using the same version of Onyx."
+                    (dom/div "Log replay crashed. Cluster probably crashed. Ensure the dashboard is using the same version of onyx and the same job scheduler."
                              (dom/pre {} 
                                       (:error (:status deployment)))))
                   (dom/div 
@@ -51,20 +54,22 @@
 
 (defcomponent deployment-peers [deployment owner]
   (render [_] 
-          (p/panel
-            {:header (om/build section-header-collapsible {:text (str "Cluster Peers (" (count (:peers deployment)) ")")} {})
-             :collapsible? true
-             :bs-style "primary"}
-            (if (and (:id deployment) 
-                     (:up? deployment)) 
-              (om/build peer-table (:peers deployment) {})
-              (dom/div "Deployment has no pulse.")))))
+          (let [replica (sq/deployment->latest-replica deployment)
+                host-peers (rq/host-peers replica)] 
+            (p/panel
+              {:header (om/build section-header-collapsible {:text (str "Cluster Peers (" (count (:peers replica)) ")")} {})
+               :collapsible? true
+               :bs-style "primary"}
+              (if (and (:id deployment) 
+                       (:up? deployment)) 
+                (om/build peer-table host-peers {})
+                (dom/div "Deployment has no pulse."))))))
 
 (defn strip-catalog [catalog task-rename]
   (mapv (fn [entry]
           (-> entry 
               (update-in [:onyx/name] task-rename)
-              (select-keys [:onyx/name :onyx/type :onyx/tenancy-ident 
+              (select-keys [:onyx/name :onyx/type :onyx/ident 
                             :onyx/medium :onyx/consumption 
                             :onyx/batch-size]))) 
           catalog))

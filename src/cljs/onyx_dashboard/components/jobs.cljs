@@ -8,100 +8,65 @@
             [om-bootstrap.table :as t]
             [cljsjs.moment]
             [onyx-dashboard.components.code :refer [clojure-block]]
+            [lib-onyx.replica-query :as rq]
+            [onyx-dashboard.state-query :as sq]
             [onyx-dashboard.components.ui-elements :refer [section-header-collapsible]]
             [cljs.core.async :as async :refer [put!]]))
 
-(defcomponent job-selector [{:keys [selected-job jobs]} owner]
+(defcomponent job-selector [{:keys [selected-job jobs] :as deployment} owner]
   (render [_]
-          (p/panel {:header (dom/h4 "Jobs") 
-                    :bs-style "primary"}
-                   (t/table {:striped? true :bordered? false :condensed? true :hover? true :class "job-selector"}
-                            ;; (dom/thead (dom/tr (dom/th "ID") (dom/th "Time")))
-                            (dom/tbody
-                              (cons (dom/tr {:class "job-entry"
-                                             :on-click (fn [_] (put! (om/get-shared owner :api-ch) [:select-job nil]))}
-                                            (dom/td (dom/i {:class (if (nil? selected-job) "fa fa-dot-circle-o" "fa fa-circle-o")}))
-                                            (dom/td {} (dom/a {:href "#"} "None"))
-                                            (dom/td {}))
-                                    (for [job (reverse (sort-by :created-at (vals jobs)))] 
-                                      (let [job-id (:id job)
-                                            selected? (= job-id selected-job)] 
-                                        (dom/tr {:class "job-entry"
-                                                 :on-click (fn [_] 
-                                                             (put! (om/get-shared owner :api-ch) 
-                                                                   [:select-job job-id]))}
-                                                (dom/td (dom/i {:class (if selected? "fa fa-dot-circle-o" "fa fa-circle-o")}))
-                                                (dom/td {} 
-                                                        (dom/a {:href "#"} (str job-id)))
-                                                (dom/td {}
-                                                        (.fromNow (js/moment (str (js/Date. (:created-at job)))))))))))))))
+          (let [replica (sq/deployment->latest-replica deployment)] 
+            (p/panel {:header (dom/h4 "Jobs") 
+                      :bs-style "primary"}
+                     (t/table {:striped? true :bordered? false :condensed? true :hover? true :class "job-selector"}
+                              (dom/thead (dom/tr (dom/td) (dom/th "ID") (dom/th "Status") (dom/th "Time")))
+                              (dom/tbody
+                                (cons (dom/tr {:class "job-entry"
+                                               :on-click (fn [_] (put! (om/get-shared owner :api-ch) [:select-job nil]))}
+                                              (dom/td (dom/i {:class (if (nil? selected-job) "fa fa-dot-circle-o" "fa fa-circle-o")}))
+                                              (dom/td {} (dom/a {:href "#"} "None"))
+                                              (dom/td {})
+                                              (dom/td {}))
+                                      (for [job (reverse (sort-by :created-at (vals jobs)))] 
+                                        (let [job-id (:id job)
+                                              selected? (= job-id selected-job)] 
+                                          (dom/tr {:class "job-entry"
+                                                   :on-click (fn [_] 
+                                                               (put! (om/get-shared owner :api-ch) 
+                                                                     [:select-job job-id]))}
+                                                  (dom/td (dom/i {:class (if selected? "fa fa-dot-circle-o" "fa fa-circle-o")}))
+                                                  (dom/td {} 
+                                                          (dom/a {:class "job-selector-id uuid" :href "#"} (str job-id)))
+                                                  (dom/td {}
+                                                          (dom/i (case (rq/job-state replica job-id)
+                                                                   :running
+                                                                   {:class "fa fa-cog fa-spin"}
+                                                                   :completed
+                                                                   {:style {:color "green"} :class "fa fa-check"}
+                                                                   :killed
+                                                                   {:style {:color "red"} :class "fa fa-exclamation"})))
+                                                  (dom/td {}
+                                                          (.fromNow (js/moment (str (js/Date. (:created-at job))))))))))))))))
 
-(defcomponent task-table [tasks owner]
+(defcomponent task-table [{:keys [job-info replica]} owner]
   (render [_]
-          (if (empty? tasks) 
-            (dom/div "No tasks are currently being processed for this job")
-            (t/table {:striped? true :bordered? false :condensed? true :hover? true}
-                     (dom/thead (dom/tr (dom/th "Name") (dom/th "Task ID") (dom/th "Peer ID")))
-                     (dom/tbody
-                       (for [[peer-id task] (sort-by (comp :name val) tasks)] 
-                         (dom/tr {:class "task-entry"}
-                                 (dom/td (str (:name task)))
-                                 (dom/td (str (:id task)))
-                                 (dom/td (str peer-id)))))))))
-
-(defcomponent metrics-table [{:keys [metrics job]} owner]
-  (render
-   [_]
-   (let [task-mapping (get metrics (:id job))]
-     (dom/div
-       (p/panel {:header "1 second window"}
-                (t/table {:striped? true :bordered? false :condensed? true :hover? true}
-                         (dom/thead
-                           (dom/tr
-                             (dom/th "Task")
-                             (dom/th "Throughput")))
-                         (dom/tbody
-                           (for [task (keys task-mapping)]
-                             (let [throughput (vals (get (:throughput (get task-mapping task)) "1s"))]
-                               (dom/tr {:class "task-entry"}
-                                       (dom/td (name task))
-                                       (dom/td (apply + (if (seq throughput) throughput [0])) " segs")))))))
-
-      (p/panel {:header "10 second window"}
-               (t/table {:striped? true :bordered? false :condensed? true :hover? true}
-                        (dom/thead
-                         (dom/tr
-                          (dom/th "Task")
-                          (dom/th "Throughput")
-                          (dom/th "Latency 50%")
-                          (dom/th "Latency 90%")
-                          (dom/th "Latency 99%")))
-                        (dom/tbody
-                         (for [task (keys task-mapping)]
-                           (let [throughput (vals (get (:throughput (get task-mapping task)) "10s"))
-                                 latency-50 (vals (get (get (:batch-latency (get task-mapping task)) "10s") 0.5))
-                                 latency-90 (vals (get (get (:batch-latency (get task-mapping task)) "10s") 0.90))
-                                 latency-99 (vals (get (get (:batch-latency (get task-mapping task)) "10s") 0.99))
-                                 peers (count latency-50)]
-                             (dom/tr {:class "task-entry"}
-                                     (dom/td (name task))
-                                     (dom/td (apply + (if (seq throughput) throughput [0])) " segs")
-                                     (dom/td (.toFixed (/ (apply + (if (seq latency-50) latency-50 [0])) peers) 1) " ms")
-                                     (dom/td (.toFixed (/ (apply + (if (seq latency-90) latency-90 [0])) peers) 1) " ms")
-                                     (dom/td (.toFixed (/ (apply + (if (seq latency-99) latency-99 [0])) peers) 1) " ms")))))))
-      
-      (p/panel {:header "60 second window"}
-               (t/table {:striped? true :bordered? false :condensed? true :hover? true}
-                        (dom/thead
-                         (dom/tr
-                          (dom/th "Task")
-                          (dom/th "Throughput")))
-                        (dom/tbody
-                         (for [task (keys task-mapping)]
-                           (let [throughput (vals (get (:throughput (get task-mapping task)) "60s"))]
-                             (dom/tr {:class "task-entry"}
-                                     (dom/td (name task))
-                                     (dom/td (apply + (if (seq throughput) throughput [0])) " segs")))))))))))
+          (let [task-hosts (sq/job-info->task-hosts replica job-info)] 
+            (if (empty? task-hosts) 
+              (dom/div "No tasks are currently being processed for this job")
+              (t/table {:striped? true :bordered? false :condensed? true :hover? true}
+                       (dom/thead (dom/tr (dom/th "Name") (dom/th "Host Allocation")))
+                       (dom/tbody
+                         (for [[task peer-hosts] task-hosts] 
+                           (dom/tr {:class "task-entry"}
+                                   (dom/td (str task))
+                                   (dom/td (dom/table {}
+                                                (dom/tbody
+                                                  (for [[host host-peers] (group-by val peer-hosts)]
+                                                    (dom/tr
+                                                      (dom/td (str host ": " 
+                                                                   (count host-peers) 
+                                                                   " peer" 
+                                                                   (if (> 1 (count host-peers)) "s"))))))))))))))))
 
 (defcomponent job-management [{:keys [id status] :as job} owner]
   (render [_]
@@ -132,58 +97,51 @@
                                                     (dom/i {:class "fa fa-times-circle-o"
                                                             :style {:padding-right "10px"}} " Kill")))))))))))
 
-(defn displayed-job-status [{:keys [status tasks] :as job}]
-  (case status 
-    :incomplete (if (empty? tasks) "pending" "running")
-    (name status)))
-
-(defcomponent job-overview-panel [job owner]
+(defcomponent job-overview-panel [{:keys [replica job-info]} owner]
   (render [_]
-          (p/panel
-            {:header (om/build section-header-collapsible {:text "Job Status"} {})
-             :collapsible? true
-             :bs-style "primary"}
-            (g/grid {} 
-                    (g/row {} 
-                           (str "Job status is: " (displayed-job-status job)))
-                    (g/row {} 
-                           (str "Task Scheduler is: " (name (:task-scheduler job))))))))
+          (let [id (:id job-info)
+                job-state (rq/job-state replica id)] 
+            (p/panel
+              {:header (om/build section-header-collapsible {:text "Job Status"} {})
+               :collapsible? true
+               :bs-style "primary"}
+              (g/grid {} 
+                      (g/row {} 
+                             (g/col {:xs 2 :md 2} "Job status")
+                             (g/col {:xs 2 :md 4} (name job-state)))
+                      (g/row {} 
+                             (g/col {:xs 2 :md 2} "Task Scheduler")
+                             (g/col {:xs 2 :md 4} (name (:task-scheduler (:job job-info))))))))))
 
-(defcomponent task-panel [{:keys [tasks] :as job} owner]
+(defcomponent task-panel [job-replica owner]
   (render [_]
           (p/panel
             {:header (om/build section-header-collapsible {:text "Running Tasks"} {})
              :collapsible? true
              :bs-style "primary"}
-            (om/build task-table tasks {}))))
+            (om/build task-table job-replica {}))))
 
-(defcomponent job-info [{:keys [job metrics] :as data} owner]
+(defcomponent job-info [{:keys [replica job-info]} owner]
   (render [_]
-          (let [{:keys [pretty-catalog pretty-workflow pretty-flow-conditions]} job]
+          (let [{:keys [pretty-catalog pretty-workflow pretty-flow-conditions job id metrics]} job-info] 
             (dom/div
-             (om/build job-overview-panel job)
-             ;(om/build task-panel job {})
-             (p/panel
-              {:header (om/build section-header-collapsible {:text "Workflow"} {})
-               :collapsible? true
-               :bs-style "primary"}
-              (om/build clojure-block {:input pretty-workflow}))
-
-             (p/panel
-              {:header (om/build section-header-collapsible {:text "Catalog"} {})
-               :collapsible? true
-               :bs-style "primary"}
-              (om/build clojure-block {:input pretty-catalog}))
-             
-             (if pretty-flow-conditions 
-               (p/panel
-                {:header (om/build section-header-collapsible {:text "Flow Conditions"} {})
+              (om/build job-overview-panel {:replica replica :job-info job-info})
+              (om/build task-panel {:replica replica :job-info job-info} {})
+              (p/panel
+                {:header (om/build section-header-collapsible {:text "Workflow"} {})
                  :collapsible? true
                  :bs-style "primary"}
-                (om/build clojure-block {:input pretty-flow-conditions})))
+                (om/build clojure-block {:input pretty-workflow}))
 
-             (comment (p/panel
-                        {:header (om/build section-header-collapsible {:text "Metrics"} {})
-                         :collapsible? true
-                         :bs-style "primary"}
-                        (om/build metrics-table data)))))))
+              (p/panel
+                {:header (om/build section-header-collapsible {:text "Catalog"} {})
+                 :collapsible? true
+                 :bs-style "primary"}
+                (om/build clojure-block {:input pretty-catalog}))
+
+              (if-not (empty? pretty-flow-conditions) 
+                (p/panel
+                  {:header (om/build section-header-collapsible {:text "Flow Conditions"} {})
+                   :collapsible? true
+                   :bs-style "primary"}
+                  (om/build clojure-block {:input pretty-flow-conditions})))))))

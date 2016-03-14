@@ -12,7 +12,15 @@ body {
 }
 
 .job-entry {
-	font-size: 10px;
+	font-size: 8px;
+}
+
+.uuid {
+	font-family: 'Lucida Console', 'Lucida Sans Typewriter', monaco, 'Bitstream Vera Sans Mono', monospace;
+}
+
+.job-selector-id {
+	font-size 8px;
 }
 
 .unselectable 
@@ -53,4 +61,3 @@ body {
 .modal {
 	display: block;
 }
-

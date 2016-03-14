@@ -89,11 +89,11 @@
             tracking (atom {})
             event-handler-fut (start-event-handler sente peer-config deployments tracking)
             handler (ring.middleware.defaults/wrap-defaults routes ring-defaults-config)
-            server (http-kit-server/run-server handler {:port 3000})
+            port (Integer. (or (System/getenv "PORT") "3000"))
+            server (http-kit-server/run-server handler {:port port})
             uri (format "http://localhost:%s/" (:local-port (meta server)))
-            refresh-fut (future (od/refresh-deployments-watch send-f 
-                                                              (zk/connect (:zookeeper/address peer-config))
-                                                              deployments))]
+            conn (zk/connect (:zookeeper/address peer-config))
+            refresh-fut (future (od/refresh-deployments-watch send-f conn deployments))]
         (println "Http-kit server is running at" uri)
         (assoc component 
                :server server 
@@ -103,10 +103,16 @@
                :tracking tracking))))
   (stop [{:keys [server tracking deployments] :as component}]
     (println "Stopping HTTP Server")
-    (swap! tracking od/stop-all-tracking!)
-    (future-cancel (:event-handler-fut component))
-    (future-cancel (:refresh-fut component))
-    (server :timeout 100)
+    (try 
+      (server :timeout 100)
+      (finally 
+        (try 
+          (swap! tracking od/stop-all-tracking!)
+          (finally
+            (try 
+              (future-cancel (:event-handler-fut component))
+              (finally
+                (future-cancel (:refresh-fut component)))))))) 
     (assoc component :server nil :event-handler-fut nil :deployments nil :tracking nil)))
 
 (defn new-http-server [peer-config]

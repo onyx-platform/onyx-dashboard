@@ -1,6 +1,14 @@
 (ns onyx-dashboard.controllers.api
   (:require [cljs-uuid.core :as uuid]))
 
+(defn new-deployment-state [tracking-id tenancy-id]
+  {:tracking-id tracking-id
+   :id tenancy-id
+   :selected-job nil
+   :view-index nil
+   :message-id-max nil
+   :replica-states {}})
+
 (defmulti api-controller (fn [[cmd] _ _] cmd))
 
 (defmethod api-controller :select-job [[_ id] _ state]
@@ -10,9 +18,7 @@
   (let [tracking-id (uuid/make-random)] 
     (chsk-send! [:deployment/track {:deployment-id deployment-id
                                     :tracking-id tracking-id}])
-    (assoc state :deployment {:tracking-id tracking-id
-                              :id deployment-id
-                              :entries {}})))
+    (assoc state :deployment (new-deployment-state tracking-id deployment-id))))
 
 (defmethod api-controller :start-job [[_ job-info] chsk-send! state]
   (chsk-send! [:job/start job-info])

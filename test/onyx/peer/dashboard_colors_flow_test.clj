@@ -7,12 +7,11 @@
             [onyx.plugin.core-async :refer [take-segments!]]
             [onyx.api]))
 
-(def id (java.util.UUID/randomUUID))
+(comment (def id (java.util.UUID/randomUUID))
 
 (defn run-test-fixture
   [browser-type f]
   (let [system (component/start (sys/get-system "127.0.0.1:2188" 
-                                                (str id)
                                                 "onyx.job-scheduler/greedy"))]
     (webdriver/set-driver! {:browser browser-type})
     (webdriver/implicit-wait 20000)
@@ -33,9 +32,9 @@
                  :onyx.messaging/peer-port 40200
                  :onyx.messaging/bind-addr "localhost"}})
 
-(def env-config (assoc (:env-config config) :onyx/tenancy-id id))
+(def env-config (assoc (:env-config config) :onyx/id id))
 
-(def peer-config (assoc (:peer-config config) :onyx/tenancy-id id))
+(def peer-config (assoc (:peer-config config) :onyx/id id))
 
 (def env (onyx.api/start-env env-config))
 
@@ -319,4 +318,4 @@
 
                         (onyx.api/shutdown-peer-group peer-group)
 
-                        (onyx.api/shutdown-env env)))))
+                        (onyx.api/shutdown-env env))))))
