@@ -22,6 +22,7 @@
 		 ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
 		 [org.onyxplatform/onyx "0.8.11"]
 		 [org.onyxplatform/lib-onyx "0.8.12.0-20160314.202610-2" :exclusions [ring-jetty-component]]
+                 [org.onyxplatform/onyx-viz "0.1.0-20160314.203939-1"]
 		 [timothypratley/patchin "0.3.5"]
 		 [com.cognitect/transit-clj "0.8.275"]
 		 [com.cognitect/transit-cljs "0.8.220"]
@@ -42,8 +43,6 @@
 		 [org.apache.httpcomponents/httpcore "4.4.4"]
 		 [org.clojure/core.cache "0.6.4"]
 		 [shoreleave/shoreleave-browser "0.3.0"]
-                 ;; Switch to onyx-platform
-                 [onyx-viz "0.1.0-20160314.202732-1"]
 		 [org.omcljs/om "0.8.8"]
 		 [ankha "0.1.5.1-479897" :exclusions [om com.cemerick/austin]]
 		 [racehub/om-bootstrap "0.6.1" :exclusions [om]]
