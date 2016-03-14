@@ -6,6 +6,7 @@
             [om-bootstrap.button :as b]
             [om-bootstrap.table :as t]
             [om-bootstrap.grid :as g]
+            [om-bootstrap.pagination :as pg]
             [shoreleave.browser.blob :as blob]
             [lib-onyx.replica-query :as rq]
             [onyx-dashboard.components.ui-elements :refer [section-header-collapsible]]
@@ -37,7 +38,9 @@
             (dom/div
               (p/panel
                 {:header (dom/div {} (dom/h4 {:class "unselectable"} "Dashboard Status"))
-                 :bs-style (if (or crashed? (not (:up-to-date? deployment)))  "danger" "primary")}
+                 :bs-style ;(if (or crashed? (not (:up-to-date? deployment)))  "danger" "primary")
+                 ;; Freshness measure is currently broken
+                 "primary"}
                 (dom/div 
                   (if crashed? 
                     (dom/div "Log replay crashed. Cluster probably crashed. Ensure the dashboard is using the same version of onyx and the same job scheduler."
@@ -52,13 +55,50 @@
                     (if-let [entry-time (:created-at last-entry)] 
                       (str "Dashboard last updated " (.fromNow (js/moment (str (js/Date. entry-time)))))))))))))
 
+
+
+(defcomponent deployment-time-travel [{:keys [time-travel-message-id message-id-max] :as deployment} owner]
+  (render [_] 
+          (dom/div
+            (p/panel
+              {:header (dom/div {} (dom/h4 {:class "unselectable"} "Dashboard Time Travel"))
+               :bs-style (if time-travel-message-id  "danger" "primary")}
+              (let [selected-entry (sq/deployment->latest-entry deployment)
+                    selected-message-id (:message-id selected-entry)
+                    at-min? (zero? selected-message-id)
+                    at-max? (= selected-message-id message-id-max)] 
+                (g/grid {}
+                        (g/row {}
+                               (if (nil? time-travel-message-id)
+                                 "Following the cluster log"
+                                 (str "Time travelling to " (.fromNow (js/moment (str (js/Date. (:created-at selected-entry))))))))
+                        (g/row {}
+                               (pg/pagination {}
+                                              (pg/previous {:on-click (fn [e] 
+                                                                        (when-not at-min? 
+                                                                          (put! (om/get-shared owner :api-ch) 
+                                                                                [:time-travel (dec selected-message-id)])
+                                                                          (.preventDefault e)))
+                                                            :disabled? at-min?})
+                                              (pg/page {:active? true
+                                                        :on-click (fn [e] (.preventDefault e))} 
+                                                       (sq/message-id deployment))
+                                              (pg/next {:on-click (fn [e] 
+                                                                    (when-not at-max? 
+                                                                      (put! (om/get-shared owner :api-ch) 
+                                                                            [:time-travel (inc selected-message-id)]) 
+                                                                      (.preventDefault e)))
+                                                        :disabled? at-max?})))))))))
+
 (defcomponent deployment-peers [deployment owner]
+  (init-state [_]
+              {:collapsed? false})
   (render [_] 
           (let [replica (sq/deployment->latest-replica deployment)
                 host-peers (rq/host-peers replica)] 
             (p/panel
               {:header (om/build section-header-collapsible {:text (str "Cluster Peers (" (count (:peers replica)) ")")} {})
-               :collapsible? true
+               ;:collapsible? true
                :bs-style "primary"}
               (if (and (:id deployment) 
                        (:up? deployment)) 
@@ -139,7 +179,7 @@
                     (dom/div))
                   (p/panel
                     {:header "Deployment Log Dump" 
-                     :collapsible? true
+                     ;:collapsible? true
                      :bs-style "primary"}
                     (t/table {:striped? true :bordered? false :condensed? true :hover? true}
                              (dom/thead (dom/tr (dom/th "Type") (dom/th)))

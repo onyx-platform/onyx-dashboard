@@ -1,6 +1,5 @@
 (ns onyx-dashboard.onyx-deployment
-  (:require 
-            [onyx.system :as system :refer [onyx-client]]
+  (:require [onyx.system :as system :refer [onyx-client]]
             [onyx.extensions :as extensions]
             [onyx.api]
             [onyx.log.zookeeper :as zk-onyx]
@@ -77,6 +76,7 @@
         job (jq/job-information log-sub replica job-id)]
     (send-fn! [:deployment/submitted-job {:tracking-id tracking-id
                                           :job {:task-name->id task-name->id
+                                                :created-at-d (:message-id entry)
                                                 :created-at (:created-at entry)
                                                 :id job-id
                                                 :job job}}])))

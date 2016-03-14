@@ -29,25 +29,27 @@
                                               (dom/td {}))
                                       (for [job (reverse (sort-by :created-at (vals jobs)))] 
                                         (let [job-id (:id job)
-                                              selected? (= job-id selected-job)] 
-                                          (dom/tr {:on-click (fn [_] 
-                                                               (put! (om/get-shared owner :api-ch) 
-                                                                     [:select-job job-id]))}
-                                                  (dom/td (dom/i {:class (if selected? "fa fa-dot-circle-o" "fa fa-circle-o")}))
-                                                  (dom/td {} 
-                                                          (dom/a {:class "job-entry uuid" :href "#"} (str job-id)))
-                                                  (dom/td {}
-                                                          (dom/i (case (rq/job-state replica job-id)
-                                                                   :running
-                                                                   {:class "fa fa-cog fa-spin"}
-                                                                   :completed
-                                                                   {:style {:color "green"} :class "fa fa-check"}
-                                                                   :killed
-                                                                   (if (:exception job)
-                                                                     {:style {:color "red"} :class "fa fa-exclamation"} 
-                                                                     {:style {:color "orange"} :class "fa fa-remove"}))))
-                                                  (dom/td {:style {:font-size 8}}
-                                                          (.fromNow (js/moment (str (js/Date. (:created-at job))))))))))))))))
+                                              selected? (= job-id selected-job)
+                                              job-state (rq/job-state replica job-id)] 
+                                          (if-not (= job-state :GCd) 
+                                            (dom/tr {:on-click (fn [_] 
+                                                                 (put! (om/get-shared owner :api-ch) 
+                                                                       [:select-job job-id]))}
+                                                    (dom/td (dom/i {:class (if selected? "fa fa-dot-circle-o" "fa fa-circle-o")}))
+                                                    (dom/td {} 
+                                                            (dom/a {:class "job-entry uuid" :href "#"} (str job-id)))
+                                                    (dom/td {}
+                                                            (dom/i (case job-state
+                                                                     :running
+                                                                     {:class "fa fa-cog fa-spin"}
+                                                                     :completed
+                                                                     {:style {:color "green"} :class "fa fa-check"}
+                                                                     :killed
+                                                                     (if (:exception job)
+                                                                       {:style {:color "red"} :class "fa fa-exclamation"} 
+                                                                       {:style {:color "orange"} :class "fa fa-remove"}))))
+                                                    (dom/td {:style {:font-size 8}}
+                                                            (.fromNow (js/moment (str (js/Date. (:created-at job)))))))))))))))))
 
 (defcomponent task-table [{:keys [job-info replica]} owner]
   (render [_]
@@ -104,11 +106,11 @@
                 job-state (rq/job-state replica id)] 
             (p/panel
               {:header (om/build section-header-collapsible {:text "Job Status"} {})
-               :collapsible? true
+               ;:collapsible? true
                :bs-style "primary"}
               (g/grid {} 
                       (g/row {} 
-                             (g/col {:xs 2 :md 2} "Job status")
+                             (g/col {:xs 2 :md 2} "Job Status")
                              (g/col {:xs 2 :md 4} (name job-state)))
                       (g/row {} 
                              (g/col {:xs 2 :md 2} "Task Scheduler")
@@ -118,7 +120,7 @@
   (render [_]
           (p/panel
             {:header (om/build section-header-collapsible {:text "Running Tasks"} {})
-             :collapsible? true
+             ;:collapsible? true
              :bs-style "primary"}
             (om/build task-table job-replica {}))))
 
@@ -126,7 +128,7 @@
   (render [_]
           (p/panel
             {:header (om/build section-header-collapsible {:text "Exception Thrown"} {})
-             :collapsible? true
+             ;:collapsible? true
              :bs-style "primary"}
             (dom/pre exception))))
 
@@ -134,39 +136,46 @@
   (render [_]
           (let [{:keys [job id metrics exception]} job-info
                 {:keys [catalog workflow flow-conditions triggers windows]} job] 
-            (dom/div
-              (om/build job-overview-panel {:replica replica :job-info job-info})
-              (if exception (om/build exception-panel exception {}))
-              (om/build task-panel {:replica replica :job-info job-info} {})
+            (if (= :GCd (rq/job-state replica id))
               (p/panel
-                {:header (om/build section-header-collapsible {:text "Workflow"} {})
-                 :collapsible? true
+                {:header (om/build section-header-collapsible {:text "Job State"} {})
+                 ;:collapsible? true
                  :bs-style "primary"}
-                (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value workflow)))}))
+                (dom/div "Selected job is unknown to the cluster at the selected message id"))
 
-              (p/panel
-                {:header (om/build section-header-collapsible {:text "Catalog"} {})
-                 :collapsible? true
-                 :bs-style "primary"}
-                (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value catalog)))}))
+              (dom/div
+                (om/build job-overview-panel {:replica replica :job-info job-info})
+                (if exception (om/build exception-panel exception {}))
+                (om/build task-panel {:replica replica :job-info job-info} {})
+                (p/panel
+                  {:header (om/build section-header-collapsible {:text "Workflow"} {})
+                   ;:collapsible? true
+                   :bs-style "primary"}
+                  (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value workflow)))}))
 
-              (if-not (empty? flow-conditions) 
                 (p/panel
-                  {:header (om/build section-header-collapsible {:text "Flow Conditions"} {})
-                   :collapsible? true
+                  {:header (om/build section-header-collapsible {:text "Catalog"} {})
+                   ;:collapsible? true
                    :bs-style "primary"}
-                  (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value flow-conditions)))})))
-              
-              (if-not (empty? windows) 
-                (p/panel
-                  {:header (om/build section-header-collapsible {:text "Windows"} {})
-                   :collapsible? true
-                   :bs-style "primary"}
-                  (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value windows)))})))
+                  (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value catalog)))}))
 
-              (if-not (empty? triggers) 
-                (p/panel
-                  {:header (om/build section-header-collapsible {:text "Triggers"} {})
-                   :collapsible? true
-                   :bs-style "primary"}
-                  (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value triggers)))})))))))
+                (if-not (empty? flow-conditions) 
+                  (p/panel
+                    {:header (om/build section-header-collapsible {:text "Flow Conditions"} {})
+                     ;:collapsible? true
+                     :bs-style "primary"}
+                    (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value flow-conditions)))})))
+
+                (if-not (empty? windows) 
+                  (p/panel
+                    {:header (om/build section-header-collapsible {:text "Windows"} {})
+                     ;:collapsible? true
+                     :bs-style "primary"}
+                    (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value windows)))})))
+
+                (if-not (empty? triggers) 
+                  (p/panel
+                    {:header (om/build section-header-collapsible {:text "Triggers"} {})
+                     ;:collapsible? true
+                     :bs-style "primary"}
+                    (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value triggers)))}))))))))

@@ -17,7 +17,7 @@
 		 [org.clojure/core.async "0.2.374"]
 		 [com.stuartsierra/component "0.2.3"]
 		 [com.taoensso/sente "1.5.0" :exclusions [com.taoensso/timbre com.taoensso/encore]]
-		 [cljs-uuid "0.0.4"]
+                 [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
 		 [ring "1.3.2"]
 		 ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
 		 [org.onyxplatform/onyx "0.8.11"]
@@ -39,13 +39,13 @@
 		 [http-kit "2.1.19"]
 		 ; make this explicit to fix uberjar?
 		 ;[potemkin "0.3.13"]
-		 [org.apache.httpcomponents/httpcore "4.4"]
+		 [org.apache.httpcomponents/httpcore "4.4.4"]
 		 [org.clojure/core.cache "0.6.4"]
 		 [shoreleave/shoreleave-browser "0.3.0"]
 		 [org.omcljs/om "0.8.8"]
 		 [ankha "0.1.5.1-479897" :exclusions [om com.cemerick/austin]]
-		 [racehub/om-bootstrap "0.5.1" :exclusions [om]]
-		 [prismatic/om-tools "0.3.11" :exclusions [om]]]
+		 [racehub/om-bootstrap "0.6.1" :exclusions [om]]
+		 [prismatic/om-tools "0.4.0" :exclusions [om]]]
 
   :plugins [[lein-cljsbuild "1.0.6"]
             ;[lein-version-spec "0.0.4"]

@@ -5,7 +5,7 @@
             [om-bootstrap.grid :as g]
             [om-bootstrap.random :as r]
             [onyx-dashboard.components.deployment :refer [select-deployment deployment-indicator 
-                                                          deployment-peers deployment-log-dump]]
+                                                          deployment-time-travel deployment-peers deployment-log-dump]]
             [onyx-dashboard.components.jobs :refer [job-selector job-info #_job-management]]
             [onyx-dashboard.components.log :refer [log-entries-pager]]
             [onyx-dashboard.controllers.api :refer [api-controller]]
@@ -47,6 +47,7 @@
                                               (om/build deployment-indicator 
                                                         {:deployment deployment
                                                          :last-entry (sq/deployment->latest-entry deployment)})
+                                              (om/build deployment-time-travel deployment)
                                               (om/build job-selector deployment {})
                                               (om/build deployment-peers deployment {})
                                               ; (if job 

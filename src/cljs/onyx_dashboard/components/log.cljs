@@ -81,7 +81,7 @@
                                               {:text (str "Raw Cluster Activity" 
                                                           (if job-filter (str " - Job " job-filter)))}
                                               {})
-                            :collapsible? true
+                            ;:collapsible? true
                             :bs-style "primary"}
                            (if (empty? filtered-entries)
                              (dom/div "No log entries found.")
