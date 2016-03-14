@@ -1,6 +1,5 @@
 (ns onyx-dashboard.onyx-deployment
-  (:require [fipp.edn :refer [pprint] :rename {pprint fipp}]
-            [onyx.system :as system :refer [onyx-client]]
+  (:require [onyx.system :as system :refer [onyx-client]]
             [onyx.extensions :as extensions]
             [onyx.api]
             [onyx.log.zookeeper :as zk-onyx]
@@ -8,13 +7,17 @@
             [onyx.log.curator :as zk]
             [clojure.core.async :refer [chan timeout thread <!! alts!!]]
             [com.stuartsierra.component :as component]
+	    [lib-onyx.log-subscriber :as s]
+            [lib-onyx.job-query :as jq]
+            [lib-onyx.replica-query :as rq]
+	    [timothypratley.patchin :as patchin]
             [taoensso.timbre :as timbre :refer [info error spy]]))
 
 (defn kill-job [peer-config deployment-id {:keys [id] :as job-info}]
-  (onyx.api/kill-job (assoc peer-config :onyx/tenancy-id deployment-id) id))
+  (onyx.api/kill-job (assoc peer-config :onyx/id deployment-id) id))
 
 (defn start-job [peer-config deployment-id {:keys [catalog workflow task-scheduler] :as job-info}]
-  (onyx.api/submit-job (assoc peer-config :onyx/tenancy-id deployment-id)
+  (onyx.api/submit-job (assoc peer-config :onyx/id deployment-id)
                        {:catalog catalog
                         :workflow workflow
                         :task-scheduler task-scheduler}))
@@ -33,177 +36,85 @@
   (zk/children client (zk-onyx/pulse-path deployment-id)))
 
 (defn refresh-deployments-watch [send-all-fn! zk-client deployments]
-  (if-let [children (zk/children zk-client 
-                                 zk-onyx/root-path 
-                                 :watcher 
-                                 (fn [_] (refresh-deployments-watch send-all-fn! zk-client deployments)))]
-    (->> children
-         (map (juxt identity 
-                    (partial zk-deployment-entry-stat zk-client)))
-         (map (fn [[child stat]]
-                (vector child
-                        {:created-at (java.util.Date. (:ctime stat))
-                         :modified-at (java.util.Date. (:mtime stat))})))
-         (into {})
-         (reset! deployments)
-         (distribute-deployment-listing send-all-fn!))
-    (do
-      (println (format "Could not find deployments at %s. Retrying in 1s." zk-onyx/root-path))
-      (Thread/sleep 1000)
-      (recur send-all-fn! zk-client deployments))))
-
-(defn peer-allocated-to-task [job-allocations job-id peer-id]
-  (ffirst 
-    (filter (fn [[task-id peer-ids]]
-              (not-empty (filter #{peer-id} peer-ids))) 
-            job-allocations)))
-
-(defn task-allocated-to-peer [allocations peer-id]
-  (first
-    (keep (fn [job-id] 
-            (if-let [task-id (peer-allocated-to-task (allocations job-id) job-id peer-id)]
-              {:job-id job-id :task-id task-id}))
-          (keys allocations))))
+  (loop [] 
+    (try 
+      (when-not (Thread/interrupted)
+        (if-let [children (zk/children zk-client zk-onyx/root-path)]
+          (do (->> children
+                   (map (juxt identity 
+                              (partial zk-deployment-entry-stat zk-client)))
+                   (map (fn [[child stat]]
+                          (vector child
+                                  {:created-at (java.util.Date. (:ctime stat))
+                                   :modified-at (java.util.Date. (:mtime stat))})))
+                   (into {})
+                   (reset! deployments)
+                   (distribute-deployment-listing send-all-fn!))
+            (Thread/sleep 1000))
+          (do
+            (println (format "Could not find deployments at %s. Retrying in 1s." zk-onyx/root-path))
+            (Thread/sleep 1000))))
+      (catch InterruptedException ie
+        (info "Shutting down refresh deployments watch"))
+      (catch Throwable t
+        (println t "Error watching deployments")))
+    (recur)))
 
 (def freshness-timeout 100)
 
-(defn apply-log-entry [send-fn! tracking-id entry replica]
-  (try 
-    (extensions/apply-log-entry entry replica)
-    (catch Throwable t
-      (send-fn! [:deployment/log-replay-crash {:tracking-id tracking-id :error (str t)}])
-      nil)))
-
 (defmulti log-notifications 
-  (fn [send-fn! replica diff log entry tracking-id]
-    ((:fn entry) {:signal-ready :job/peer-assigned
-                  :accept-join-cluster :deployment/peer-joined
-                  :notify-join-cluster :deployment/peer-notify-joined-accepted
-                  :leave-cluster :deployment/peer-left
-                  :submit-job :deployment/submitted-job
-                  :seal-output :deployment/completed-job
+  (fn [send-fn! log-sub replica diff entry tracking-id]
+    ((:fn entry) {:submit-job :deployment/submitted-job
                   :kill-job :deployment/kill-job})))
 
-(defmethod log-notifications :deployment/submitted-job [send-fn! replica diff log entry tracking-id]
+(defmethod log-notifications :deployment/submitted-job [send-fn! log-sub replica diff entry tracking-id]
   (let [job-id (:id (:args entry))
-        catalog (extensions/read-chunk log :catalog job-id)
-        workflow (extensions/read-chunk log :workflow job-id)
-        flow-conditions (extensions/read-chunk log :flow-conditions job-id)]
-    (send-fn! [:deployment/submitted-job (cond-> {:tracking-id tracking-id
-                                                  :id job-id
-                                                  :entry entry
-                                                  :task-scheduler (:task-scheduler (:args entry))
-                                                  :catalog catalog
-                                                  :workflow workflow
-                                                  :pretty-catalog (with-out-str (fipp (into [] catalog)))
-                                                  :pretty-workflow (with-out-str (fipp (into [] workflow)))
-                                                  :created-at (:created-at entry)}
-                                           flow-conditions (assoc :flow-conditions flow-conditions
-                                                                  :pretty-flow-conditions (with-out-str (fipp (into [] flow-conditions)))))])))
+        tasks (:tasks (:args entry))
+        task-name->id (zipmap (map #(jq/task-name log-sub %) tasks) tasks)
+        job (jq/job-information log-sub replica job-id)]
+    (send-fn! [:deployment/submitted-job {:tracking-id tracking-id
+                                          :job {:task-name->id task-name->id
+                                                :created-at-d (:message-id entry)
+                                                :created-at (:created-at entry)
+                                                :id job-id
+                                                :job job}}])))
 
-(defmethod log-notifications :deployment/peer-notify-joined-accepted [send-fn! replica diff _ entry tracking-id]
-  (when-let [peer (:accepted-joiner diff)]
-    (send-fn! [:deployment/peer-notify-joined-accepted {:tracking-id tracking-id
-                                                        :id peer}])))
+(defmethod log-notifications :deployment/kill-job [send-fn! log-sub replica diff entry tracking-id]
+  (when-let [exception (jq/exception log-sub (:job (:args entry)))]
+    (send-fn! [:deployment/kill-job {:tracking-id tracking-id
+                                     :id (:job (:args entry))
+                                     :exception (pr-str exception)}])))
 
+(defmethod log-notifications :default [send-fn! log-sub replica diff entry tracking-id] )
 
-(defmethod log-notifications :deployment/peer-joined [send-fn! replica _ _ entry tracking-id]
-  (send-fn! [:deployment/peer-joined {:tracking-id tracking-id
-                                      :replica replica
-                                      :id (:subject (:args entry))}]))
-
-(defmethod log-notifications :deployment/peer-left [send-fn! _ _ _  entry tracking-id]
-  (send-fn! [:deployment/peer-left {:tracking-id tracking-id
-                                    :id (:id (:args entry))}]))
-
-(defmethod log-notifications :job/peer-assigned [send-fn! replica diff log entry tracking-id]
-  (let [peer-id (:id (:args entry))
-        {:keys [job-id task-id]} (task-allocated-to-peer (:allocations replica) peer-id)]
-  (when task-id 
-    (let [task (extensions/read-chunk log :task task-id)] 
-      (send-fn! [:job/peer-assigned {:tracking-id tracking-id
-                                     :job-id job-id 
-                                     :peer-id peer-id
-                                     :task (select-keys task [:id :name])}])))))
-
-(defmethod log-notifications :deployment/completed-job [send-fn! replica diff log entry tracking-id]
-  (when (and (:job-completed? diff) (:job diff))
-    (send-fn! [:deployment/completed-job {:tracking-id tracking-id
-                                          :entry entry
-                                          :id (:job diff)}])))
-
-(defmethod log-notifications :deployment/kill-job [send-fn! replica diff log entry tracking-id]
-  (send-fn! [:deployment/kill-job {:tracking-id tracking-id
-                                   :entry entry
-                                   :id (:job (:args entry))}]))
-
-(defmethod log-notifications :default [send-fn! replica diff log entry tracking-id])
-
-(defn send-job-statuses [send-fn! tracking-id incomplete-jobs new-incomplete-jobs]
-  (when (not= incomplete-jobs new-incomplete-jobs)
-    (send-fn! [:deployment/job-statuses 
-               {:tracking-id tracking-id 
-                :finished-jobs (clojure.set/difference incomplete-jobs new-incomplete-jobs)
-                :incomplete-jobs (clojure.set/difference new-incomplete-jobs incomplete-jobs)}])))
-
-(defn send-log-entry [send-fn! tracking-id entry]
-  (send-fn! [:deployment/log-entry (assoc entry :tracking-id tracking-id)]))
-
-(defn track-deployment [send-fn! deployment-id subscription ch f-check-pulses tracking-id]
-  (let [log (:log (:env subscription))]
-    (loop [replica (:replica subscription)
-           up-to-date? false
-           incomplete-jobs (:jobs replica)]
-      (if-let [entry (first (alts!! (vector ch (timeout freshness-timeout))))]
-        (if-let [new-replica (apply-log-entry send-fn! tracking-id entry replica)] 
-          (let [diff (extensions/replica-diff entry replica new-replica)
-                new-incomplete-jobs #{}]
-            (send-job-statuses send-fn! tracking-id incomplete-jobs new-incomplete-jobs)
-            (log-notifications send-fn! new-replica diff log entry tracking-id)
-            (send-log-entry send-fn! tracking-id entry)
-            (recur new-replica false new-incomplete-jobs)))
-        (let [has-no-pulse? (empty? (f-check-pulses))] 
-          (when has-no-pulse?
-            (send-fn! [:deployment/no-pulse {:tracking-id tracking-id}]))
-          (send-fn! [:deployment/up-to-date {:tracking-id tracking-id}])
-          (recur replica true incomplete-jobs))))))
-
-(defrecord LogSubscription [peer-config]
-  component/Lifecycle
-  (start [component]
-    (info "Start log subscription")
-    (let [sub-ch (chan 100)
-          subscription (onyx.api/subscribe-to-log peer-config sub-ch)]
-      (assoc component :subscription subscription :subscription-ch sub-ch)))
-
-  (stop [component]
-    (info "Shutting down log subscription")
-    (onyx.api/shutdown-env (:env (:subscription component)))
-    (assoc component :subscription nil :channel nil)))
+(defn process-subscription-event [send-fn! tenancy-id tracking-id !last-replica 
+                                  sub {:keys [replica entry] :as state}]
+  (let [patch (patchin/diff @!last-replica replica)]
+    (send-fn! [:deployment/log-entry {:tracking-id tracking-id
+                                      :entry entry
+                                      :diff patch}])
+    (log-notifications send-fn! sub replica patch entry tracking-id)))
 
 (defrecord TrackDeploymentManager [send-fn! peer-config tracking-id user-id]
   component/Lifecycle
   (start [component]
-    ; Convert to a system?
-    (info "Starting Track Deployment manager " send-fn! peer-config user-id)
-    (let [subscription (component/start (map->LogSubscription {:peer-config peer-config}))
+    (let [tenancy-id (:onyx/id peer-config)
+          _ (info "Starting Track Deployment manager for tenancy " tenancy-id peer-config user-id)
           f-check-pulses (partial deployment-pulses 
-                                  (zk/connect (:zookeeper/address peer-config)) 
-                                  (:onyx/tenancy-id peer-config))]
-      (assoc component 
-             :subscription subscription
-             :tracking-fut (future
-                             (track-deployment (partial send-fn! user-id)
-                                               (:onyx/tenancy-id peer-config)
-                                               (:subscription subscription)
-                                               (:subscription-ch subscription)
-                                               f-check-pulses
-                                               tracking-id)))))
+				  (zk/connect (:zookeeper/address peer-config)) 
+				  tenancy-id)
+	  last-replica (atom {})
+	  callback-fn (partial process-subscription-event 
+			       (partial send-fn! user-id)
+                               tenancy-id
+			       tracking-id
+			       last-replica)
+	  log-subscriber (s/start-log-subscriber peer-config {:callback-fn callback-fn})]
+      (assoc component :log-subscriber log-subscriber)))
   (stop [component]
     (info "Stopping Track Deployment manager.")
     (assoc component 
-           :subscription (component/stop (:subscription component))
-           :tracking-fut (future-cancel (:tracking-fut component)))))
+           :log-subscriber (s/stop-log-subscriber (:log-subscriber component)))))
 
 (defn new-track-deployment-manager [send-fn! peer-config user-id tracking-id]
   (map->TrackDeploymentManager {:send-fn! send-fn! 
@@ -227,6 +138,6 @@
                (stop-tracking! user-id)
                (assoc user-id (component/start 
                                 (new-track-deployment-manager send-fn! 
-                                                              (assoc peer-config :onyx/tenancy-id deployment-id)
+                                                              (assoc peer-config :onyx/id deployment-id)
                                                               user-id
                                                               tracking-id)))))))

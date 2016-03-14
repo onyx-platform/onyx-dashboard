@@ -17,13 +17,7 @@
 
 (defonce app-state 
   (atom {:ready? false
-         :deployments {}
-         :deployment {:tracking-id nil
-                      :jobs []
-                      :selected-job nil
-                      :view-index nil
-                      :message-id-max nil
-                      :entries {}}}))
+         :deployments {}}))
 
 (def packer (sente-transit/get-flexi-packer :edn))
 

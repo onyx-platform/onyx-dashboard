@@ -6,23 +6,27 @@
             [om-bootstrap.button :as b]
             [om-bootstrap.table :as t]
             [om-bootstrap.grid :as g]
+            [om-bootstrap.pagination :as pg]
             [shoreleave.browser.blob :as blob]
+            [lib-onyx.replica-query :as rq]
             [onyx-dashboard.components.ui-elements :refer [section-header-collapsible]]
+            [onyx-dashboard.state-query :as sq]
             [cljs.core.async :as async :refer [put!]]
             [cljsjs.moment]
             [cljs.core.async :as async :refer [<! >! put! chan]])
   (:require-macros [cljs.core.async.macros :as asyncm :refer [go-loop]]))
 
-(defcomponent peer-table [peers owner]
+(defcomponent peer-table [host-peers owner]
   (render [_]
-          (if (empty? peers) 
+          (if (empty? host-peers) 
             (dom/div "No peers are currently running")
             (t/table {:striped? true :bordered? false :condensed? true :hover? true}
                      (dom/thead (dom/tr (dom/th "ID")))
                      (dom/tbody
-                       (for [peer-id peers] 
+                       (for [[host peers] host-peers] 
                          (dom/tr {:class "peer-entry"}
-                                 (dom/td (str peer-id)))))))))
+                                 (dom/td host)
+                                 (dom/td (count peers)))))))))
 
 (defcomponent deployment-indicator [{:keys [deployment last-entry]} owner]
   (render [_] 
@@ -34,10 +38,12 @@
             (dom/div
               (p/panel
                 {:header (dom/div {} (dom/h4 {:class "unselectable"} "Dashboard Status"))
-                 :bs-style (if (or crashed? (not (:up-to-date? deployment)))  "danger" "primary")}
+                 :bs-style ;(if (or crashed? (not (:up-to-date? deployment)))  "danger" "primary")
+                 ;; Freshness measure is currently broken
+                 "primary"}
                 (dom/div 
                   (if crashed? 
-                    (dom/div "Log replay crashed. Cluster probably crashed, assuming the dashboard is using the same version of Onyx."
+                    (dom/div "Log replay crashed. Cluster probably crashed. Ensure the dashboard is using the same version of onyx and the same job scheduler."
                              (dom/pre {} 
                                       (:error (:status deployment)))))
                   (dom/div 
@@ -49,22 +55,65 @@
                     (if-let [entry-time (:created-at last-entry)] 
                       (str "Dashboard last updated " (.fromNow (js/moment (str (js/Date. entry-time)))))))))))))
 
-(defcomponent deployment-peers [deployment owner]
+
+
+(defcomponent deployment-time-travel [{:keys [time-travel-message-id message-id-max] :as deployment} owner]
   (render [_] 
-          (p/panel
-            {:header (om/build section-header-collapsible {:text (str "Cluster Peers (" (count (:peers deployment)) ")")} {})
-             :collapsible? true
-             :bs-style "primary"}
-            (if (and (:id deployment) 
-                     (:up? deployment)) 
-              (om/build peer-table (:peers deployment) {})
-              (dom/div "Deployment has no pulse.")))))
+          (dom/div
+            (p/panel
+              {:header (dom/div {} (dom/h4 {:class "unselectable"} "Dashboard Time Travel"))
+               :bs-style (if time-travel-message-id  "danger" "primary")}
+              (let [selected-entry (sq/deployment->latest-entry deployment)
+                    selected-message-id (:message-id selected-entry)
+                    at-min? (zero? selected-message-id)
+                    at-max? (= selected-message-id message-id-max)] 
+                (g/grid {}
+                        (conj 
+                          (if (nil? time-travel-message-id)
+                            [(g/row {}
+                                    "Following the cluster log")]
+                            [(g/row {}
+                                    (str "Time travelling to:"))
+                             (g/row {}
+                                    (str (js/Date. (:created-at selected-entry))))])
+                          (g/row {}
+                                 (pg/pagination {}
+                                                (pg/previous {:on-click (fn [e] 
+                                                                          (when-not at-min? 
+                                                                            (put! (om/get-shared owner :api-ch) 
+                                                                                  [:time-travel (dec selected-message-id)])
+                                                                            (.preventDefault e)))
+                                                              :disabled? at-min?})
+                                                (pg/page {:active? true
+                                                          :on-click (fn [e] (.preventDefault e))} 
+                                                         (sq/message-id deployment))
+                                                (pg/next {:on-click (fn [e] 
+                                                                      (when-not at-max? 
+                                                                        (put! (om/get-shared owner :api-ch) 
+                                                                              [:time-travel (inc selected-message-id)]) 
+                                                                        (.preventDefault e)))
+                                                          :disabled? at-max?}))))))))))
+
+(defcomponent deployment-peers [deployment owner]
+  (init-state [_]
+              {:collapsed? false})
+  (render [_] 
+          (let [replica (sq/deployment->latest-replica deployment)
+                host-peers (rq/host-peers replica)] 
+            (p/panel
+              {:header (om/build section-header-collapsible {:text (str "Cluster Peers (" (count (:peers replica)) ")")} {})
+               ;:collapsible? true
+               :bs-style "primary"}
+              (if (and (:id deployment) 
+                       (:up? deployment)) 
+                (om/build peer-table host-peers {})
+                (dom/div "Deployment has no pulse."))))))
 
 (defn strip-catalog [catalog task-rename]
   (mapv (fn [entry]
           (-> entry 
               (update-in [:onyx/name] task-rename)
-              (select-keys [:onyx/name :onyx/type :onyx/tenancy-ident 
+              (select-keys [:onyx/name :onyx/type :onyx/ident 
                             :onyx/medium :onyx/consumption 
                             :onyx/batch-size]))) 
           catalog))
@@ -82,11 +131,6 @@
   (mapv (fn [{:keys [workflow catalog] :as job}]
           (let [task-rename (workflow->task-rename-map workflow)] 
             (-> job
-                (dissoc :pretty-workflow
-                        :pretty-catalog
-                        :pretty-flow-conditions
-                        :tracking-id)
-                ; FIXME remove flow conditions until we have implemented publicising
                 (dissoc :flow-conditions) 
                 (update-in [:workflow] replace-in-workflow task-rename)
                 (update-in [:catalog] strip-catalog task-rename))))
@@ -138,8 +182,8 @@
                                              {:opts {:parent-ch download-ch}})
                     (dom/div))
                   (p/panel
-                    {:header "Deployment Log Dump" 
-                     :collapsible? true
+                    {:header (dom/h4 {:class "unselectable"} "Deployment Log Dump")
+                     ;:collapsible? true
                      :bs-style "primary"}
                     (t/table {:striped? true :bordered? false :condensed? true :hover? true}
                              (dom/thead (dom/tr (dom/th "Type") (dom/th)))

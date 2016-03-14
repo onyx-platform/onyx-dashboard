@@ -8,7 +8,7 @@ dependencies:
   override:
     - echo '{:user {:plugins [[lein-voom "0.1.0-20150822_000839-g763d315"]]}}' > ~/.lein/profiles.clj
     - lein voom build-deps
-    - echo Y | lein upgrade 2.5.1:
+    - echo Y | lein upgrade 2.6.0:
         timeout: 900
     - lein deps
   pre:
