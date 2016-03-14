@@ -1,4 +1,4 @@
-(defproject org.onyxplatform/onyx-dashboard "0.9.0.0-SNAPSHOT"
+(defproject org.onyxplatform/onyx-dashboard "0.8.11.1-SNAPSHOT"
   :description "Dashboard for the Onyx distributed computation system"
   :url "http://github.com/lbradstreet/onyx-dashboard"
   :license {:name "Eclipse Public License"
@@ -21,7 +21,7 @@
 		 [ring "1.3.2"]
 		 ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
 		 [org.onyxplatform/onyx "0.8.11"]
-		 [org.onyxplatform/lib-onyx "0.8.12.0-SNAPSHOT" :exclusions [ring-jetty-component]]
+		 [org.onyxplatform/lib-onyx "0.8.12.0-20160314.202610-2" :exclusions [ring-jetty-component]]
 		 [timothypratley/patchin "0.3.5"]
 		 [com.cognitect/transit-clj "0.8.275"]
 		 [com.cognitect/transit-cljs "0.8.220"]
@@ -42,6 +42,8 @@
 		 [org.apache.httpcomponents/httpcore "4.4.4"]
 		 [org.clojure/core.cache "0.6.4"]
 		 [shoreleave/shoreleave-browser "0.3.0"]
+                 ;; Switch to onyx-platform
+                 [onyx-viz "0.1.0-20160314.202732-1"]
 		 [org.omcljs/om "0.8.8"]
 		 [ankha "0.1.5.1-479897" :exclusions [om com.cemerick/austin]]
 		 [racehub/om-bootstrap "0.6.1" :exclusions [om]]
@@ -109,9 +111,9 @@
                        :aot :all
                        :cljsbuild ^:replace 
                        {:builds 
-                        {:uberjar {:source-paths ["src/cljs" "env/prod/cljs"]
-                                   :compiler {:output-to "resources/public/js/app.js"
-                                              :output-dir "resources/public/js/advanced"
-                                              :source-map "resources/public/js/app.js.map"
-                                                                   :optimizations :advanced
-                                                                   :pretty-print false}}}}}})
+			{:uberjar {:source-paths ["src/cljs" "env/prod/cljs"]
+				   :compiler {:output-to "resources/public/js/app.js"
+					      :output-dir "resources/public/js/advanced"
+					      :source-map "resources/public/js/app.js.map"
+					      :optimizations :advanced
+					      :pretty-print false}}}}}})

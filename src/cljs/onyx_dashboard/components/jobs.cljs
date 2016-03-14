@@ -9,6 +9,7 @@
             [cljsjs.moment]
             [fipp.edn :as fipp]
             [onyx-dashboard.components.code :refer [clojure-block]]
+            [onyx-viz.core :as viz]
             [lib-onyx.replica-query :as rq]
             [onyx-dashboard.state-query :as sq]
             [onyx-dashboard.components.ui-elements :refer [section-header-collapsible]]
@@ -48,8 +49,7 @@
                                                                      (if (:exception job)
                                                                        {:style {:color "red"} :class "fa fa-exclamation"} 
                                                                        {:style {:color "orange"} :class "fa fa-remove"}))))
-                                                    (dom/td {:style {:font-size 8}}
-                                                            (.fromNow (js/moment (str (js/Date. (:created-at job)))))))))))))))))
+                                                    (dom/td {} (.fromNow (js/moment (str (js/Date. (:created-at job)))))))))))))))))
 
 (defcomponent task-table [{:keys [job-info replica]} owner]
   (render [_]
@@ -132,6 +132,14 @@
              :bs-style "primary"}
             (dom/pre exception))))
 
+(defcomponent job-visualisation [job-info owner]
+  (render [_]
+          (p/panel
+            {:header (om/build section-header-collapsible {:text "Job Visualization"} {})
+             ;:collapsible? true
+             :bs-style "primary"}
+            (om/build viz/job-dag {:job (:job job-info) :width 640 :height 480}))))
+
 (defcomponent job-info [{:keys [replica job-info]} owner]
   (render [_]
           (let [{:keys [job id metrics exception]} job-info
@@ -147,6 +155,9 @@
                 (om/build job-overview-panel {:replica replica :job-info job-info})
                 (if exception (om/build exception-panel exception {}))
                 (om/build task-panel {:replica replica :job-info job-info} {})
+                (om/build job-visualisation job-info {})
+
+
                 (p/panel
                   {:header (om/build section-header-collapsible {:text "Workflow"} {})
                    ;:collapsible? true

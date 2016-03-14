@@ -108,14 +108,10 @@
                                    next-handler (partial change-index
                                                          (max 0 (- current-index entries-per-page)))]
                                (dom/div
-
                                  (if visible-entry 
                                    (om/build log-entry-modal (:entry (replica-states visible-entry)) {:opts {:entry-ch entry-ch}}))
-
-
                                  (dom/div
                                    (om/build log-entries-table displayed-entries {:opts {:entry-ch entry-ch}})
-
                                    (pg/pagination {}
                                                   (pg/previous 
                                                     (if (zero? current-page) 

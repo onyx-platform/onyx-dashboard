@@ -1,0 +1,36 @@
+/* This sets the color for input nodes to a light blue green. */
+g.type-input > rect {
+  fill:	#C6F5B8;
+}
+
+g.type-function > rect {
+  fill: #B8E5F5;
+}
+
+g.type-output > rect {
+  fill: #F5F7D0;
+}
+
+
+text {
+  font-weight: 300;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serf;
+  font-size: 14px;
+}
+
+.node rect {
+  stroke: #999;
+  fill: #fff;
+  stroke-width: 1.5px;
+}
+
+.edgePath path {
+  stroke: #333;
+  stroke-width: 1.5px;
+}
+
+.tipsy .catalog {
+  font-family: "Lucida Console", Monaco, monospace;
+  font-size: 7px;
+  text-align: left;
+}

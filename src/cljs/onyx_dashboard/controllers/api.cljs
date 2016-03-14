@@ -22,7 +22,8 @@
     (assoc state :deployment (new-deployment-state tracking-id deployment-id))))
 
 (defmethod api-controller :time-travel [[_ message-id] chsk-send! state]
-  (assoc-in state [:deployment :time-travel-message-id] message-id))
+  (assoc-in state [:deployment :time-travel-message-id] (if-not (= message-id (:message-id-max (:deployment state)))
+                                                          message-id)))
 
 (defmethod api-controller :start-job [[_ job-info] chsk-send! state]
   (chsk-send! [:job/start job-info])

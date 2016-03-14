@@ -20,58 +20,50 @@ order to provide releases out of band with Onyx.
 
 ## Development
 
-Setup an environment variable for `PEER_CONFIG` in your lein user profiles.clj like so:
-
-```clojure
-{:user {:env {:peer-config "path-to-peerconfig.edn"}}}
+In a terminal start a sample job and cluster to dashboard against:
+```
+lein run -m onyx.peer.dag-test
 ```
 
-or by setting the environment variable in your shell.
+Then start developyment:
 
-Then open a terminal and run `lein figwheel` to start the Figwheel build
-(https://github.com/bhauman/lein-figwheel).
-
-and run `lein repl` to start your repl.
+Run `lein repl` to start your repl.
 
 In the REPL, run
+```clojure
+(onyx-dashboard.dev/start-figwheel)
+```
+
+Then run:
 
 ```clojure
-(user/go)
+(user/stop) (clojure.tools.namespace.repl/refresh) (user/go)
 ```
+to start the server, and each time you make a change on the server.
 
 Then point your browser at http://localhost:3000/
 
 ## Deployment
 
-Configure an environment variable `PEER_CONFIG`.
-
-e.g. `PEER_CONFIG="peer-config.edn"` 
-
-Where peer-config.edn contains the peer-config used by your peers e.g.
-
+Run the jar via:
 ```
-{:zookeeper/address "127.0.0.1:2188"
- :onyx.peer/job-scheduler :onyx.job-scheduler/greedy
- :onyx.messaging/impl :aeron
- :onyx.messaging/peer-port-range [40200 40260]
- :onyx.messaging/bind-addr "localhost"}
+java -server -jar onyx-dashboard-VERSION.jar ZOOKEEPER_ADDR JOB_SCHEDULER
 ```
 
-Then run the Onyx Dashboard in one of several ways:
+e.g.
+```
+java -server -jar target/onyx-dashboard.jar "127.0.0.1:2188" "onyx.job-scheduler/greedy"
+```
 
-* Download the [uberjar
-version](https://github.com/lbradstreet/onyx-dashboard/releases).
-  Then run it via `java -jar FILENAME`.
-* Or build and run the uberjar `lein clean && lein with-profile uberjar uberjar`. 
-Then run it via `java -jar target/onyx-dashboard.jar`.
-* Or use the development instructions above.
+Note that the job scheduler does not start with a keyword.
+
+By default the server will listen on port 3000, but this can be configured via the PORT environment variable.
 
 ## License
 
-Copyright © 2015 Lucas Bradstreet & Michael Drogalis
+Copyright © 2016 Distributed Masonry
 
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Distributed under the Eclipse Public License either version 1.0 or (at your option) any later version.
 
 ## Chestnut
 

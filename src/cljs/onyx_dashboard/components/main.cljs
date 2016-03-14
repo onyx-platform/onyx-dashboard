@@ -38,8 +38,8 @@
                                                                     :margin-top "10px"}}
                                                            "Onyx Dashboard"))))
                     (g/grid {}
-                            (g/row {}
-                                   (g/col {:xs 6 :md 4}
+                            (g/row {:class "no-gutter"}
+                                   (g/col {:xs 4 :md 4}
                                           (dom/div {:class "left-nav-deployment"} 
                                                    (om/build select-deployment app {}))
                                           (if (:id deployment) 
@@ -47,15 +47,15 @@
                                               (om/build deployment-indicator 
                                                         {:deployment deployment
                                                          :last-entry (sq/deployment->latest-entry deployment)})
-                                              (om/build deployment-time-travel deployment)
                                               (om/build job-selector deployment {})
                                               (om/build deployment-peers deployment {})
                                               ; (if job 
                                               ;   (om/build job-management 
                                               ;             job
                                               ;             {:react-key (str "management-" (:id job))}))
+                                              (om/build deployment-time-travel deployment)
                                               (om/build deployment-log-dump deployment))))
-                                   (g/col {:xs 11 :md 8}
+                                   (g/col {:xs 8 :md 8}
                                           (if (:id deployment) 
                                             (dom/div 
                                               (if job 

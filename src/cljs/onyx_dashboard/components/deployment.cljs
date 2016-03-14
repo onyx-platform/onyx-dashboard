@@ -68,27 +68,31 @@
                     at-min? (zero? selected-message-id)
                     at-max? (= selected-message-id message-id-max)] 
                 (g/grid {}
-                        (g/row {}
-                               (if (nil? time-travel-message-id)
-                                 "Following the cluster log"
-                                 (str "Time travelling to " (.fromNow (js/moment (str (js/Date. (:created-at selected-entry))))))))
-                        (g/row {}
-                               (pg/pagination {}
-                                              (pg/previous {:on-click (fn [e] 
-                                                                        (when-not at-min? 
-                                                                          (put! (om/get-shared owner :api-ch) 
-                                                                                [:time-travel (dec selected-message-id)])
-                                                                          (.preventDefault e)))
-                                                            :disabled? at-min?})
-                                              (pg/page {:active? true
-                                                        :on-click (fn [e] (.preventDefault e))} 
-                                                       (sq/message-id deployment))
-                                              (pg/next {:on-click (fn [e] 
-                                                                    (when-not at-max? 
-                                                                      (put! (om/get-shared owner :api-ch) 
-                                                                            [:time-travel (inc selected-message-id)]) 
-                                                                      (.preventDefault e)))
-                                                        :disabled? at-max?})))))))))
+                        (conj 
+                          (if (nil? time-travel-message-id)
+                            [(g/row {}
+                                    "Following the cluster log")]
+                            [(g/row {}
+                                    (str "Time travelling to:"))
+                             (g/row {}
+                                    (str (js/Date. (:created-at selected-entry))))])
+                          (g/row {}
+                                 (pg/pagination {}
+                                                (pg/previous {:on-click (fn [e] 
+                                                                          (when-not at-min? 
+                                                                            (put! (om/get-shared owner :api-ch) 
+                                                                                  [:time-travel (dec selected-message-id)])
+                                                                            (.preventDefault e)))
+                                                              :disabled? at-min?})
+                                                (pg/page {:active? true
+                                                          :on-click (fn [e] (.preventDefault e))} 
+                                                         (sq/message-id deployment))
+                                                (pg/next {:on-click (fn [e] 
+                                                                      (when-not at-max? 
+                                                                        (put! (om/get-shared owner :api-ch) 
+                                                                              [:time-travel (inc selected-message-id)]) 
+                                                                        (.preventDefault e)))
+                                                          :disabled? at-max?}))))))))))
 
 (defcomponent deployment-peers [deployment owner]
   (init-state [_]
@@ -178,7 +182,7 @@
                                              {:opts {:parent-ch download-ch}})
                     (dom/div))
                   (p/panel
-                    {:header "Deployment Log Dump" 
+                    {:header (dom/h4 {:class "unselectable"} "Deployment Log Dump")
                      ;:collapsible? true
                      :bs-style "primary"}
                     (t/table {:striped? true :bordered? false :condensed? true :hover? true}

@@ -36,31 +36,29 @@
   (zk/children client (zk-onyx/pulse-path deployment-id)))
 
 (defn refresh-deployments-watch [send-all-fn! zk-client deployments]
-  (try 
-    (loop [] 
+  (loop [] 
+    (try 
       (when-not (Thread/interrupted)
         (if-let [children (zk/children zk-client zk-onyx/root-path)]
-          (do 
-            (->> children
-                 (map (juxt identity 
-                            (partial zk-deployment-entry-stat zk-client)))
-                 (map (fn [[child stat]]
-                        (vector child
-                                {:created-at (java.util.Date. (:ctime stat))
-                                 :modified-at (java.util.Date. (:mtime stat))})))
-                 (into {})
-                 (reset! deployments)
-                 (distribute-deployment-listing send-all-fn!))
-            (Thread/sleep 1000)
-            (recur))
+          (do (->> children
+                   (map (juxt identity 
+                              (partial zk-deployment-entry-stat zk-client)))
+                   (map (fn [[child stat]]
+                          (vector child
+                                  {:created-at (java.util.Date. (:ctime stat))
+                                   :modified-at (java.util.Date. (:mtime stat))})))
+                   (into {})
+                   (reset! deployments)
+                   (distribute-deployment-listing send-all-fn!))
+            (Thread/sleep 1000))
           (do
             (println (format "Could not find deployments at %s. Retrying in 1s." zk-onyx/root-path))
-            (Thread/sleep 1000)
-            (recur)))))
-    (catch InterruptedException ie
-      (info "Shutting down refresh deployments watch"))
-    (catch Throwable t
-      (println t "Error watching deployments"))))
+            (Thread/sleep 1000))))
+      (catch InterruptedException ie
+        (info "Shutting down refresh deployments watch"))
+      (catch Throwable t
+        (println t "Error watching deployments")))
+    (recur)))
 
 (def freshness-timeout 100)
 
