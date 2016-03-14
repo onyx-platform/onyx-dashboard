@@ -1,5 +1,5 @@
 (ns onyx-dashboard.onyx-deployment
-  (:require [fipp.edn :refer [pprint] :rename {pprint fipp}]
+  (:require 
             [onyx.system :as system :refer [onyx-client]]
             [onyx.extensions :as extensions]
             [onyx.api]
@@ -77,19 +77,15 @@
         job (jq/job-information log-sub replica job-id)]
     (send-fn! [:deployment/submitted-job {:tracking-id tracking-id
                                           :job {:task-name->id task-name->id
-                                                ;:task-hosts task-hosts
-                                                :pretty-catalog (with-out-str (fipp (into [] (:catalog job))))
-                                                :pretty-workflow (with-out-str (fipp (into [] (:workflow job))))
-                                                :pretty-flow-conditions (with-out-str (fipp (into [] (:flow-conditions job))))
                                                 :created-at (:created-at entry)
                                                 :id job-id
                                                 :job job}}])))
 
 (defmethod log-notifications :deployment/kill-job [send-fn! log-sub replica diff entry tracking-id]
-  #_(info "entry is " entry)
-  #_(send-fn! [:deployment/kill-job {:tracking-id tracking-id
-                                   :entry entry
-                                   :id (:job (:args entry))}]))
+  (when-let [exception (jq/exception log-sub (:job (:args entry)))]
+    (send-fn! [:deployment/kill-job {:tracking-id tracking-id
+                                     :id (:job (:args entry))
+                                     :exception (pr-str exception)}])))
 
 (defmethod log-notifications :default [send-fn! log-sub replica diff entry tracking-id] )
 

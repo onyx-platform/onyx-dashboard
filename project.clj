@@ -34,7 +34,7 @@
 		 [instaparse "1.4.1"]
 		 [enlive "1.1.5"]
 		 [fence "0.2.0"]
-		 [fipp "0.6.2"]
+		 [fipp "0.6.4"]
 		 [environ "1.0.0"]
 		 [http-kit "2.1.19"]
 		 ; make this explicit to fix uberjar?

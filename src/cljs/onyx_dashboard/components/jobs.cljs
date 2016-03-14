@@ -7,6 +7,7 @@
             [om-bootstrap.button :as b]
             [om-bootstrap.table :as t]
             [cljsjs.moment]
+            [fipp.edn :as fipp]
             [onyx-dashboard.components.code :refer [clojure-block]]
             [lib-onyx.replica-query :as rq]
             [onyx-dashboard.state-query :as sq]
@@ -19,24 +20,22 @@
             (p/panel {:header (dom/h4 "Jobs") 
                       :bs-style "primary"}
                      (t/table {:striped? true :bordered? false :condensed? true :hover? true :class "job-selector"}
-                              (dom/thead (dom/tr (dom/td) (dom/th "ID") (dom/th "Status") (dom/th "Time")))
+                              (dom/thead (dom/tr (dom/td) (dom/th "ID") (dom/th "State") (dom/th "Time")))
                               (dom/tbody
-                                (cons (dom/tr {:class "job-entry"
-                                               :on-click (fn [_] (put! (om/get-shared owner :api-ch) [:select-job nil]))}
+                                (cons (dom/tr {:on-click (fn [_] (put! (om/get-shared owner :api-ch) [:select-job nil]))}
                                               (dom/td (dom/i {:class (if (nil? selected-job) "fa fa-dot-circle-o" "fa fa-circle-o")}))
-                                              (dom/td {} (dom/a {:href "#"} "None"))
+                                              (dom/td {} (dom/a {:class "job-entry" :href "#"} "None"))
                                               (dom/td {})
                                               (dom/td {}))
                                       (for [job (reverse (sort-by :created-at (vals jobs)))] 
                                         (let [job-id (:id job)
                                               selected? (= job-id selected-job)] 
-                                          (dom/tr {:class "job-entry"
-                                                   :on-click (fn [_] 
+                                          (dom/tr {:on-click (fn [_] 
                                                                (put! (om/get-shared owner :api-ch) 
                                                                      [:select-job job-id]))}
                                                   (dom/td (dom/i {:class (if selected? "fa fa-dot-circle-o" "fa fa-circle-o")}))
                                                   (dom/td {} 
-                                                          (dom/a {:class "job-selector-id uuid" :href "#"} (str job-id)))
+                                                          (dom/a {:class "job-entry uuid" :href "#"} (str job-id)))
                                                   (dom/td {}
                                                           (dom/i (case (rq/job-state replica job-id)
                                                                    :running
@@ -44,8 +43,10 @@
                                                                    :completed
                                                                    {:style {:color "green"} :class "fa fa-check"}
                                                                    :killed
-                                                                   {:style {:color "red"} :class "fa fa-exclamation"})))
-                                                  (dom/td {}
+                                                                   (if (:exception job)
+                                                                     {:style {:color "red"} :class "fa fa-exclamation"} 
+                                                                     {:style {:color "orange"} :class "fa fa-remove"}))))
+                                                  (dom/td {:style {:font-size 8}}
                                                           (.fromNow (js/moment (str (js/Date. (:created-at job))))))))))))))))
 
 (defcomponent task-table [{:keys [job-info replica]} owner]
@@ -68,34 +69,34 @@
                                                                    " peer" 
                                                                    (if (> 1 (count host-peers)) "s"))))))))))))))))
 
-(defcomponent job-management [{:keys [id status] :as job} owner]
-  (render [_]
-          (let [api-ch (om/get-shared owner :api-ch)
-                restart-job-handler (fn [_] 
-                                      (when (js/confirm "Are you sure you want to restart this job?")
-                                        (put! api-ch [:restart-job id])))
-                kill-job-handler (fn [_] 
-                                   (when (js/confirm "Are you sure you want to kill this job?")
-                                     (put! api-ch [:kill-job id])))] 
-            (dom/div
-              (p/panel
-                {:header (om/build section-header-collapsible {:text "Job Management"} {})
-                 :collapsible? true
-                 :bs-style "primary"}
-                (g/grid {} 
-                        (g/row {} 
-                               (g/col {:xs 2 :md 1}
-                                      (dom/button {:on-click restart-job-handler
-                                                   :type "button"
-                                                   :class "btn btn-warning"}
-                                                  (dom/i {:class "fa fa-repeat"} " Restart")))
-                               (g/col {:xs 2 :md 1}
-                                      (if (= status :incomplete)
-                                        (dom/button {:on-click kill-job-handler
-                                                     :type "button"
-                                                     :class "btn btn-danger"}
-                                                    (dom/i {:class "fa fa-times-circle-o"
-                                                            :style {:padding-right "10px"}} " Kill")))))))))))
+; (defcomponent job-management [{:keys [id status] :as job} owner]
+;   (render [_]
+;           (let [api-ch (om/get-shared owner :api-ch)
+;                 restart-job-handler (fn [_] 
+;                                       (when (js/confirm "Are you sure you want to restart this job?")
+;                                         (put! api-ch [:restart-job id])))
+;                 kill-job-handler (fn [_] 
+;                                    (when (js/confirm "Are you sure you want to kill this job?")
+;                                      (put! api-ch [:kill-job id])))] 
+;             (dom/div
+;               (p/panel
+;                 {:header (om/build section-header-collapsible {:text "Job Management"} {})
+;                  :collapsible? true
+;                  :bs-style "primary"}
+;                 (g/grid {} 
+;                         (g/row {} 
+;                                (g/col {:xs 2 :md 1}
+;                                       (dom/button {:on-click restart-job-handler
+;                                                    :type "button"
+;                                                    :class "btn btn-warning"}
+;                                                   (dom/i {:class "fa fa-repeat"} " Restart")))
+;                                (g/col {:xs 2 :md 1}
+;                                       (if (= status :incomplete)
+;                                         (dom/button {:on-click kill-job-handler
+;                                                      :type "button"
+;                                                      :class "btn btn-danger"}
+;                                                     (dom/i {:class "fa fa-times-circle-o"
+;                                                             :style {:padding-right "10px"}} " Kill")))))))))))
 
 (defcomponent job-overview-panel [{:keys [replica job-info]} owner]
   (render [_]
@@ -121,27 +122,51 @@
              :bs-style "primary"}
             (om/build task-table job-replica {}))))
 
+(defcomponent exception-panel [exception owner]
+  (render [_]
+          (p/panel
+            {:header (om/build section-header-collapsible {:text "Exception Thrown"} {})
+             :collapsible? true
+             :bs-style "primary"}
+            (dom/pre exception))))
+
 (defcomponent job-info [{:keys [replica job-info]} owner]
   (render [_]
-          (let [{:keys [pretty-catalog pretty-workflow pretty-flow-conditions job id metrics]} job-info] 
+          (let [{:keys [job id metrics exception]} job-info
+                {:keys [catalog workflow flow-conditions triggers windows]} job] 
             (dom/div
               (om/build job-overview-panel {:replica replica :job-info job-info})
+              (if exception (om/build exception-panel exception {}))
               (om/build task-panel {:replica replica :job-info job-info} {})
               (p/panel
                 {:header (om/build section-header-collapsible {:text "Workflow"} {})
                  :collapsible? true
                  :bs-style "primary"}
-                (om/build clojure-block {:input pretty-workflow}))
+                (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value workflow)))}))
 
               (p/panel
                 {:header (om/build section-header-collapsible {:text "Catalog"} {})
                  :collapsible? true
                  :bs-style "primary"}
-                (om/build clojure-block {:input pretty-catalog}))
+                (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value catalog)))}))
 
-              (if-not (empty? pretty-flow-conditions) 
+              (if-not (empty? flow-conditions) 
                 (p/panel
                   {:header (om/build section-header-collapsible {:text "Flow Conditions"} {})
                    :collapsible? true
                    :bs-style "primary"}
-                  (om/build clojure-block {:input pretty-flow-conditions})))))))
+                  (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value flow-conditions)))})))
+              
+              (if-not (empty? windows) 
+                (p/panel
+                  {:header (om/build section-header-collapsible {:text "Windows"} {})
+                   :collapsible? true
+                   :bs-style "primary"}
+                  (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value windows)))})))
+
+              (if-not (empty? triggers) 
+                (p/panel
+                  {:header (om/build section-header-collapsible {:text "Triggers"} {})
+                   :collapsible? true
+                   :bs-style "primary"}
+                  (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value triggers)))})))))))

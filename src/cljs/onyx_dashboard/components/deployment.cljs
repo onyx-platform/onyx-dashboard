@@ -87,11 +87,6 @@
   (mapv (fn [{:keys [workflow catalog] :as job}]
           (let [task-rename (workflow->task-rename-map workflow)] 
             (-> job
-                (dissoc :pretty-workflow
-                        :pretty-catalog
-                        :pretty-flow-conditions
-                        :tracking-id)
-                ; FIXME remove flow conditions until we have implemented publicising
                 (dissoc :flow-conditions) 
                 (update-in [:workflow] replace-in-workflow task-rename)
                 (update-in [:catalog] strip-catalog task-rename))))

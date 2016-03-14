@@ -6,7 +6,7 @@
             [om-bootstrap.random :as r]
             [onyx-dashboard.components.deployment :refer [select-deployment deployment-indicator 
                                                           deployment-peers deployment-log-dump]]
-            [onyx-dashboard.components.jobs :refer [job-selector job-info job-management]]
+            [onyx-dashboard.components.jobs :refer [job-selector job-info #_job-management]]
             [onyx-dashboard.components.log :refer [log-entries-pager]]
             [onyx-dashboard.controllers.api :refer [api-controller]]
             [onyx-dashboard.state-query :as sq]

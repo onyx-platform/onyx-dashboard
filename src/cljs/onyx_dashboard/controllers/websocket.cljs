@@ -32,10 +32,9 @@
     state))
 
 (defmethod msg-controller :deployment/kill-job 
-  [[_ {:keys [id tracking-id] :as msg}] state]
+  [[_ {:keys [id tracking-id exception] :as msg}] state]
   (if (is-tracking? tracking-id state)
-    state
-    ;(assoc-in state [:deployment :jobs id :status] :killed)
+    (assoc-in state [:deployment :jobs id :exception] exception)
     state))
 
 (defmethod msg-controller :deployment/log-entry [[_ {:keys [tracking-id entry diff]}] state]
