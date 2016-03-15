@@ -16,4 +16,4 @@ COPY /target/onyx-dashboard.jar /
 
 EXPOSE 3000
 
-CMD sh -c "java -server -jar /onyx-dashboard.jar $ZOOKEEPER_ADDR $JOB_SCHEDULER"
+CMD sh -c "java -server -jar /onyx-dashboard.jar $ZOOKEEPER_ADDR"

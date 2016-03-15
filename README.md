@@ -47,15 +47,8 @@ Then point your browser at http://localhost:3000/
 
 Run the jar via:
 ```
-java -server -jar onyx-dashboard-VERSION.jar ZOOKEEPER_ADDR JOB_SCHEDULER
+java -server -jar onyx-dashboard-VERSION.jar ZOOKEEPER_ADDR
 ```
-
-e.g.
-```
-java -server -jar target/onyx-dashboard.jar "127.0.0.1:2188" "onyx.job-scheduler/greedy"
-```
-
-Note that the job scheduler does not start with a keyword.
 
 By default the server will listen on port 3000, but this can be configured via the PORT environment variable.
 

@@ -1,4 +1,4 @@
-(ns onyx-dashboard.onyx-deployment
+(ns onyx-dashboard.tenancy
   (:require [onyx.system :as system :refer [onyx-client]]
             [onyx.extensions :as extensions]
             [onyx.api]
@@ -95,32 +95,32 @@
                                       :diff patch}])
     (log-notifications send-fn! sub replica patch entry tracking-id)))
 
-(defrecord TrackDeploymentManager [send-fn! peer-config tracking-id user-id]
+(defrecord TrackTenancyManager [send-fn! peer-config tracking-id user-id]
   component/Lifecycle
   (start [component]
     (let [tenancy-id (:onyx/id peer-config)
-          _ (info "Starting Track Deployment manager for tenancy " tenancy-id peer-config user-id)
+          _ (info "Starting Track Tenancy manager for tenancy " tenancy-id peer-config user-id)
           f-check-pulses (partial deployment-pulses 
-				  (zk/connect (:zookeeper/address peer-config)) 
-				  tenancy-id)
-	  last-replica (atom {})
-	  callback-fn (partial process-subscription-event 
-			       (partial send-fn! user-id)
+                                  (zk/connect (:zookeeper/address peer-config)) 
+                                  tenancy-id)
+          last-replica (atom {})
+          callback-fn (partial process-subscription-event 
+                               (partial send-fn! user-id)
                                tenancy-id
-			       tracking-id
-			       last-replica)
-	  log-subscriber (s/start-log-subscriber peer-config {:callback-fn callback-fn})]
+                               tracking-id
+                               last-replica)
+          log-subscriber (s/start-log-subscriber peer-config {:callback-fn callback-fn})]
       (assoc component :log-subscriber log-subscriber)))
   (stop [component]
-    (info "Stopping Track Deployment manager.")
+    (info "Stopping Track Tenancy manager.")
     (assoc component 
            :log-subscriber (s/stop-log-subscriber (:log-subscriber component)))))
 
-(defn new-track-deployment-manager [send-fn! peer-config user-id tracking-id]
-  (map->TrackDeploymentManager {:send-fn! send-fn! 
-                                :peer-config peer-config 
-                                :user-id user-id
-                                :tracking-id tracking-id}))
+(defn new-track-tenancy-manager [send-fn! peer-config user-id tracking-id]
+  (map->TrackTenancyManager {:send-fn! send-fn! 
+                             :peer-config peer-config 
+                             :user-id user-id
+                             :tracking-id tracking-id}))
 
 (defn stop-tracking! [tracking user-id]
   (if-let [manager (tracking user-id)]
@@ -138,9 +138,9 @@
              (-> tr
                  (stop-tracking! user-id)
                  (assoc user-id (component/start 
-                                  (new-track-deployment-manager send-fn! 
-                                                                (assoc peer-config :onyx/id deployment-id)
-                                                                user-id
-                                                                tracking-id))))))
+                                  (new-track-tenancy-manager send-fn! 
+                                                             (assoc peer-config :onyx/id deployment-id)
+                                                             user-id
+                                                             tracking-id))))))
     (catch Throwable t
       (println t))))
