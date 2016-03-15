@@ -132,12 +132,15 @@
   (reduce stop-tracking! tr (keys tr)))
 
 (defn start-tracking! [send-fn! peer-config tracking {:keys [deployment-id tracking-id]} user-id]
-  (swap! tracking 
-         (fn [tr]
-           (-> tr
-               (stop-tracking! user-id)
-               (assoc user-id (component/start 
-                                (new-track-deployment-manager send-fn! 
-                                                              (assoc peer-config :onyx/id deployment-id)
-                                                              user-id
-                                                              tracking-id)))))))
+  (try 
+    (swap! tracking 
+           (fn [tr]
+             (-> tr
+                 (stop-tracking! user-id)
+                 (assoc user-id (component/start 
+                                  (new-track-deployment-manager send-fn! 
+                                                                (assoc peer-config :onyx/id deployment-id)
+                                                                user-id
+                                                                tracking-id))))))
+    (catch Throwable t
+      (println t))))

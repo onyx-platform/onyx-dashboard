@@ -7,12 +7,11 @@
             [onyx.plugin.core-async :refer [take-segments!]]
             [onyx.api]))
 
-(comment (def id (java.util.UUID/randomUUID))
+(def id (java.util.UUID/randomUUID))
 
 (defn run-test-fixture
   [browser-type f]
-  (let [system (component/start (sys/get-system "127.0.0.1:2188" 
-                                                "onyx.job-scheduler/greedy"))]
+  (let [system (component/start (sys/get-system "127.0.0.1:2188"))]
     (webdriver/set-driver! {:browser browser-type})
     (webdriver/implicit-wait 20000)
 
@@ -299,8 +298,6 @@
     (is (= (clojure.string/replace workflow-text "\n" "")
            (str workflow)))
 
-    (Thread/sleep 100000)
-
     (is (not (empty? catalog-text)))
     (is (not (empty? lifecycles-text)))))
 
@@ -310,12 +307,12 @@
                       (fn []
                         (webdriver/to (str "http://localhost:" 3000))
                         (load-last-deployment)
-                        (load-job)
-                        (check-job-text)
+                        ;(load-job)
+                        ;(check-job-text)
 
                         (doseq [v-peer v-peers]
                           (onyx.api/shutdown-peer v-peer))
 
                         (onyx.api/shutdown-peer-group peer-group)
 
-                        (onyx.api/shutdown-env env))))))
+                        (onyx.api/shutdown-env env)))))

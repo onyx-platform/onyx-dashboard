@@ -21,8 +21,8 @@
 		 [ring "1.3.2"]
 		 ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
 		 [org.onyxplatform/onyx "0.8.11"]
-		 [org.onyxplatform/lib-onyx "0.8.12.0-20160314.202610-2" :exclusions [ring-jetty-component]]
-                 [org.onyxplatform/onyx-viz "0.1.0-20160314.203939-1"]
+		 [org.onyxplatform/lib-onyx "0.8.12.0-SNAPSHOT" :exclusions [ring-jetty-component]]
+                 [org.onyxplatform/onyx-visualization "0.1.0"]
 		 [timothypratley/patchin "0.3.5"]
 		 [com.cognitect/transit-clj "0.8.275"]
 		 [com.cognitect/transit-cljs "0.8.220"]

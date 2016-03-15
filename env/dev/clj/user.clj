@@ -6,7 +6,7 @@
 (def system nil)
 
 (defn init []
-  (alter-var-root #'system (constantly (sys/get-system "127.0.0.1:2188" :onyx.job-scheduler/balanced))))
+  (alter-var-root #'system (constantly (sys/get-system "127.0.0.1:2188"))))
 
 (defn start []
   (alter-var-root #'system component/start))

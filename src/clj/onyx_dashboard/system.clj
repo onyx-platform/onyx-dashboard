@@ -19,18 +19,17 @@
   (:gen-class))
 
 (defn get-system 
-  ([zookeeper-addr job-scheduler]
-   (get-system {:zookeeper/address zookeeper-addr
-                :onyx.peer/job-scheduler (keyword job-scheduler)
-                :onyx.messaging/impl :aeron
-                ;; Doesn't matter for the dashboard
-                :onyx.messaging/bind-addr "localhost"}))
-  ([peer-config]
+  ([zookeeper-addr]
    (component/system-map
      :sente (component/using (sente) [])
-     :http (component/using (new-http-server peer-config) [:sente]))))
+     :http (component/using (new-http-server {:zookeeper/address zookeeper-addr
+                                              :onyx.peer/job-scheduler :not-required/for-peer-sub
+                                              :onyx.messaging/impl :aeron
+                                              ;; Doesn't matter for the dashboard
+                                              :onyx.messaging/bind-addr "localhost"}) 
+                            [:sente]))))
 
-(defn -main [zookeeper-addr job-scheduler]
-  (component/start (get-system zookeeper-addr job-scheduler))
+(defn -main [zookeeper-addr]
+  (component/start (get-system zookeeper-addr))
   ;; block forever
   (<!! (chan)))
