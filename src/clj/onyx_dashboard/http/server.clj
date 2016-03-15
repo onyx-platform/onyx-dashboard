@@ -13,7 +13,7 @@
             [compojure.core :as comp :refer (defroutes GET POST)]
             [compojure.route :as route]
             [com.stuartsierra.component :as component]
-            [onyx-dashboard.onyx-deployment :as od]
+            [onyx-dashboard.tenancy :as tenancy]
             [onyx.log.curator :as zk]
             [taoensso.timbre :as timbre :refer [info error spy]]))
 
@@ -32,29 +32,28 @@
   (future
     (loop []
       (when-let [event (<!! (:ch-chsk sente))]
-        ;(info "EVENT:" event)
         ;; TODO: more sophisticated tracking,
         ;; should track by cluster id rather than user
         ;; and count the number of users tracking it. When the user count drops to 0
         ;; then stop the future.
         (let [user-id (event->uid event)] 
           (case (:id event) 
-            :deployment/track (od/start-tracking! (:chsk-send! sente)
-                                                  peer-config
-                                                  tracking
-                                                  (:?data event)
-                                                  user-id)
+            :deployment/track (tenancy/start-tracking! (:chsk-send! sente)
+                                                       peer-config
+                                                       tracking
+                                                       (:?data event)
+                                                       user-id)
             :deployment/get-listing ((:chsk-send! sente) user-id [:deployment/listing @deployments])
-            :job/kill (od/kill-job peer-config 
-                                   (:deployment-id (:?data event))
-                                   (:job (:?data event)))
-            :job/start (od/start-job peer-config 
-                                     (:deployment-id (:?data event))
-                                     (:job (:?data event)))
-            :job/restart (od/restart-job peer-config 
-                                         (:deployment-id (:?data event))
-                                         (:job (:?data event)))
-            :chsk/uidport-close (swap! tracking od/stop-tracking! user-id)
+            :job/kill (tenancy/kill-job peer-config 
+                                        (:deployment-id (:?data event))
+                                        (:job (:?data event)))
+            :job/start (tenancy/start-job peer-config 
+                                          (:deployment-id (:?data event))
+                                          (:job (:?data event)))
+            :job/restart (tenancy/restart-job peer-config 
+                                              (:deployment-id (:?data event))
+                                              (:job (:?data event)))
+            :chsk/uidport-close (swap! tracking tenancy/stop-tracking! user-id)
             :chsk/ws-ping nil
             nil #_(println "Dunno what to do with: " event)))
         (recur)))))
@@ -93,7 +92,7 @@
             server (http-kit-server/run-server handler {:port port})
             uri (format "http://localhost:%s/" (:local-port (meta server)))
             conn (zk/connect (:zookeeper/address peer-config))
-            refresh-fut (future (od/refresh-deployments-watch send-f conn deployments))]
+            refresh-fut (future (tenancy/refresh-deployments-watch send-f conn deployments))]
         (println "Http-kit server is running at" uri)
         (assoc component 
                :server server 
@@ -107,7 +106,7 @@
       (server :timeout 100)
       (finally 
         (try 
-          (swap! tracking od/stop-all-tracking!)
+          (swap! tracking tenancy/stop-all-tracking!)
           (finally
             (try 
               (future-cancel (:event-handler-fut component))

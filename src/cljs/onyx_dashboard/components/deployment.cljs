@@ -107,7 +107,7 @@
               (if (and (:id deployment) 
                        (:up? deployment)) 
                 (om/build peer-table host-peers {})
-                (dom/div "Deployment has no pulse."))))))
+                (dom/div "Tenancy has no pulse."))))))
 
 (defn strip-catalog [catalog task-rename]
   (mapv (fn [entry]
@@ -182,7 +182,7 @@
                                              {:opts {:parent-ch download-ch}})
                     (dom/div))
                   (p/panel
-                    {:header (dom/h4 {:class "unselectable"} "Deployment Log Dump")
+                    {:header (dom/h4 {:class "unselectable"} "Tenancy Log Dump")
                      ;:collapsible? true
                      :bs-style "primary"}
                     (t/table {:striped? true :bordered? false :condensed? true :hover? true}
@@ -208,7 +208,7 @@
           (dom/div {:class "btn-group btn-group-justified" :role "group"} 
                    (apply (partial b/dropdown {:id "ddl-deployment"
                                                :bs-style "default" 
-                                               :title (or (:id deployment) "Select Deployment")})
+                                               :title (or (:id deployment) "Select Tenancy")})
                           (for [[id info] (reverse (sort-by (comp :created-at val) 
                                                             deployments))]
                             (b/menu-item {:key id
