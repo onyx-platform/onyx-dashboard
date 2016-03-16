@@ -58,6 +58,7 @@ fi
 lein set-version $new_plugin_version
 
 echo "[Onyx Dashboard $new_plugin_version](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-$new_plugin_version.jar)" > NEWRELEASES.MD
+echo >> NEWRELEASES.MD
 cat RELEASES.md >> NEWRELEASES.MD
 mv -f NEWRELEASES.MD RELEASES.md
 
