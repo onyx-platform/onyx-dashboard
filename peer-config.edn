@@ -1,6 +1,0 @@
-{; port 2188 for CircleCI use, as ZooKeeper is already hosted
- :zookeeper/address "127.0.0.1:2188"
- :onyx.peer/job-scheduler :onyx.job-scheduler/greedy
- :onyx.messaging/impl :aeron
- :onyx.messaging/peer-port 40200
- :onyx.messaging/bind-addr "localhost"}

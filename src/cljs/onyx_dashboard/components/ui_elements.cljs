@@ -11,7 +11,9 @@
                 (dom/div {:on-click (fn [e] (om/update-state! owner :collapsed? not))}
                          (dom/h4 {:class "unselectable"} 
                                  text
-                                 (dom/i {:style {:float "right"}
+                                 ;; Not colllapsible by default is broken in latest bootstrap
+                                 ;; So disabling collapsibility all together for now
+                                 #_(dom/i {:style {:float "right"}
                                          :class (if collapsed? 
                                                   "fa fa-caret-square-o-down"
                                                   "fa fa-caret-square-o-up")})))))

@@ -7,9 +7,35 @@
             [onyx.plugin.core-async :refer [take-segments!]]
             [onyx.api]))
 
+(defn load-last-deployment []
+  (webdriver/wait-until #(not (empty? (webdriver/text "div.container"))))
+  (webdriver/click "button#ddl-deployment")
+  (webdriver/click "ul.dropdown-menu > li:last-child"))
+
+(defn load-job []
+  (webdriver/wait-until #(= 2 (count (webdriver/find-elements {:css "tr.job-entry"}))))
+  (webdriver/click (second (webdriver/find-elements {:css "tr.job-entry"}))))
+
+(defn check-job-text [workflow]
+  ;; remove this sleep - should perform a wait-until
+  (Thread/sleep 4000)
+  (let [[workflow-text catalog-text lifecycles-text] 
+        (map webdriver/text 
+             (webdriver/find-elements {:css "div.ace_content"}))]
+    (is (= (clojure.string/replace workflow-text "\n" "")
+           (str workflow)))
+
+    (is (not (empty? catalog-text)))
+    (is (not (empty? lifecycles-text)))))
+
+(deftest load-site
+  (testing "Load site and run checks"
+
+(def id (java.util.UUID/randomUUID))
+
 (defn run-test-fixture
   [browser-type f]
-  (let [system (component/start (sys/get-system "peer-config.edn"))]
+  (let [system (component/start (sys/get-system "127.0.0.1:2188"))]
     (webdriver/set-driver! {:browser browser-type})
     (webdriver/implicit-wait 20000)
 
@@ -19,14 +45,15 @@
         (component/stop system)
         (webdriver/quit)))))
 
-(def id (java.util.UUID/randomUUID))
-
 (def config 
-  {:env-config
-   {:zookeeper/address "127.0.0.1:2188"
-    :zookeeper/server? true
-    :zookeeper.server/port 2188}
-   :peer-config (read-string (slurp "peer-config.edn"))})
+  {:env-config {:zookeeper/address "127.0.0.1:2188"
+                :zookeeper/server? true
+                :zookeeper.server/port 2188}
+   :peer-config {:zookeeper/address "127.0.0.1:2188"
+                 :onyx.peer/job-scheduler :onyx.job-scheduler/greedy
+                 :onyx.messaging/impl :aeron
+                 :onyx.messaging/peer-port 40200
+                 :onyx.messaging/bind-addr "localhost"}})
 
 (def env-config (assoc (:env-config config) :onyx/id id))
 
@@ -271,44 +298,14 @@
 
 (close! colors-in-chan)
 
-(deftest check-outputs
-  (testing "outputs"
-    (is (= (into #{} green) green-expectatations))
-    (is (= (into #{} red) red-expectatations))
-    (is (= (into #{} blue) blue-expectatations))))
 
-(defn load-last-deployment []
-  (webdriver/wait-until #(not (empty? (webdriver/text "div.container"))))
-  (webdriver/click "button#ddl-deployment")
-  (webdriver/click "ul.dropdown-menu > li:last-child"))
 
-(defn load-job []
-  (webdriver/wait-until #(= 2 (count (webdriver/find-elements {:css "tr.job-entry"}))))
-  (webdriver/click (second (webdriver/find-elements {:css "tr.job-entry"}))))
-
-(defn check-job-text []
-  ;; remove this sleep - should perform a wait-until
-  (Thread/sleep 4000)
-  (let [[workflow-text catalog-text lifecycles-text] 
-        (map webdriver/text 
-             (webdriver/find-elements {:css "div.ace_content"}))]
-    (is (= (clojure.string/replace workflow-text "\n" "")
-           (str workflow)))
-
-    (is (not (empty? catalog-text)))
-    (is (not (empty? lifecycles-text)))
-    
-    #_(is (= (clojure.string/replace catalog-text "\n" "")
-           (str catalog)))))
-
-(deftest load-site
-  (testing "Load site and run checks"
     (run-test-fixture :chrome 
                       (fn []
                         (webdriver/to (str "http://localhost:" 3000))
                         (load-last-deployment)
-                        (load-job)
-                        (check-job-text)
+                        ;(load-job)
+                        ;(check-job-text workflow)
 
                         (doseq [v-peer v-peers]
                           (onyx.api/shutdown-peer v-peer))
