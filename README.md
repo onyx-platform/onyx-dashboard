@@ -52,6 +52,11 @@ java -server -jar onyx-dashboard-VERSION.jar ZOOKEEPER_ADDR
 
 By default the server will listen on port 3000, but this can be configured via the PORT environment variable.
 
+Alternately, run the docker image like so:
+```
+docker run -e ZOOKEEPER_ADDR="192.168.1.170:2188" onyx/onyx-dashboard:tag
+```
+
 ## License
 
 Copyright © 2016 Distributed Masonry
