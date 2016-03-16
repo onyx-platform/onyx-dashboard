@@ -62,12 +62,6 @@
   (doseq [uid (:any @connected-uids)]
     (send-fn! uid msg)))
 
-(defn metrics-handler [send-f request]
-  (http-kit-server/with-channel request channel
-    (http-kit-server/on-receive
-     channel
-     (fn [data] (send-f [:metrics/event (read-string data)])))))
-
 (defrecord HttpServer [peer-config]
   component/Lifecycle
   (start [{:keys [sente] :as component}]
@@ -78,7 +72,6 @@
       (defroutes routes
         (GET  "/" [] (page))
         (GET  "/chsk" req ((:ring-ajax-get-or-ws-handshake sente) req))
-        (GET  "/metrics" req (partial metrics-handler send-f))
         (POST "/chsk" req ((:ring-ajax-post sente) req))
         (resources "/")
         (resources "/react" {:root "react"})
