@@ -20,6 +20,22 @@ compatible with Onyx `0.8.1.0-alpha8`, use a version of the dashboard beginning 
 `0.8.1.0-alpha8`. The fourth version number will be reserved for dashboard versioning, in
 order to provide releases out of band with Onyx.
 
+Releases are listed at [RELEASES.md](RELEASES.md).
+
+## Deployment
+
+Run the jar via:
+```
+java -server -jar onyx-dashboard-VERSION.jar ZOOKEEPER_ADDR
+```
+
+By default the server will listen on port 3000, but this can be configured via the PORT environment variable.
+
+Alternately, run the docker image like so:
+```
+docker run -e ZOOKEEPER_ADDR="192.168.1.170:2188" onyx/onyx-dashboard:tag
+```
+
 ## Development
 
 In a terminal start a sample job and cluster to dashboard against:
@@ -44,20 +60,6 @@ Then run:
 to start the server, and each time you make a change on the server.
 
 Then point your browser at http://localhost:3000/
-
-## Deployment
-
-Run the jar via:
-```
-java -server -jar onyx-dashboard-VERSION.jar ZOOKEEPER_ADDR
-```
-
-By default the server will listen on port 3000, but this can be configured via the PORT environment variable.
-
-Alternately, run the docker image like so:
-```
-docker run -e ZOOKEEPER_ADDR="192.168.1.170:2188" onyx/onyx-dashboard:tag
-```
 
 ## License
 
