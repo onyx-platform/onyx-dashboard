@@ -62,7 +62,7 @@ cat RELEASES.MD >> NEWRELEASES.MD
 mv -f NEWRELEASES.MD RELEASES.MD
 
 sed -i.bak "s/$current_version/$new_plugin_version/g" README.md
-git add README.md project.clj
+git add README.md project.clj RELEASES.MD
 
 git commit -m "Release version $new_plugin_version."
 git tag $new_plugin_version
