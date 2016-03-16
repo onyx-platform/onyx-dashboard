@@ -58,13 +58,12 @@ fi
 lein set-version $new_plugin_version
 
 echo "[Onyx Dashboard $new_plugin_version](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-$new_plugin_version.jar)" > NEWRELEASES.MD
-cat RELEASES.MD >> NEWRELEASES.MD
-cat NEWRELEASES.MD > RELEASES.MD
-rm -f NEWRELEASES.MD
+cat RELEASES.md >> NEWRELEASES.MD
+mv -f NEWRELEASES.MD RELEASES.md
 
 sed -i.bak "s/$current_version/$new_plugin_version/g" README.md
 
-git commit -m "Release version $new_plugin_version." README.md project.clj RELEASES.MD
+git commit -m "Release version $new_plugin_version." README.md project.clj RELEASES.md
 git tag $new_plugin_version
 git push origin $new_plugin_version
 git push origin master
@@ -80,5 +79,5 @@ git checkout master
 lein set-version
 snapshot_version=`lein pprint :version | sed s/\"//g`
 sed -i.bak "s/$new_plugin_version/$snapshot_version/g" README.md
-git commit -m "Prepare for next release cycle." project.clj README.md RELEASES.MD
+git commit -m "Prepare for next release cycle." project.clj README.md RELEASES.md
 git push origin master
