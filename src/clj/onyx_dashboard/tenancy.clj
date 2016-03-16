@@ -14,10 +14,10 @@
             [taoensso.timbre :as timbre :refer [info error spy]]))
 
 (defn kill-job [peer-config deployment-id {:keys [id] :as job-info}]
-  (onyx.api/kill-job (assoc peer-config :onyx/id deployment-id) id))
+  (onyx.api/kill-job (assoc peer-config :onyx/tenancy-id deployment-id) id))
 
 (defn start-job [peer-config deployment-id {:keys [catalog workflow task-scheduler] :as job-info}]
-  (onyx.api/submit-job (assoc peer-config :onyx/id deployment-id)
+  (onyx.api/submit-job (assoc peer-config :onyx/tenancy-id deployment-id)
                        {:catalog catalog
                         :workflow workflow
                         :task-scheduler task-scheduler}))
@@ -98,7 +98,7 @@
 (defrecord TrackTenancyManager [send-fn! peer-config tracking-id user-id]
   component/Lifecycle
   (start [component]
-    (let [tenancy-id (:onyx/id peer-config)
+    (let [tenancy-id (:onyx/tenancy-id peer-config)
           _ (info "Starting Track Tenancy manager for tenancy " tenancy-id peer-config user-id)
           f-check-pulses (partial deployment-pulses 
                                   (zk/connect (:zookeeper/address peer-config)) 
@@ -139,7 +139,7 @@
                  (stop-tracking! user-id)
                  (assoc user-id (component/start 
                                   (new-track-tenancy-manager send-fn! 
-                                                             (assoc peer-config :onyx/id deployment-id)
+                                                             (assoc peer-config :onyx/tenancyid deployment-id)
                                                              user-id
                                                              tracking-id))))))
     (catch Throwable t
