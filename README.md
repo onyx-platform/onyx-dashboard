@@ -1,6 +1,8 @@
 # onyx-dashboard
 
-A dashboard for the [Onyx](https://github.com/onyx-platform/onyx) distributed computation system, version `0.8.1.0-alpha8`.
+A dashboard for the [Onyx](https://github.com/onyx-platform/onyx) distributed computation system.
+
+![Onyx Dashboard](doc/screenshot.jpg)
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/onyx-platform/onyx?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
