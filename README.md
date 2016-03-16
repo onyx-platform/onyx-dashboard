@@ -2,7 +2,7 @@
 
 A dashboard for the [Onyx](https://github.com/onyx-platform/onyx) distributed computation system.
 
-![Onyx Dashboard](doc/screenshot.jpg)
+<img src="doc/screenshot.jpg" width="200">
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/onyx-platform/onyx?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
