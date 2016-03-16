@@ -1,6 +1,8 @@
 # onyx-dashboard
 
-A dashboard for the [Onyx](https://github.com/onyx-platform/onyx) distributed computation system, version `0.8.1.0-alpha8`.
+A dashboard for the [Onyx](https://github.com/onyx-platform/onyx) distributed computation system.
+
+<img src="doc/screenshot.jpg" width="400">
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/onyx-platform/onyx?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -17,6 +19,22 @@ Version numbers will kept in sync with [Onyx]
 compatible with Onyx `0.8.1.0-alpha8`, use a version of the dashboard beginning with
 `0.8.1.0-alpha8`. The fourth version number will be reserved for dashboard versioning, in
 order to provide releases out of band with Onyx.
+
+Releases are listed at [RELEASES.md](RELEASES.md).
+
+## Deployment
+
+Run the jar via:
+```
+java -server -jar onyx-dashboard-VERSION.jar ZOOKEEPER_ADDR
+```
+
+By default the server will listen on port 3000, but this can be configured via the PORT environment variable.
+
+Alternately, run the docker image like so:
+```
+docker run -e ZOOKEEPER_ADDR="192.168.1.170:2188" onyx/onyx-dashboard:tag
+```
 
 ## Development
 
@@ -37,20 +55,11 @@ In the REPL, run
 Then run:
 
 ```clojure
-(user/stop) (clojure.tools.namespace.repl/refresh) (user/go)
+(user/stop) (clojure.tools.namespace.repl/refresh) (user/go "127.0.0.1:2188")
 ```
 to start the server, and each time you make a change on the server.
 
 Then point your browser at http://localhost:3000/
-
-## Deployment
-
-Run the jar via:
-```
-java -server -jar onyx-dashboard-VERSION.jar ZOOKEEPER_ADDR
-```
-
-By default the server will listen on port 3000, but this can be configured via the PORT environment variable.
 
 ## License
 

@@ -27,9 +27,9 @@ deployment:
   production:
     branch: master
     commands:
-      - docker build -t onyx/onyx-dashboard:$CIRCLE_SHA1 . | tee docker-build.log
+      - docker build -t onyx/onyx-dashboard:$(lein pprint :version | sed s/\"//g) . | tee docker-build.log
       - docker tag $(tail -1 docker-build.log | cut -d ' ' -f 3) onyx/onyx-dashboard:latest
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
-      - docker push onyx/onyx-dashboard:$CIRCLE_SHA1
+      - docker push onyx/onyx-dashboard:$(lein pprint :version | sed s/\"//g)
       - docker push onyx/onyx-dashboard:latest
       - aws s3 cp target/onyx-dashboard.jar s3://onyx-releases/onyx-dashboard/onyx-dashboard-`lein project-version`.jar
