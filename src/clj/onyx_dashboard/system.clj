@@ -23,6 +23,7 @@
    (component/system-map
      :sente (component/using (sente) [])
      :http (component/using (new-http-server {:zookeeper/address zookeeper-addr
+                                              ;; Remove once schema is fixed
                                               :onyx.peer/job-scheduler :not-required/for-peer-sub
                                               :onyx.messaging/impl :aeron
                                               ;; Doesn't matter for the dashboard

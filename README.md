@@ -39,7 +39,7 @@ In the REPL, run
 Then run:
 
 ```clojure
-(user/stop) (clojure.tools.namespace.repl/refresh) (user/go)
+(user/stop) (clojure.tools.namespace.repl/refresh) (user/go "127.0.0.1:2188")
 ```
 to start the server, and each time you make a change on the server.
 

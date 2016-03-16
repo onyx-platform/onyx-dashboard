@@ -7,6 +7,30 @@
             [onyx.plugin.core-async :refer [take-segments!]]
             [onyx.api]))
 
+(defn load-last-deployment []
+  (webdriver/wait-until #(not (empty? (webdriver/text "div.container"))))
+  (webdriver/click "button#ddl-deployment")
+  (webdriver/click "ul.dropdown-menu > li:last-child"))
+
+(defn load-job []
+  (webdriver/wait-until #(= 2 (count (webdriver/find-elements {:css "tr.job-entry"}))))
+  (webdriver/click (second (webdriver/find-elements {:css "tr.job-entry"}))))
+
+(defn check-job-text [workflow]
+  ;; remove this sleep - should perform a wait-until
+  (Thread/sleep 4000)
+  (let [[workflow-text catalog-text lifecycles-text] 
+        (map webdriver/text 
+             (webdriver/find-elements {:css "div.ace_content"}))]
+    (is (= (clojure.string/replace workflow-text "\n" "")
+           (str workflow)))
+
+    (is (not (empty? catalog-text)))
+    (is (not (empty? lifecycles-text)))))
+
+(deftest load-site
+  (testing "Load site and run checks"
+
 (def id (java.util.UUID/randomUUID))
 
 (defn run-test-fixture
@@ -274,41 +298,14 @@
 
 (close! colors-in-chan)
 
-(deftest check-outputs
-  (testing "outputs"
-    (is (= (into #{} green) green-expectatations))
-    (is (= (into #{} red) red-expectatations))
-    (is (= (into #{} blue) blue-expectatations))))
 
-(defn load-last-deployment []
-  (webdriver/wait-until #(not (empty? (webdriver/text "div.container"))))
-  (webdriver/click "button#ddl-deployment")
-  (webdriver/click "ul.dropdown-menu > li:last-child"))
 
-(defn load-job []
-  (webdriver/wait-until #(= 2 (count (webdriver/find-elements {:css "tr.job-entry"}))))
-  (webdriver/click (second (webdriver/find-elements {:css "tr.job-entry"}))))
-
-(defn check-job-text []
-  ;; remove this sleep - should perform a wait-until
-  (Thread/sleep 4000)
-  (let [[workflow-text catalog-text lifecycles-text] 
-        (map webdriver/text 
-             (webdriver/find-elements {:css "div.ace_content"}))]
-    (is (= (clojure.string/replace workflow-text "\n" "")
-           (str workflow)))
-
-    (is (not (empty? catalog-text)))
-    (is (not (empty? lifecycles-text)))))
-
-(deftest load-site
-  (testing "Load site and run checks"
     (run-test-fixture :chrome 
                       (fn []
                         (webdriver/to (str "http://localhost:" 3000))
                         (load-last-deployment)
                         ;(load-job)
-                        ;(check-job-text)
+                        ;(check-job-text workflow)
 
                         (doseq [v-peer v-peers]
                           (onyx.api/shutdown-peer v-peer))
