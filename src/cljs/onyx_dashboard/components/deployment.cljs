@@ -69,13 +69,13 @@
                     at-max? (= selected-message-id message-id-max)] 
                 (g/grid {}
                         (conj 
-                          (if (nil? time-travel-message-id)
-                            [(g/row {}
-                                    "Following the cluster log")]
-                            [(g/row {}
-                                    (str "Time travelling to:"))
-                             (g/row {}
-                                    (str (js/Date. (:created-at selected-entry))))])
+                         (let [opts {:style {:height "3em"}}]
+                           (if (nil? time-travel-message-id)
+                             [(g/row opts
+                                     "Following the cluster log")]
+                             [(g/row opts
+                                     (dom/p (str "Time travelling to:"))
+                                     (str (js/Date. (:created-at selected-entry))))]))
                           (g/row {}
                                  (pg/pagination {}
                                                 (pg/previous {:on-click (fn [e] 
@@ -92,7 +92,16 @@
                                                                         (put! (om/get-shared owner :api-ch) 
                                                                               [:time-travel (inc selected-message-id)]) 
                                                                         (.preventDefault e)))
-                                                          :disabled? at-max?}))))))))))
+                                                          :disabled? at-max?})
+                                                
+                                                (when time-travel-message-id
+                                                  (b/button {:bs-style "danger"
+                                                             :style {:margin-left "1em"}
+                                                             :on-click (fn [e]
+                                                                         (put! (om/get-shared owner :api-ch) 
+                                                                               [:time-travel message-id-max])
+                                                                         (.preventDefault e))}
+                                                            "Reset")))))))))))
 
 (defcomponent deployment-peers [deployment owner]
   (init-state [_]
