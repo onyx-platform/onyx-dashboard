@@ -139,7 +139,7 @@
                  (stop-tracking! user-id)
                  (assoc user-id (component/start 
                                   (new-track-tenancy-manager send-fn! 
-                                                             (assoc peer-config :onyx/tenancyid deployment-id)
+                                                             (assoc peer-config :onyx/tenancy-id deployment-id)
                                                              user-id
                                                              tracking-id))))))
     (catch Throwable t
