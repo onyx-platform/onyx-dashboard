@@ -21,7 +21,7 @@
           (if (empty? host-peers) 
             (dom/div "No peers are currently running")
             (t/table {:striped? true :bordered? false :condensed? true :hover? true}
-                     (dom/thead (dom/tr (dom/th "ID")))
+                     (dom/thead (dom/tr (dom/th "Host") (dom/th "# Peers")))
                      (dom/tbody
                        (for [[host peers] host-peers] 
                          (dom/tr {:class "peer-entry"}
