@@ -12,20 +12,20 @@
 
   :main onyx-dashboard.system
 
-  :dependencies [[org.clojure/clojure "1.7.0"]
-		 [org.clojure/clojurescript "0.0-3308"]
+  :dependencies [[org.clojure/clojure "1.8.0"]
+		 [org.clojure/clojurescript "1.8.34" :scope "provided"]
 		 [org.clojure/core.async "0.2.374"]
-		 [com.stuartsierra/component "0.2.3"]
-		 [com.taoensso/sente "1.5.0" :exclusions [com.taoensso/timbre com.taoensso/encore]]
+		 [com.stuartsierra/component "0.3.1"]
+		 [com.taoensso/sente "1.8.1" :exclusions [com.taoensso/timbre com.taoensso/encore]]
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
 		 [ring "1.3.2"]
 		 ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
-		 [org.onyxplatform/onyx "0.9.0-20160318_162059-g0436313"]
-		 [org.onyxplatform/lib-onyx "0.8.11.0" :exclusions [ring-jetty-component]]
+		 [org.onyxplatform/onyx "0.9.0-beta2"]
+		 [org.onyxplatform/lib-onyx "0.8.11.0" :exclusions [ring-jetty-component org.onyxplatform/onyx]]
                  [org.onyxplatform/onyx-visualization "0.1.0"]
 		 [timothypratley/patchin "0.3.5"]
-		 [com.cognitect/transit-clj "0.8.275"]
-		 [com.cognitect/transit-cljs "0.8.220"]
+		 [com.cognitect/transit-clj "0.8.285"]
+		 [com.cognitect/transit-cljs "0.8.237"]
 		 [cljsjs/moment "2.9.0-0"]
 		 [ring/ring-defaults "0.1.5"]
 		 [compojure "1.3.4"]
@@ -38,8 +38,6 @@
 		 [fipp "0.6.4"]
 		 [environ "1.0.0"]
 		 [http-kit "2.1.19"]
-		 ; make this explicit to fix uberjar?
-		 ;[potemkin "0.3.13"]
 		 [org.apache.httpcomponents/httpcore "4.4.4"]
 		 [org.clojure/core.cache "0.6.4"]
 		 [shoreleave/shoreleave-browser "0.3.0"]
@@ -48,7 +46,7 @@
 		 [racehub/om-bootstrap "0.6.1" :exclusions [om]]
 		 [prismatic/om-tools "0.4.0" :exclusions [om]]]
 
-  :plugins [[lein-cljsbuild "1.0.6"]
+  :plugins [[lein-cljsbuild "1.1.3"]
             ;[lein-version-spec "0.0.4"]
             [lein-environ "1.0.0"]]
 
@@ -59,7 +57,7 @@
   :cljsbuild {:builds {:app {:source-paths ["src/cljs"]
                              :compiler {:output-to     "resources/public/js/app.js"
                                         :output-dir    "resources/public/js/out"
-                                        :source-map "resources/public/js/app.map"
+                                        :source-map true
                                         :main onyx-dashboard.dev
                                         :asset-path "js/out"
                                         :optimizations :none
@@ -74,18 +72,15 @@
 
   :profiles {:dev {:source-paths ["env/dev/clj"]
 
-                   :dependencies [[figwheel "0.3.3"]
-                                  [clj-webdriver "0.6.1"]
-                                  ;[com.cemerick/piggieback "0.2.1"]
-                                  ;[weasel "0.5.0"]
-                                  [leiningen "2.6.0"]]
+                   :dependencies [[figwheel "0.5.0-6"]
+                                  [org.seleniumhq.selenium/selenium-java "2.47.1"]
+                                  [clj-webdriver "0.7.2"]
+                                  [leiningen "2.6.1"]]
 
                    :repl-options {:init-ns onyx-dashboard.system
-                                  :timeout 90000
-                                  ;:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]
-                                  }
+                                  :timeout 90000}
 
-                   :plugins [[lein-figwheel "0.3.3"]
+                   :plugins [[lein-figwheel "0.5.0-6"]
                              [lein-set-version "0.4.1"]
                              [lein-update-dependency "0.1.2"]
                              [lein-pprint "1.1.1"]

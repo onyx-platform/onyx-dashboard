@@ -21,7 +21,7 @@
             (p/panel {:header (dom/h4 "Jobs") 
                       :bs-style "primary"}
                      (t/table {:striped? true :bordered? false :condensed? true :hover? true :class "job-selector"}
-                              (dom/thead (dom/tr (dom/td) (dom/th "ID") (dom/th "State") (dom/th "Time")))
+                              (dom/thead (dom/tr (dom/th) (dom/th "ID") (dom/th "State") (dom/th "Time")))
                               (dom/tbody
                                 (cons (dom/tr {:on-click (fn [_] (put! (om/get-shared owner :api-ch) [:select-job nil]))}
                                               (dom/td (dom/i {:class (if (nil? selected-job) "fa fa-dot-circle-o" "fa fa-circle-o")}))
