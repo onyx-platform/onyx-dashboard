@@ -36,7 +36,8 @@
       :chsk/state (when (:first-open? msg)
                     (chsk-send! [:deployment/get-listing])
                     (swap! app-state assoc :ready? true)
-                    (println "First opened: " event)))))
+                    (println "First opened:" event))
+      (println "Unhandled event:" event))))
 
 (sente/start-chsk-router! ch-chsk sente-event-handler)
 
