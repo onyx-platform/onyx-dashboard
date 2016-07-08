@@ -143,7 +143,7 @@
 (defcomponent job-info [{:keys [replica job-info]} owner]
   (render [_]
           (let [{:keys [job id metrics exception]} job-info
-                {:keys [catalog workflow flow-conditions triggers windows]} job] 
+                {:keys [catalog workflow flow-conditions triggers windows metadata]} job] 
             (if (= :GCd (rq/job-state replica id))
               (p/panel
                 {:header (om/build section-header-collapsible {:text "Job State"} {})
@@ -157,6 +157,11 @@
                 (om/build task-panel {:replica replica :job-info job-info} {})
                 (om/build job-visualisation job-info {})
 
+                (p/panel
+                 {:header (om/build section-header-collapsible {:text "Metadata"} {})
+                  ;:collapsible? true
+                  :bs-style "primary"}
+                 (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value metadata)))}))
 
                 (p/panel
                   {:header (om/build section-header-collapsible {:text "Workflow"} {})
