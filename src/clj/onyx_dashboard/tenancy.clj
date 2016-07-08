@@ -70,11 +70,11 @@
 (defmethod log-notifications :deployment/submitted-job [send-fn! log-sub replica diff entry tracking-id]
   (let [job-id (:id (:args entry))
         tasks (:tasks (:args entry))
-        task-name->id (zipmap (map #(jq/task-name log-sub %) tasks) tasks)
+        task-name->id (zipmap tasks tasks)
         job (jq/job-information log-sub replica job-id)]
     (send-fn! [:deployment/submitted-job {:tracking-id tracking-id
                                           :job {:task-name->id task-name->id
-                                                :created-at-d (:message-id entry)
+                                                :message-id (:message-id entry)
                                                 :created-at (:created-at entry)
                                                 :id job-id
                                                 :job job}}])))
@@ -89,11 +89,14 @@
 
 (defn process-subscription-event [send-fn! tenancy-id tracking-id !last-replica 
                                   sub {:keys [replica entry] :as state}]
-  (let [patch (patchin/diff @!last-replica replica)]
-    (send-fn! [:deployment/log-entry {:tracking-id tracking-id
-                                      :entry entry
-                                      :diff patch}])
-    (log-notifications send-fn! sub replica patch entry tracking-id)))
+  (try 
+   (let [patch (patchin/diff @!last-replica replica)]
+     (send-fn! [:deployment/log-entry {:tracking-id tracking-id
+                                       :entry entry
+                                       :diff patch}])
+     (log-notifications send-fn! sub replica patch entry tracking-id))
+   (catch Throwable t
+     (println "Error in process-subscription-event:" t))))
 
 (defrecord TrackTenancyManager [send-fn! peer-config tracking-id user-id]
   component/Lifecycle
