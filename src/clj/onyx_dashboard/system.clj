@@ -18,7 +18,7 @@
             [clojure.string :refer [upper-case]])
   (:gen-class))
 
-(defn get-system 
+(defn get-system
   ([zookeeper-addr]
    (component/system-map
      :sente (component/using (sente) [])
@@ -27,7 +27,7 @@
                                               :onyx.peer/job-scheduler :not-required/for-peer-sub
                                               :onyx.messaging/impl :aeron
                                               ;; Doesn't matter for the dashboard
-                                              :onyx.messaging/bind-addr "localhost"}) 
+                                              :onyx.messaging/bind-addr "localhost"})
                             [:sente]))))
 
 (defn -main [zookeeper-addr]

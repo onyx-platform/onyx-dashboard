@@ -7,10 +7,19 @@
             [onyx.log.curator :as zk]
             [clojure.core.async :refer [chan timeout thread <!! alts!!]]
             [com.stuartsierra.component :as component]
-	    [lib-onyx.log-subscriber :as s]
+            [lib-onyx.log-subscriber :as s]
             [lib-onyx.job-query :as jq]
             [timothypratley.patchin :as patchin]
             [taoensso.timbre :as timbre :refer [info error spy]]))
+
+(def test-peer-config {:onyx/tenancy-id "1"
+                       :zookeeper/address "127.0.0.1:2181"
+                       :onyx.peer/job-scheduler :onyx.job-scheduler/balanced
+                       :onyx.peer/zookeeper-timeout 60000
+                       :onyx.messaging/impl :aeron
+                       :onyx.messaging/bind-addr "localhost"
+                       :onyx.messaging/peer-port 40200
+                       :onyx.messaging.aeron/embedded-driver? false})
 
 (defn kill-job [peer-config deployment-id {:keys [id] :as job-info}]
   (onyx.api/kill-job (assoc peer-config :onyx/tenancy-id deployment-id) id))
@@ -49,7 +58,7 @@
                    (into {})
                    (reset! deployments)
                    (distribute-deployment-listing send-all-fn!))
-            (Thread/sleep 1000))
+              (Thread/sleep 1000))
           (do
             (println (format "Could not find deployments at %s. Retrying in 1s." zk-onyx/root-path))
             (Thread/sleep 1000))))
@@ -87,13 +96,13 @@
 (defn process-subscription-event [send-fn! tenancy-id tracking-id !last-replica
                                   sub {:keys [replica entry] :as state}]
   (try
-   (let [patch (patchin/diff @!last-replica replica)]
-     (send-fn! [:deployment/log-entry {:tracking-id tracking-id
-                                       :entry entry
-                                       :diff patch}])
-     (log-notifications send-fn! sub replica patch entry tracking-id))
-   (catch Throwable t
-     (println "Error in process-subscription-event:" t))))
+    (let [patch (patchin/diff @!last-replica replica)]
+      (send-fn! [:deployment/log-entry {:tracking-id tracking-id
+                                        :entry entry
+                                        :diff patch}])
+      (log-notifications send-fn! sub replica patch entry tracking-id))
+    (catch Throwable t
+      (println "Error in process-subscription-event:" t))))
 
 (defrecord TrackTenancyManager [send-fn! peer-config tracking-id user-id]
   component/Lifecycle
@@ -135,9 +144,9 @@
              (-> tr
                  (stop-tracking! user-id)
                  (assoc user-id (component/start
-                                  (new-track-tenancy-manager send-fn!
-                                                             (assoc peer-config :onyx/tenancy-id deployment-id)
-                                                             user-id
-                                                             tracking-id))))))
+                                 (new-track-tenancy-manager send-fn!
+                                                            (assoc peer-config :onyx/tenancy-id deployment-id)
+                                                            user-id
+                                                            tracking-id))))))
     (catch Throwable t
       (println t))))
