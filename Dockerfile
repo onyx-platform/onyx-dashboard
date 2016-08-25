@@ -14,5 +14,3 @@ COPY /target/onyx-dashboard.jar /
 EXPOSE 3000
 
 ENTRYPOINT ["java", "-server", "-jar", "/onyx-dashboard.jar"]
-
-CMD ["$ZOOKEEPER_ADDR"]
