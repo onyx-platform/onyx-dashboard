@@ -2,7 +2,7 @@
   (:require [clojure.core.async :refer [chan >!! <!! close! sliding-buffer]]
             [clojure.test :refer [deftest is testing]]
             [onyx.plugin.core-async :refer [take-segments!]]
-            [onyx.test-helper :refer [load-config with-test-env]]
+            [onyx.test-helper :refer [with-test-env]]
             [onyx.api]))
 
 (def n-messages 15000)
@@ -69,7 +69,7 @@
 
 (defn -main [& args]
   (let [id (java.util.UUID/randomUUID)
-        config (load-config)
+        config (clojure.edn/read-string (slurp "test-resources/test-config.edn"))
         env-config (assoc (:env-config config) :onyx/tenancy-id id)
         peer-config (assoc (:peer-config config) :onyx/tenancy-id id)
         batch-size 40
@@ -124,17 +124,17 @@
 
                  {:onyx/name :H
                   :onyx/fn :onyx.peer.dag-test/h
-                :onyx/type :function
-                :onyx/batch-size batch-size}
+                  :onyx/type :function
+                  :onyx/batch-size batch-size}
 
-               {:onyx/name :I
-                :onyx/fn :onyx.peer.dag-test/i
-                :onyx/type :function
-                :onyx/batch-size batch-size}
+                 {:onyx/name :I
+                  :onyx/fn :onyx.peer.dag-test/i
+                  :onyx/type :function
+                  :onyx/batch-size batch-size}
 
-               {:onyx/name :J
-                :onyx/plugin :onyx.plugin.core-async/output
-                :onyx/type :output
+                 {:onyx/name :J
+                  :onyx/plugin :onyx.plugin.core-async/output
+                  :onyx/type :output
                   :onyx/medium :core.async
                   :onyx/batch-size batch-size
                   :onyx/max-peers 1
