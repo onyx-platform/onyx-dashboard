@@ -22,7 +22,7 @@
 		 ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
 		 [org.onyxplatform/onyx "0.9.10-beta1"]
 		 [org.onyxplatform/lib-onyx "0.9.7.1" :exclusions [ring-jetty-component org.onyxplatform/onyx]]
-                 [org.onyxplatform/onyx-visualization "0.2.0"]
+                 [org.onyxplatform/onyx-visualization "0.3.0"]
 		 [timothypratley/patchin "0.3.5"]
 		 [com.cognitect/transit-clj "0.8.285"]
 		 [com.cognitect/transit-cljs "0.8.237"]
