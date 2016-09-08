@@ -1,5 +1,5 @@
 (ns onyx-dashboard.http.server
-  (:require [clojure.core.async :refer [chan timeout thread <!! alts!!]]
+  (:require [clojure.core.async :refer [chan timeout thread <!! >!! alts!! go-loop <! >! close! go]]
             [onyx-dashboard.dev :refer [is-dev? inject-devmode-html #_browser-repl start-figwheel]]
             [org.httpkit.server :as http-kit-server]
             [com.stuartsierra.component :as component]
@@ -12,7 +12,6 @@
             [ring.util.response :refer [resource-response response content-type]]
             [compojure.core :as comp :refer (defroutes GET POST)]
             [compojure.route :as route]
-            [com.stuartsierra.component :as component]
             [onyx-dashboard.tenancy :as tenancy]
             [onyx.log.curator :as zk]
             [taoensso.timbre :as timbre :refer [info error spy]]))
@@ -28,22 +27,38 @@
 (defn event->uid [event]
   (get-in event [:ring-req :cookies "ring-session" :value]))
 
-(defn start-event-handler [sente peer-config deployments tracking]
-  (future
-    (loop []
+; WebSockets events send from browser
+; Responsibilities
+; - receive events from browser WS and call other components to handle it
+(defn events-from-browser [sente peer-config channels-comp tracking zk-comp]
+  (future 
+     (loop []
       (when-let [event (<!! (:ch-chsk sente))]
         ;; TODO: more sophisticated tracking,
         ;; should track by cluster id rather than user
         ;; and count the number of users tracking it. When the user count drops to 0
         ;; then stop the future.
-        (let [user-id (event->uid event)] 
-          (case (:id event) 
+        (let [user-id (event->uid event)
+              {:keys [zk-client notify-zc-ch]} zk-comp
+              {:keys [cmds-deployments-ch]}    channels-comp]
+
+          (case (:id event)
+            :chsk/uidport-open  (go (>! notify-zc-ch [:attach-browser-notify {:user-id user-id}]))
+            :chsk/uidport-close (do (swap! tracking tenancy/stop-tracking! user-id)
+                                    (go (>! notify-zc-ch [:remove-browser-notify {:user-id user-id}])))
+
             :deployment/track (tenancy/start-tracking! (:chsk-send! sente)
                                                        peer-config
                                                        tracking
                                                        (:?data event)
-                                                       user-id)
-            :deployment/get-listing ((:chsk-send! sente) user-id [:deployment/listing @deployments])
+                                                       user-id
+                                                       zk-client)  
+
+            :deployment/get-listing (do 
+                                        ;((:chsk-send! sente) user-id [:deployment/listing @deployments])
+                                        (println "Send listing into channel:" cmds-deployments-ch)
+                                        (go (>! cmds-deployments-ch [:deployment/listing {:user-id user-id}]))
+                                        (go (>! notify-zc-ch [:browser-refresh-zk-conn {:user-id user-id}])))
             :job/kill (tenancy/kill-job peer-config 
                                         (:deployment-id (:?data event))
                                         (:job (:?data event)))
@@ -53,22 +68,15 @@
             :job/restart (tenancy/restart-job peer-config 
                                               (:deployment-id (:?data event))
                                               (:job (:?data event)))
-            :chsk/uidport-close (swap! tracking tenancy/stop-tracking! user-id)
             :chsk/ws-ping nil
             nil #_(println "Dunno what to do with: " event)))
         (recur)))))
 
-(defn send-mult-fn [send-fn! connected-uids msg]
-  (doseq [uid (:any @connected-uids)]
-    (send-fn! uid msg)))
-
 (defrecord HttpServer [peer-config]
   component/Lifecycle
-  (start [{:keys [sente] :as component}]
+  (start [{:keys [channels sente zk deployments] :as component}]
     (println "Starting HTTP Server")
-    (let [send-f (partial send-mult-fn 
-                          (:chsk-send! sente) 
-                          (:connected-uids sente))]
+    (let []
       (defroutes routes
         (GET  "/" [] (page))
         (GET  "/chsk" req ((:ring-ajax-get-or-ws-handshake sente) req))
@@ -77,37 +85,43 @@
         (resources "/react" {:root "react"})
         (route/not-found "Page not found"))
 
-      (let [deployments (atom {})
-            tracking (atom {})
-            event-handler-fut (start-event-handler sente peer-config deployments tracking)
+      (let [tracking (atom {})
+
+            ; server
             handler (ring.middleware.defaults/wrap-defaults routes ring-defaults-config)
             port (Integer. (or (System/getenv "PORT") "3000"))
             server (http-kit-server/run-server handler {:port port})
             uri (format "http://localhost:%s/" (:local-port (meta server)))
-            conn (zk/connect (:zookeeper/address peer-config))
-            refresh-fut (future (tenancy/refresh-deployments-watch send-f conn deployments))]
+            
+            zk-client (-> zk :zk-client)
+            ; futures
+            events-from-browser (events-from-browser sente peer-config channels tracking zk)
+            ]
         (println "Http-kit server is running at" uri)
         (assoc component
-               :conn              conn 
-               :server            server 
-               :refresh-fut       refresh-fut
-               :event-handler-fut event-handler-fut 
-               :deployments       deployments 
-               :tracking          tracking))))
-  (stop [{:keys [server tracking deployments conn] :as component}]
+               :zk-client           zk-client
+               :server              server
+               :events-from-browser events-from-browser 
+               :deployments         deployments 
+               :tracking            tracking))))
+
+  (stop [{:keys [server tracking deployments zk-client events-from-browser deployments-watch] :as component}]
     (println "Stopping HTTP Server")
-    (try 
+    (try
       (server :timeout 100)
       (finally 
         (try 
           (swap! tracking tenancy/stop-all-tracking!)
           (finally
-            (try 
-              (future-cancel (:event-handler-fut component))
-              (future-cancel (:refresh-fut       component))
-              (finally
-                (if (.. conn isStarted) (zk/close conn)))))))) 
-    (assoc component :server nil :event-handler-fut nil :deployments nil :tracking nil)))
+            (try
+              (when events-from-browser (future-cancel events-from-browser)))))))
+    (assoc component 
+           :zk-client           nil 
+           :server              nil 
+           :events-from-browser nil 
+           :deployments-watch   nil
+           :deployments         nil 
+           :tracking            nil)))
 
 (defn new-http-server [peer-config]
   (map->HttpServer {:peer-config peer-config}))
