@@ -20,7 +20,7 @@
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
 		 [ring "1.3.2"]
 		 ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
-		 [org.onyxplatform/onyx "0.9.10-20160908_200533-g57e292f"]
+		 [org.onyxplatform/onyx "0.9.10-20160908_200738-gf11cd1a"]
 		 [org.onyxplatform/lib-onyx "0.9.7.1" :exclusions [ring-jetty-component org.onyxplatform/onyx]]
                  [org.onyxplatform/onyx-visualization "0.4.0"]
 		 [timothypratley/patchin "0.3.5"]
