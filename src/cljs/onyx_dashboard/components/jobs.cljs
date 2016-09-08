@@ -138,7 +138,7 @@
             {:header (om/build section-header-collapsible {:text "Job Visualization"} {})
              ;:collapsible? true
              :bs-style "primary"}
-            (om/build viz/job-dag {:job (:job job-info) :width 640 :height 480}))))
+            (om/build viz/job-dag {:job (:job job-info) :width 640 :height 640}))))
 
 (defcomponent job-info [{:keys [replica job-info]} owner]
   (render [_]
