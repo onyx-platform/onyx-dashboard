@@ -1,4 +1,4 @@
-(defproject org.onyxplatform/onyx-dashboard "0.9.10.0-SNAPSHOT"
+(defproject org.onyxplatform/onyx-dashboard "0.9.10.0-beta3"
   :description "Dashboard for the Onyx distributed computation system"
   :url "http://github.com/lbradstreet/onyx-dashboard"
   :license {:name "Eclipse Public License"
@@ -20,9 +20,9 @@
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
 		 [ring "1.3.2"]
 		 ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
-		 [org.onyxplatform/onyx "0.9.10-beta1"]
+		 [org.onyxplatform/onyx "0.9.10-beta3"]
 		 [org.onyxplatform/lib-onyx "0.9.7.1" :exclusions [ring-jetty-component org.onyxplatform/onyx]]
-                 [org.onyxplatform/onyx-visualization "0.1.0"]
+                 [org.onyxplatform/onyx-visualization "0.4.0"]
 		 [timothypratley/patchin "0.3.5"]
 		 [com.cognitect/transit-clj "0.8.285"]
 		 [com.cognitect/transit-cljs "0.8.237"]
@@ -109,5 +109,6 @@
 				   :compiler {:output-to "resources/public/js/app.js"
 					      :output-dir "resources/public/js/advanced"
 					      :source-map "resources/public/js/app.js.map"
+                                              :externs ["src/js/d3_externs.js"]
 					      :optimizations :advanced
 					      :pretty-print false}}}}}})
