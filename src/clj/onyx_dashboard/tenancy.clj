@@ -36,8 +36,8 @@
   (zk/children client (zk-onyx/pulse-path deployment-id)))
 
 (defn refresh-deployments-watch [send-all-fn! zk-client deployments]
-  (loop [] 
-    (try 
+  (try 
+    (loop [] 
       (when-not (Thread/interrupted)
         (if-let [children (zk/children zk-client zk-onyx/root-path)]
           (do (->> children
@@ -54,11 +54,9 @@
           (do
             (println (format "Could not find deployments at %s. Retrying in 1s." zk-onyx/root-path))
             (Thread/sleep 1000))))
-      (catch InterruptedException ie
-        (info "Shutting down refresh deployments watch"))
-      (catch Throwable t
-        (println t "Error watching deployments")))
-    (recur)))
+      (recur))
+    (catch org.apache.zookeeper.KeeperException$ConnectionLossException e
+      (info (format "ZK connection lost at %s. Deployments watch stopped." zk-onyx/root-path)))))
 
 (def freshness-timeout 100)
 
