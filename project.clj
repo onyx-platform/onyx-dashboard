@@ -1,4 +1,4 @@
-(defproject org.onyxplatform/onyx-dashboard "0.9.10.0-SNAPSHOT"
+(defproject org.onyxplatform/onyx-dashboard "0.9.10.0-beta7"
   :description "Dashboard for the Onyx distributed computation system"
   :url "http://github.com/lbradstreet/onyx-dashboard"
   :license {:name "Eclipse Public License"
@@ -20,7 +20,7 @@
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
 		 [ring "1.3.2"]
 		 ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
-		 [org.onyxplatform/onyx "0.9.10-beta6"]
+		 [org.onyxplatform/onyx "0.9.10-beta7"]
 		 [org.onyxplatform/lib-onyx "0.9.7.1" :exclusions [ring-jetty-component org.onyxplatform/onyx]]
                  [org.onyxplatform/onyx-visualization "0.4.0"]
 		 [timothypratley/patchin "0.3.5"]
