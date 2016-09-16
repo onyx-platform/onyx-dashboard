@@ -3,7 +3,13 @@
             [clojure.test :refer [deftest is testing]]
             [onyx.plugin.core-async :refer [take-segments!]]
             [onyx.test-helper :refer [with-test-env]]
-            [onyx.api]))
+            [onyx.api]
+            [taoensso.timbre :as timbre]))
+
+; uncomment deps from project.clj and this
+; usefull for hunting problems
+; it allows to see logs from included jars
+; (timbre/set-level! :trace)
 
 (def n-messages 15000)
 
