@@ -16,6 +16,7 @@
 		 [org.clojure/clojurescript "1.8.34" :scope "provided"]
 		 [org.clojure/core.async "0.2.374"]
 		 [com.stuartsierra/component "0.3.1"]
+     [com.taoensso/timbre "4.7.4"]
 		 [com.taoensso/sente "1.8.1" :exclusions [com.taoensso/timbre com.taoensso/encore]]
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
 		 [ring "1.3.2"]
