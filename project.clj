@@ -45,13 +45,7 @@
 		 [org.omcljs/om "0.8.8"]
 		 [ankha "0.1.5.1-479897" :exclusions [om com.cemerick/austin]]
 		 [racehub/om-bootstrap "0.6.1" :exclusions [om]]
-		 [prismatic/om-tools "0.4.0" :exclusions [om]]
-
-     ; usefull for debugging problems
-     ; it allows to see logs from included jars
-     ; [com.fzakaria/slf4j-timbre "0.3.2"]
-     ; [org.slf4j/log4j-over-slf4j "1.7.14"]
-     ]
+		 [prismatic/om-tools "0.4.0" :exclusions [om]]]
 
   :plugins [[lein-cljsbuild "1.1.3"]
             ;[lein-version-spec "0.0.4"]
@@ -82,6 +76,8 @@
                    :dependencies [[figwheel "0.5.0-6"]
                                   [org.seleniumhq.selenium/selenium-java "2.47.1"]
                                   [clj-webdriver "0.7.2"]
+                                  [com.fzakaria/slf4j-timbre "0.3.2"]
+                                  [org.slf4j/log4j-over-slf4j "1.7.14"]
                                   [leiningen "2.6.1"]]
 
                    :repl-options {:init-ns onyx-dashboard.system
