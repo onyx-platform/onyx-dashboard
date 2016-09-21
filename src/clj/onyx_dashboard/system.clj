@@ -16,23 +16,22 @@
             [environ.core :refer [env]]
             [onyx.static.validation :refer [validate-peer-config]]
             [clojure.string :refer [upper-case]]
-            [taoensso.timbre :refer [info] :as timbre]
+            [taoensso.timbre :as timbre]
             [taoensso.timbre.appenders.3rd-party.rotor :as rotor])
   (:gen-class))
 
-; uncomment some deps from project.clj to see also logs from included jars
-(let [file-log-lvl    :error   ; set to :trace to see more details
-      console-log-lvl :info
-      rotor-appender (rotor/rotor-appender {:path "dashboard.log"})
-      rotor-appender (assoc rotor-appender :min-level file-log-lvl)]
-      (timbre/merge-config!
-          {:appenders
-            {:println {:min-level console-log-lvl
-                       :enabled? true}
-             :rotor rotor-appender}}))
 
 (defn get-system 
   ([zookeeper-addr]
+    (let [file-log-lvl    :error   ; set to :trace to see more details
+          console-log-lvl :info
+          rotor-appender (rotor/rotor-appender {:path "dashboard.log"})
+          rotor-appender (assoc rotor-appender :min-level file-log-lvl)]
+          (timbre/merge-config!
+              {:appenders
+                {:println {:min-level console-log-lvl
+                           :enabled? true}
+                 :rotor rotor-appender}}))
    (component/system-map
      :sente (component/using (sente) [])
      :http (component/using (new-http-server {:zookeeper/address zookeeper-addr
