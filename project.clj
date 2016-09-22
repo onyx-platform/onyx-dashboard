@@ -1,4 +1,4 @@
-(defproject org.onyxplatform/onyx-dashboard "0.9.10.0-SNAPSHOT"
+(defproject org.onyxplatform/onyx-dashboard "0.9.10.1-SNAPSHOT"
   :description "Dashboard for the Onyx distributed computation system"
   :url "http://github.com/lbradstreet/onyx-dashboard"
   :license {:name "Eclipse Public License"
@@ -16,14 +16,21 @@
 		 [org.clojure/clojurescript "1.8.34" :scope "provided"]
 		 [org.clojure/core.async "0.2.374"]
 		 [com.stuartsierra/component "0.3.1"]
-		 [com.taoensso/sente "1.8.1" :exclusions [com.taoensso/timbre com.taoensso/encore]]
-                 [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
+     ; taoensso deps
+     [com.taoensso/timbre "4.7.4" ]
+     [com.taoensso/encore "2.67.2"]
+     [com.taoensso/sente  "1.8.1" :exclusions [com.taoensso/timbre com.taoensso/encore]]
+
+     [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
 		 [ring "1.3.2"]
 		 ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
-		 [org.onyxplatform/onyx "0.9.10"]
-		 [org.onyxplatform/lib-onyx "0.9.7.1" :exclusions [ring-jetty-component org.onyxplatform/onyx]]
-                 [org.onyxplatform/onyx-visualization "0.4.0"]
-		 [timothypratley/patchin "0.3.5"]
+		 
+     ; onyx deps
+     [org.onyxplatform/onyx               "0.9.10"  :exclusions [org.slf4j/slf4j-nop]]
+     [org.onyxplatform/lib-onyx           "0.9.7.1" :exclusions [ring-jetty-component org.onyxplatform/onyx]]
+     [org.onyxplatform/onyx-visualization "0.4.0"]
+		 
+     [timothypratley/patchin "0.3.5"]
 		 [com.cognitect/transit-clj "0.8.285"]
 		 [com.cognitect/transit-cljs "0.8.237"]
 		 [cljsjs/moment "2.9.0-0"]
@@ -75,6 +82,11 @@
                    :dependencies [[figwheel "0.5.0-6"]
                                   [org.seleniumhq.selenium/selenium-java "2.47.1"]
                                   [clj-webdriver "0.7.2"]
+                                  ; logging from included jars
+                                  [com.fzakaria/slf4j-timbre  "0.3.2"]
+                                  [org.slf4j/slf4j-api        "1.7.14"]
+                                  [org.slf4j/log4j-over-slf4j "1.7.14"]
+                                  
                                   [leiningen "2.6.1"]]
 
                    :repl-options {:init-ns onyx-dashboard.system
