@@ -143,7 +143,7 @@
 (defcomponent job-info [{:keys [replica job-info]} owner]
   (render [_]
           (let [{:keys [job id metrics exception]} job-info
-                {:keys [catalog workflow flow-conditions triggers windows metadata]} job] 
+                {:keys [catalog workflow flow-conditions triggers windows lifecycles metadata]} job] 
             (if (= :GCd (rq/job-state replica id))
               (p/panel
                 {:header (om/build section-header-collapsible {:text "Job State"} {})
@@ -174,6 +174,12 @@
                    ;:collapsible? true
                    :bs-style "primary"}
                   (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value catalog)))}))
+
+                (p/panel
+                 {:header (om/build section-header-collapsible {:text "Lifecycles"} {})
+                  ;:collapsible? true
+                  :bs-style "primary"}
+                 (om/build clojure-block {:input (with-out-str (fipp/pprint (om/value lifecycles)))}))
 
                 (if-not (empty? flow-conditions) 
                   (p/panel
