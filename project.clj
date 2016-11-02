@@ -26,7 +26,7 @@
 
                  ; onyx deps
                  ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
-                 [org.onyxplatform/onyx "0.9.13-20161101_155459-g2643289"]
+                 [org.onyxplatform/onyx "0.9.13-20161102_031247-g9778393"]
                  [org.onyxplatform/lib-onyx "0.9.10.0" :exclusions [ring-jetty-component org.onyxplatform/onyx]]
                  [org.onyxplatform/onyx-visualization "0.4.0"]
 
