@@ -5,7 +5,7 @@
             [onyx.log.zookeeper :as zk-onyx]
             [onyx.log.commands.common :as common]
             [onyx.log.curator :as zk]
-            [clojure.core.async :refer [chan timeout thread <!! alts!!]]
+            [clojure.core.async :refer [chan timeout thread <!! alts!! go-loop close! <!]]
             [com.stuartsierra.component :as component]
 	    [lib-onyx.log-subscriber :as s]
             [lib-onyx.job-query :as jq]
@@ -26,37 +26,10 @@
   (kill-job peer-config deployment-id job-info)
   (start-job peer-config deployment-id job-info))
 
-(defn zk-deployment-entry-stat [client entry]
-  (:stat (zk/data client (zk-onyx/prefix-path entry))))
 
-(defn distribute-deployment-listing [send-all-fn! listing]
-  (send-all-fn! [:deployment/listing listing]))
+(defn deployment-pulses [zk-client deployment-id]
+  (zk/children zk-client (zk-onyx/pulse-path deployment-id)))
 
-(defn deployment-pulses [client deployment-id]
-  (zk/children client (zk-onyx/pulse-path deployment-id)))
-
-(defn refresh-deployments-watch [send-all-fn! zk-client deployments]
-  (try 
-    (loop [] 
-      (when-not (Thread/interrupted)
-        (if-let [children (zk/children zk-client zk-onyx/root-path)]
-          (do (->> children
-                   (map (juxt identity 
-                              (partial zk-deployment-entry-stat zk-client)))
-                   (map (fn [[child stat]]
-                          (vector child
-                                  {:created-at (java.util.Date. (:ctime stat))
-                                   :modified-at (java.util.Date. (:mtime stat))})))
-                   (into {})
-                   (reset! deployments)
-                   (distribute-deployment-listing send-all-fn!))
-            (Thread/sleep 1000))
-          (do
-            (println (format "Could not find deployments at %s. Retrying in 1s." zk-onyx/root-path))
-            (Thread/sleep 1000))))
-      (recur))
-    (catch org.apache.zookeeper.KeeperException$ConnectionLossException e
-      (info (format "ZK connection lost at %s. Deployments watch stopped." zk-onyx/root-path)))))
 
 (def freshness-timeout 100)
 
@@ -96,13 +69,14 @@
    (catch Throwable t
      (println "Error in process-subscription-event:" t))))
 
-(defrecord TrackTenancyManager [send-fn! peer-config tracking-id user-id]
+(defrecord TrackTenancyManager [send-fn! peer-config tracking-id user-id zk-client]
   component/Lifecycle
   (start [component]
+    (println "Starting Track Tenancy Manager")
     (let [tenancy-id (:onyx/tenancy-id peer-config)
           _ (info "Starting Track Tenancy manager for tenancy " tenancy-id peer-config user-id)
           f-check-pulses (partial deployment-pulses 
-                                  (zk/connect (:zookeeper/address peer-config)) 
+                                  zk-client 
                                   tenancy-id)
           last-replica (atom {})
           callback-fn (partial process-subscription-event 
@@ -113,15 +87,16 @@
           log-subscriber (s/start-log-subscriber peer-config {:callback-fn callback-fn})]
       (assoc component :log-subscriber log-subscriber)))
   (stop [component]
-    (info "Stopping Track Tenancy manager.")
+    (info "Stopping Track Tenancy Manager.")
     (assoc component 
            :log-subscriber (s/stop-log-subscriber (:log-subscriber component)))))
 
-(defn new-track-tenancy-manager [send-fn! peer-config user-id tracking-id]
+(defn new-track-tenancy-manager [send-fn! peer-config user-id tracking-id zk-client]
   (map->TrackTenancyManager {:send-fn! send-fn! 
                              :peer-config peer-config 
                              :user-id user-id
-                             :tracking-id tracking-id}))
+                             :tracking-id tracking-id
+                             :zk-client zk-client}))
 
 (defn stop-tracking! [tracking user-id]
   (if-let [manager (tracking user-id)]
@@ -132,7 +107,7 @@
 (defn stop-all-tracking! [tr]
   (reduce stop-tracking! tr (keys tr)))
 
-(defn start-tracking! [send-fn! peer-config tracking {:keys [deployment-id tracking-id]} user-id]
+(defn start-tracking! [send-fn! peer-config tracking {:keys [deployment-id tracking-id]} user-id zk-client]
   (try 
     (swap! tracking 
            (fn [tr]
@@ -142,6 +117,7 @@
                                   (new-track-tenancy-manager send-fn! 
                                                              (assoc peer-config :onyx/tenancy-id deployment-id)
                                                              user-id
-                                                             tracking-id))))))
+                                                             tracking-id
+                                                             zk-client))))))
     (catch Throwable t
       (println t))))

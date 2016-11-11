@@ -2,6 +2,7 @@
   (:require [clojure.set :refer [union]]
 	    [timothypratley.patchin :as p]))
 
+; update app state
 (defmulti msg-controller (fn [[type _] _] type))
 
 (defmethod msg-controller :deployment/listing 
@@ -56,6 +57,11 @@
   (if (is-tracking? msg state)
     (assoc-in state [:deployment :up?] false)
     state))
+
+(defmethod msg-controller :deployment/zk-conn-state [[_ msg] state]
+  (.log js/console "ZK connection" (str msg))
+  (assoc-in state [:zk-up?] (-> msg :zk-up?)))
+
 
 ; (defmethod msg-controller :metrics/event [[_ msg] state]
 ;   (cond (and (= (:metric msg) :throughput))
