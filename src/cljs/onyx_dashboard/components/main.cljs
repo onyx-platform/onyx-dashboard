@@ -42,7 +42,7 @@
                               (g/row {:class "no-gutter"}
                                 (g/col {:xs 12 :md 12}
                                   (dom/div {:class "alert alert-danger"} 
-                                    "Zookeeper connection problem. Trying to reconnect..."))))
+                                    "ZooKeeper connection problem. Trying to reconnect..."))))
                             (g/row {:class "no-gutter"}
                                    (g/col {:xs 4 :md 4}
                                           (dom/div {:class "left-nav-deployment"} 
