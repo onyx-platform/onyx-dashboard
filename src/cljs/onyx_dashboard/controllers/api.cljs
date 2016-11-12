@@ -10,6 +10,7 @@
    :time-travel-message-id nil
    :replica-states {}})
 
+; user actions
 (defmulti api-controller (fn [[cmd] _ _] cmd))
 
 (defmethod api-controller :select-job [[_ id] _ state]

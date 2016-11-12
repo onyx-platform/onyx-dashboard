@@ -13,7 +13,7 @@
             [cljs.core.async :as async :refer [<! >! put! chan]])
   (:require-macros [cljs.core.async.macros :as asyncm :refer [go-loop]]))
 
-(defcomponent main-component [{:keys [deployment metrics] :as app} owner]
+(defcomponent main-component [{:keys [deployment metrics zk-up?] :as app} owner]
   (did-mount [_] 
              (let [api-ch (om/get-shared owner :api-ch)
                    chsk-send! (om/get-shared owner :chsk-send!)] 
@@ -38,6 +38,11 @@
                                                                     :margin-top "10px"}}
                                                            "Onyx Dashboard"))))
                     (g/grid {}
+                            (when-not zk-up?
+                              (g/row {:class "no-gutter"}
+                                (g/col {:xs 12 :md 12}
+                                  (dom/div {:class "alert alert-danger"} 
+                                    "ZooKeeper connection problem. Trying to reconnect..."))))
                             (g/row {:class "no-gutter"}
                                    (g/col {:xs 4 :md 4}
                                           (dom/div {:class "left-nav-deployment"} 

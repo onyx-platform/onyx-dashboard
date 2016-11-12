@@ -17,7 +17,8 @@
 
 (defonce app-state 
   (atom {:ready? false
-         :deployments {}}))
+         :deployments {}
+         :zk-up? true}))
 
 (def packer (sente-transit/get-flexi-packer :edn))
 
