@@ -1,16 +1,16 @@
-FROM frolvlad/alpine-oraclejdk8:full
-MAINTAINER Gardner Vickers <gardner@vickers.me>
+FROM ubuntu:14.04.2
 
-ADD https://github.com/just-containers/s6-overlay/releases/download/v1.11.0.1/s6-overlay-amd64.tar.gz /tmp/
+MAINTAINER Lucas Bradstreet <lucasbradstreet@gmail.com>
 
-RUN tar xzf /tmp/s6-overlay-amd64.tar.gz -C /
-RUN apk add --update bash
-RUN rm -rf /tmp/*
+# Add a repo where OpenJDK can be found.
+RUN apt-get install -y software-properties-common && \
+add-apt-repository -y ppa:webupd8team/java && \
+apt-get update && \
+echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | sudo /usr/bin/debconf-set-selections && \
+apt-get install -y oracle-java8-installer python2.7
 
-COPY scripts/run.sh /opt/run.sh
-COPY target/onyx-dashboard.jar /opt/onyx-dashboard.jar
+COPY /target/onyx-dashboard.jar /
 
-ENTRYPOINT ["/init"]
 EXPOSE 3000
 
-CMD ["opt/run.sh"]
+ENTRYPOINT ["java", "-server", "-jar", "/onyx-dashboard.jar"]
