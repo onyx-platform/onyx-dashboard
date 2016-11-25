@@ -61,13 +61,13 @@
                                         (go (>! notify-zc-ch [:browser-refresh-zk-conn {:user-id user-id}])))
             :job/kill (tenancy/kill-job peer-config 
                                         (:deployment-id (:?data event))
-                                        (:job (:?data event)))
+                                        (:job           (:?data event)))
             :job/start (tenancy/start-job peer-config 
                                           (:deployment-id (:?data event))
-                                          (:job (:?data event)))
+                                          (:job           (:?data event)))
             :job/restart (tenancy/restart-job peer-config 
                                               (:deployment-id (:?data event))
-                                              (:job (:?data event)))
+                                              (:job           (:?data event)))
             :chsk/ws-ping nil
             nil #_(println "Dunno what to do with: " event)))
         (recur)))))

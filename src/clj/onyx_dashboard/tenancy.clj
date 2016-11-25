@@ -2,28 +2,31 @@
   (:require [onyx.system :as system :refer [onyx-client]]
             [onyx.extensions :as extensions]
             [onyx.api]
-            [onyx.log.zookeeper :as zk-onyx]
+            [onyx.log.zookeeper       :as zk-onyx]
             [onyx.log.commands.common :as common]
-            [onyx.log.curator :as zk]
+            [onyx.log.curator         :as zk]
             [clojure.core.async :refer [chan timeout thread <!! alts!! go-loop close! <!]]
             [com.stuartsierra.component :as component]
-	    [lib-onyx.log-subscriber :as s]
-            [lib-onyx.job-query :as jq]
-            [lib-onyx.replica-query :as rq]
-	    [timothypratley.patchin :as patchin]
+	          [lib-onyx.log-subscriber :as s]
+            [lib-onyx.job-query      :as jq]
+            [lib-onyx.replica-query  :as rq]
+	          [timothypratley.patchin :as patchin]
             [taoensso.timbre :as timbre :refer [info error spy]]))
 
-(defn kill-job [peer-config deployment-id {:keys [id] :as job-info}]
-  (onyx.api/kill-job (assoc peer-config :onyx/tenancy-id deployment-id) id))
+(defn kill-job [peer-config deployment-id job-info]
+  (let [id (get-in job-info [:metadata :job-id])]
+        (println "Kill job" id)
+        (onyx.api/kill-job (assoc peer-config :onyx/tenancy-id deployment-id) id)))
 
-(defn start-job [peer-config deployment-id {:keys [catalog workflow task-scheduler] :as job-info}]
-  (onyx.api/submit-job (assoc peer-config :onyx/tenancy-id deployment-id)
-                       {:catalog catalog
-                        :workflow workflow
-                        :task-scheduler task-scheduler}))
+(defn start-job [peer-config deployment-id job-info]
+  (let [id (get-in job-info [:metadata :job-id])]
+        (println "Start job" id)
+        (onyx.api/submit-job (assoc peer-config :onyx/tenancy-id deployment-id)
+                             job-info)))
 
-(defn restart-job [peer-config deployment-id job-info]
-  (kill-job peer-config deployment-id job-info)
+(defn restart-job [peer-config deployment-id {:keys [id] :as job-info}]
+  (println "Restart job" (get-in job-info [:metadata :job-id]))
+  (kill-job  peer-config deployment-id job-info)
   (start-job peer-config deployment-id job-info))
 
 
