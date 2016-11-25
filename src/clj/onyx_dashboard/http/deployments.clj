@@ -59,7 +59,7 @@
     (let [into-br (-> sente :chsk-send!)
           cmds-ch (-> channels :cmds-deployments-ch)
           deployments       (atom {})
-          deployments-watch (start-deployments-watch sente zk deployments)
+          deployments-watch nil
           cmds (go-loop []
                         (when-let [[cmd data] (<! cmds-ch)]
                                (do (case cmd
