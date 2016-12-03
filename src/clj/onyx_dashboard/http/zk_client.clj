@@ -78,7 +78,7 @@
                         (println "ZK connection state:" (str newState))
                         (reset! zk-state newState)
 
-                        (when (= newState ConnectionState/RECONNECTED)
+                        (when (or (= newState ConnectionState/RECONNECTED) (= newState ConnectionState/CONNECTED))
                               (go (>! (-> channels :cmds-deployments-ch) [:restart]))))))
 
 
@@ -122,7 +122,7 @@
 
           ; ZK connection client
           zk-client (connect-1-retry (:zookeeper/address peer-config))
-          zk-state (atom false)
+          zk-state (atom ConnectionState/LOST)
           ; show connection status on console
           ; force other components to restart after reconnect
           nc (notify-console zk-client zk-state channels)
