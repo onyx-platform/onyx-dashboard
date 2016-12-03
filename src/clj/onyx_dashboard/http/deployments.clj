@@ -38,6 +38,7 @@
                    (Thread/sleep 1000)))))
       (recur))
     (catch java.lang.IllegalStateException e)
+    (catch java.lang.InterruptedException  e)
     (catch org.apache.zookeeper.KeeperException$ConnectionLossException e
       (println (format "ZK connection lost at %s. Deployments watch stopped." zk-onyx/root-path)))
     (catch Throwable t
