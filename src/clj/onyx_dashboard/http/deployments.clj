@@ -38,6 +38,7 @@
                    (Thread/sleep 1000)))))
       (recur))
     (catch java.lang.IllegalStateException e)
+    (catch java.lang.InterruptedException  e)
     (catch org.apache.zookeeper.KeeperException$ConnectionLossException e
       (println (format "ZK connection lost at %s. Deployments watch stopped." zk-onyx/root-path)))
     (catch Throwable t
@@ -59,7 +60,7 @@
     (let [into-br (-> sente :chsk-send!)
           cmds-ch (-> channels :cmds-deployments-ch)
           deployments       (atom {})
-          deployments-watch (start-deployments-watch sente zk deployments)
+          deployments-watch nil
           cmds (go-loop []
                         (when-let [[cmd data] (<! cmds-ch)]
                                (do (case cmd

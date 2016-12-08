@@ -71,34 +71,39 @@
                                                                    " peer" 
                                                                    (if (> 1 (count host-peers)) "s"))))))))))))))))
 
-; (defcomponent job-management [{:keys [id status] :as job} owner]
-;   (render [_]
-;           (let [api-ch (om/get-shared owner :api-ch)
-;                 restart-job-handler (fn [_] 
-;                                       (when (js/confirm "Are you sure you want to restart this job?")
-;                                         (put! api-ch [:restart-job id])))
-;                 kill-job-handler (fn [_] 
-;                                    (when (js/confirm "Are you sure you want to kill this job?")
-;                                      (put! api-ch [:kill-job id])))] 
-;             (dom/div
-;               (p/panel
-;                 {:header (om/build section-header-collapsible {:text "Job Management"} {})
-;                  :collapsible? true
-;                  :bs-style "primary"}
-;                 (g/grid {} 
-;                         (g/row {} 
-;                                (g/col {:xs 2 :md 1}
-;                                       (dom/button {:on-click restart-job-handler
-;                                                    :type "button"
-;                                                    :class "btn btn-warning"}
-;                                                   (dom/i {:class "fa fa-repeat"} " Restart")))
-;                                (g/col {:xs 2 :md 1}
-;                                       (if (= status :incomplete)
-;                                         (dom/button {:on-click kill-job-handler
-;                                                      :type "button"
-;                                                      :class "btn btn-danger"}
-;                                                     (dom/i {:class "fa fa-times-circle-o"
-;                                                             :style {:padding-right "10px"}} " Kill")))))))))))
+ (defcomponent job-management [{:keys [replica job-info]} owner]
+   (render [_]
+           (let [id        (:id job-info)
+                 job-state (rq/job-state replica id)
+                 api-ch    (om/get-shared owner :api-ch)
+                 restart-job-handler (fn [_]
+                                       (when (js/confirm "Are you sure you want to restart this job?")
+                                         (put! api-ch [:restart-job id])))
+                 kill-job-handler (fn [_]
+                                    (when (js/confirm "Are you sure you want to kill this job?")
+                                      (put! api-ch [:kill-job id])))]
+
+             (dom/div
+               (p/panel
+                 {:header (om/build section-header-collapsible {:text "Job Management"} {})
+                  ;:collapsible? true
+                  :bs-style "primary"}
+                 (g/grid {}
+                         (g/row {}
+                                ; TODO fix
+                                ;(when (or (= :running job-state) (= :killed job-state))
+                                ;(g/col {:xs 2 :md 1}
+                                ;       (dom/button {:on-click restart-job-handler
+                                ;                    :type "button"
+                                ;                    :class "btn btn-warning"}
+                                ;                   (dom/i {:class "fa fa-repeat"} " Restart"))))
+                                (when (= :running job-state)
+                                (g/col {:xs 2 :md 1}
+                                         (dom/button {:on-click kill-job-handler
+                                                      :type "button"
+                                                      :class "btn btn-danger"}
+                                                     (dom/i {:class "fa fa-times-circle-o"
+                                                             :style {:padding-right "10px"}} " Kill")))))))))))
 
 (defcomponent job-overview-panel [{:keys [replica job-info]} owner]
   (render [_]
