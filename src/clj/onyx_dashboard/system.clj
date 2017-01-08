@@ -9,7 +9,6 @@
             [onyx-dashboard.http.deployments :refer [new-deployments]]
             [onyx-dashboard.channels         :refer [new-channels]]
             [onyx.system :refer [onyx-client]]
-            [onyx.messaging.aeron]
             [compojure.core :refer [GET defroutes]]
             [compojure.route :refer [resources]]
             [compojure.handler :refer [api]]
