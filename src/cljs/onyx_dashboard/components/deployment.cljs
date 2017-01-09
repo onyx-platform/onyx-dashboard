@@ -20,13 +20,14 @@
   (render [_]
           (if (empty? host-peers) 
             (dom/div "No peers are currently running")
-            (t/table {:striped? true :bordered? false :condensed? true :hover? true}
-                     (dom/thead (dom/tr (dom/th "Host") (dom/th "# Peers")))
+
+            (t/table {:striped? false :bordered? false :condensed? true :hover? false}
+                     (dom/thead (dom/tr (dom/th {:class "col-xs-1"} "# Peers") (dom/th {:class "col-xs-11"} "Host") ))
                      (dom/tbody
                        (for [[host peers] host-peers] 
                          (dom/tr {:class "peer-entry"}
-                                 (dom/td host)
-                                 (dom/td (count peers)))))))))
+                                 (dom/td (dom/span {:class "label label-default"} (count peers)))
+                                 (dom/td host))))))))
 
 (defcomponent deployment-indicator [{:keys [deployment last-entry]} owner]
   (render [_] 
@@ -62,7 +63,8 @@
           (dom/div
             (p/panel
               {:header (dom/div {} (dom/h4 {:class "unselectable"} "Dashboard Time Travel"))
-               :bs-style (if time-travel-message-id  "danger" "primary")}
+               ;:bs-style (if time-travel-message-id  "danger" "primary")
+               }
               (let [selected-entry (sq/deployment->latest-entry deployment)
                     selected-message-id (:message-id selected-entry)
                     at-min? (zero? selected-message-id)
@@ -112,7 +114,8 @@
             (p/panel
               {:header (om/build section-header-collapsible {:text (str "Cluster Peers (" (count (:peers replica)) ")")} {})
                ;:collapsible? true
-               :bs-style "primary"}
+               ;:bs-style "primary"
+               }
               (if (and (:id deployment) 
                        (:up? deployment)) 
                 (om/build peer-table host-peers {})
@@ -212,16 +215,35 @@
                     "in the dump before making it public."))))
 
 
-(defcomponent select-deployment [{:keys [deployments deployment]} owner]
-  (render [_] 
-          (dom/div {:class "btn-group btn-group-justified" :role "group"} 
-                   (apply (partial b/dropdown {:id "ddl-deployment"
-                                               :bs-style "default" 
-                                               :title (or (:id deployment) "Select Tenancy")})
-                          (for [[id info] (reverse (sort-by (comp :created-at val) 
-                                                            deployments))]
-                            (b/menu-item {:key id
-                                          :on-select (fn [_] 
-                                                       (put! (om/get-shared owner :api-ch) 
-                                                             [:track-deployment id]))} 
-                                         id))))))
+; (defcomponent select-deployment [{:keys [deployments deployment]} owner]
+;   (render [_]
+;           (dom/div {:class "btn-group btn-group-justified" :role "group"} 
+;                    (apply (partial b/dropdown {:id "ddl-deployment"
+;                                                :bs-style "default" 
+;                                                :title (or (:id deployment) "Select Tenanc")})
+;                           (for [[id info] (reverse (sort-by (comp :created-at val) 
+;                                                             deployments))]
+;                             (b/menu-item {:key id
+;                                           :on-select (fn [_] 
+;                                                        (put! (om/get-shared owner :api-ch) 
+;                                                              [:track-deployment id]))} 
+;                                          id))))))
+
+(defcomponent select-deployment2 [{:keys [deployments deployment ui/select-deployment? ui/curr-page] :as state} owner]
+  (render [_]
+      (g/row {}
+         (g/col {:xs 12}
+            (p/panel {:header (dom/h4 {:class "unselectable"} "Select Tenancy")}
+              (dom/ul {:class "tenancies-select"}
+                (for [[id info] (reverse (sort-by (comp :created-at val) deployments))]
+                  (let [selected (= id (:id deployment))]
+                    (dom/li {}
+                      (b/button {:key id
+                                 :bs-style (if selected "success" "default")
+                                 :on-click (fn [_]
+                                               (put! (om/get-shared owner :api-ch) [:menu-tenancy nil])
+                                               (when (not selected)
+                                                  (put! (om/get-shared owner :api-ch) [:track-deployment id])))}
+                        (dom/i {:class "fa fa-cloud-upload"})
+                        " "
+                        id))))))))))

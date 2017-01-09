@@ -17,3 +17,16 @@
                                          :class (if collapsed? 
                                                   "fa fa-caret-square-o-down"
                                                   "fa fa-caret-square-o-up")})))))
+
+(defcomponent please-select-job [_ owner]
+  (render [_]
+    (dom/div {}
+      (dom/h4 {} "No job selected")
+      (dom/p {} "Please go to Tenancy page and select a job."))))
+
+(defcomponent please-select-tenancy [_ owner]
+  (render [_]
+    (dom/div {}
+       (dom/h4 {} "No tenancy selected")
+       (dom/p {} "Please go to Tenancies page and select a tenancy."))))
+

@@ -13,9 +13,9 @@
 
 (def packer (sente-transit/get-flexi-packer :edn))
 
-(defn send-mult-fn [send-fn! connected-uids msg]
+(defn into-all-browsers! [into-br! connected-uids msg]
   (doseq [uid (:any @connected-uids)]
-    (send-fn! uid msg)))
+    (into-br! uid msg)))
 
 ; Responsibilities
 ; create websocket for backend
@@ -31,19 +31,19 @@
           ring-ajax-post                (-> x :ajax-post-fn)
           ring-ajax-get-or-ws-handshake (-> x :ajax-get-or-ws-handshake-fn)
           ch-chsk                       (-> x :ch-recv)
-          chsk-send!                    (-> x :send-fn)
+          into-br!                      (-> x :send-fn)
           connected-uids                (-> x :connected-uids)
 
-          send-mult (partial send-mult-fn
-                             chsk-send!
-                             connected-uids)]
+          into-all-br! (partial into-all-browsers!
+                                into-br!
+                                connected-uids)]
       (assoc component
         :ring-ajax-post ring-ajax-post
         :ring-ajax-get-or-ws-handshake ring-ajax-get-or-ws-handshake
         :ch-chsk        ch-chsk
-        :chsk-send!     chsk-send!
+        :into-br!       into-br!
         :connected-uids connected-uids
-        :send-mult      send-mult)))
+        :into-all-br!   into-all-br!)))
 
   (stop [component]
     (println "Stopping Sente")

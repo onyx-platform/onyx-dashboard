@@ -47,7 +47,7 @@
             :chsk/uidport-close (do (swap! tracking tenancy/stop-tracking! user-id)
                                     (go (>! notify-zc-ch [:remove-browser-notify {:user-id user-id}])))
 
-            :deployment/track (tenancy/start-tracking! (:chsk-send! sente)
+            :deployment/track (tenancy/start-tracking! (-> sente :into-br!)
                                                        peer-config
                                                        tracking
                                                        (:?data event)
@@ -56,7 +56,6 @@
 
             :deployment/get-listing (do 
                                         ;((:chsk-send! sente) user-id [:deployment/listing @deployments])
-                                        (println "Send listing into channel:" cmds-deployments-ch)
                                         (go (>! cmds-deployments-ch [:deployment/listing {:user-id user-id}]))
                                         (go (>! notify-zc-ch [:browser-refresh-zk-conn {:user-id user-id}])))
             :job/kill (tenancy/kill-job peer-config 

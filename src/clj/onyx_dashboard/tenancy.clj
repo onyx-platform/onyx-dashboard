@@ -37,42 +37,42 @@
 (def freshness-timeout 100)
 
 (defmulti log-notifications 
-  (fn [send-fn! log-sub replica diff entry tracking-id]
+  (fn [into-br! log-sub replica diff entry tracking-id]
     ((:fn entry) {:submit-job :deployment/submitted-job
                   :kill-job :deployment/kill-job})))
 
-(defmethod log-notifications :deployment/submitted-job [send-fn! log-sub replica diff entry tracking-id]
+(defmethod log-notifications :deployment/submitted-job [into-br! log-sub replica diff entry tracking-id]
   (let [job-id (:id (:args entry))
         tasks (:tasks (:args entry))
         task-name->id (zipmap tasks tasks)
         job (jq/job-information log-sub replica job-id)]
-    (send-fn! [:deployment/submitted-job {:tracking-id tracking-id
+    (into-br! [:deployment/submitted-job {:tracking-id tracking-id
                                           :job {:task-name->id task-name->id
                                                 :message-id (:message-id entry)
                                                 :created-at (:created-at entry)
                                                 :id job-id
                                                 :job job}}])))
 
-(defmethod log-notifications :deployment/kill-job [send-fn! log-sub replica diff entry tracking-id]
+(defmethod log-notifications :deployment/kill-job [into-br! log-sub replica diff entry tracking-id]
   (when-let [exception (jq/exception log-sub (:job (:args entry)))]
-    (send-fn! [:deployment/kill-job {:tracking-id tracking-id
+    (into-br! [:deployment/kill-job {:tracking-id tracking-id
                                      :id (:job (:args entry))
                                      :exception (pr-str exception)}])))
 
-(defmethod log-notifications :default [send-fn! log-sub replica diff entry tracking-id] )
+(defmethod log-notifications :default [into-br! log-sub replica diff entry tracking-id] )
 
-(defn process-subscription-event [send-fn! tenancy-id tracking-id !last-replica 
+(defn process-subscription-event [into-br! tenancy-id tracking-id !last-replica 
                                   sub {:keys [replica entry] :as state}]
   (try 
    (let [patch (patchin/diff @!last-replica replica)]
-     (send-fn! [:deployment/log-entry {:tracking-id tracking-id
+     (into-br! [:deployment/log-entry {:tracking-id tracking-id
                                        :entry entry
                                        :diff patch}])
-     (log-notifications send-fn! sub replica patch entry tracking-id))
+     (log-notifications into-br! sub replica patch entry tracking-id))
    (catch Throwable t
      (println "Error in process-subscription-event:" t))))
 
-(defrecord TrackTenancyManager [send-fn! peer-config tracking-id user-id zk-client]
+(defrecord TrackTenancyManager [into-br! peer-config tracking-id user-id zk-client]
   component/Lifecycle
   (start [component]
     (println "Starting Track Tenancy Manager")
@@ -83,7 +83,7 @@
                                   tenancy-id)
           last-replica (atom {})
           callback-fn (partial process-subscription-event 
-                               (partial send-fn! user-id)
+                               (partial into-br! user-id)
                                tenancy-id
                                tracking-id
                                last-replica)
@@ -94,8 +94,8 @@
     (assoc component 
            :log-subscriber (s/stop-log-subscriber (:log-subscriber component)))))
 
-(defn new-track-tenancy-manager [send-fn! peer-config user-id tracking-id zk-client]
-  (map->TrackTenancyManager {:send-fn! send-fn! 
+(defn new-track-tenancy-manager [into-br! peer-config user-id tracking-id zk-client]
+  (map->TrackTenancyManager {:into-br! into-br! 
                              :peer-config peer-config 
                              :user-id user-id
                              :tracking-id tracking-id
@@ -110,14 +110,14 @@
 (defn stop-all-tracking! [tr]
   (reduce stop-tracking! tr (keys tr)))
 
-(defn start-tracking! [send-fn! peer-config tracking {:keys [deployment-id tracking-id]} user-id zk-client]
+(defn start-tracking! [into-br! peer-config tracking {:keys [deployment-id tracking-id]} user-id zk-client]
   (try 
     (swap! tracking 
            (fn [tr]
              (-> tr
                  (stop-tracking! user-id)
                  (assoc user-id (component/start 
-                                  (new-track-tenancy-manager send-fn! 
+                                  (new-track-tenancy-manager into-br! 
                                                              (assoc peer-config :onyx/tenancy-id deployment-id)
                                                              user-id
                                                              tracking-id
