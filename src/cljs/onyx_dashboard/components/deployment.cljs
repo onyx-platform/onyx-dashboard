@@ -229,7 +229,7 @@
 ;                                                              [:track-deployment id]))} 
 ;                                          id))))))
 
-(defcomponent select-deployment2 [{:keys [deployments deployment ui/select-deployment? ui/curr-page] :as state} owner]
+(defcomponent select-deployment [{:keys [deployments deployment ui/select-deployment? ui/curr-page] :as state} owner]
   (render [_]
       (g/row {}
          (g/col {:xs 12}
