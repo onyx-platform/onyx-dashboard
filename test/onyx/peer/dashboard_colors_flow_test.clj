@@ -2,6 +2,7 @@
   (:require [clojure.core.async :refer [chan >!! <!! close! sliding-buffer]]
             [clojure.test :refer :all]
             [clj-webdriver.taxi :as webdriver]
+            [onyx.test-helper]
             [com.stuartsierra.component :as component]
             [onyx-dashboard.system :as sys]
             [onyx.plugin.core-async :refer [take-segments!]]
@@ -38,7 +39,6 @@
   (let [system (component/start (sys/get-system "127.0.0.1:2188"))]
     (webdriver/set-driver! {:browser browser-type})
     (webdriver/implicit-wait 20000)
-
     (try
       (f)
       (finally
@@ -66,6 +66,7 @@
 (def batch-size 10)
 
 (def colors-in-chan (chan 100))
+(def colors-in-buffer (atom nil))
 
 (def red-out-chan (chan (sliding-buffer 100)))
 
@@ -83,8 +84,6 @@
            {:color "cyan" :extra-key "Some extra context for the predicates"}
            {:color "yellow" :extra-key "Some extra context for the predicates"}]]
   (>!! colors-in-chan x))
-
-(>!! colors-in-chan :done)
 
 (def catalog
   [{:onyx/name :colors-in
@@ -191,7 +190,8 @@
     :flow/predicate :onyx.peer.dashboard-colors-flow-test/orange?}])
 
 (defn inject-colors-in-ch [event lifecycle]
-  {:core.async/chan colors-in-chan})
+  {:core.async/buffer colors-in-buffer
+   :core.async/chan colors-in-chan})
 
 (defn inject-red-out-ch [event lifecycle]
   {:core.async/chan red-out-chan})
@@ -217,20 +217,12 @@
 (def lifecycles
   [{:lifecycle/task :colors-in
     :lifecycle/calls :onyx.peer.dashboard-colors-flow-test/colors-in-calls}
-   {:lifecycle/task :colors-in
-    :lifecycle/calls :onyx.plugin.core-async/reader-calls}
    {:lifecycle/task :red-out
     :lifecycle/calls :onyx.peer.dashboard-colors-flow-test/red-out-calls}
-   {:lifecycle/task :red-out
-    :lifecycle/calls :onyx.plugin.core-async/writer-calls}
    {:lifecycle/task :blue-out
     :lifecycle/calls :onyx.peer.dashboard-colors-flow-test/blue-out-calls}
-   {:lifecycle/task :blue-out
-    :lifecycle/calls :onyx.plugin.core-async/writer-calls}
    {:lifecycle/task :green-out
-    :lifecycle/calls :onyx.peer.dashboard-colors-flow-test/green-out-calls}
-   {:lifecycle/task :green-out
-    :lifecycle/calls :onyx.plugin.core-async/writer-calls}])
+    :lifecycle/calls :onyx.peer.dashboard-colors-flow-test/green-out-calls}])
 
 (def seen-before? (atom false))
 
@@ -266,50 +258,49 @@
 
 (def v-peers (onyx.api/start-peers 7 peer-group))
 
-(onyx.api/submit-job
- peer-config
- {:catalog catalog :workflow workflow
-  :flow-conditions flow-conditions :lifecycles lifecycles
-  :task-scheduler :onyx.task-scheduler/balanced})
+(close! colors-in-chan)
 
-(def red (take-segments! red-out-chan))
+(->> (onyx.api/submit-job
+      peer-config
+      {:catalog catalog :workflow workflow
+       :flow-conditions flow-conditions :lifecycles lifecycles
+       :task-scheduler :onyx.task-scheduler/balanced})
+     :job-id
+     (onyx.test-helper/feedback-exception! peer-config))
 
-(def blue (take-segments! blue-out-chan))
+(def red (take-segments! red-out-chan 50))
 
-(def green (take-segments! green-out-chan))
+(def blue (take-segments! blue-out-chan 50))
+
+(def green (take-segments! green-out-chan 50))
 
 (def red-expectatations
   #{{:color "white"}
     {:color "red"}
-    {:color "orange"}
-    :done})
+    {:color "orange"}})
 
 (def blue-expectatations
   #{{:color "white"}
     {:color "blue"}
-    {:color "orange"}
-    :done})
+    {:color "orange"}})
 
 (def green-expectatations
   #{{:color "white"}
     {:color "green"}
-    {:color "orange"}
-    :done})
+    {:color "orange"}})
 
-(close! colors-in-chan)
+(run-test-fixture :chrome 
+                  (fn []
+                    (Thread/sleep 50000)
+                    (webdriver/to (str "http://localhost:" 3000))
+                    (load-last-deployment)
+                    ;(load-job)
+                    ;(check-job-text workflow)
 
 
+                    (doseq [v-peer v-peers]
+                      (onyx.api/shutdown-peer v-peer))
 
-    (run-test-fixture :chrome 
-                      (fn []
-                        (webdriver/to (str "http://localhost:" 3000))
-                        (load-last-deployment)
-                        ;(load-job)
-                        ;(check-job-text workflow)
+                    (onyx.api/shutdown-peer-group peer-group)
 
-                        (doseq [v-peer v-peers]
-                          (onyx.api/shutdown-peer v-peer))
-
-                        (onyx.api/shutdown-peer-group peer-group)
-
-                        (onyx.api/shutdown-env env)))))
+                    (onyx.api/shutdown-env env)))))
