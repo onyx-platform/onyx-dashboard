@@ -33,10 +33,19 @@ By default the server will listen on port 3000, but this can be configured via t
 
 Alternately, run the docker image like so:
 ```
-docker run onyx/onyx-dashboard:<tag> 192.168.1.170:2188
+docker run -p 3000:3000 onyx/onyx-dashboard:<tag> 192.168.1.170:2188
 ```
 
 The IP passed in is used by ZooKeeper.
+
+NOTE: If you are running the Onyx Dashboard via Docker on Mac, but are running ZooKeeper locally, be aware
+that there are limitations with networking on Mac. Per the [Docker on Mac networking documentation](https://docs.docker.com/docker-for-mac/networking/),
+your best work around is to assign a dummy IP as an alias to the loopback adapter on the host machine
+and point the Docker image at that IP. Something like this should do the trick:
+```
+sudo ifconfig lo0 alias 10.200.10.1/24
+docker run -p 3000:3000 onyx/onyx-dashboard:latest 10.200.10.1:2188
+```
 
 ## Development
 
