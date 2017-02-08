@@ -66,7 +66,7 @@
 (def batch-size 10)
 
 (def colors-in-chan (chan 100))
-(def colors-in-buffer (atom nil))
+(def colors-in-buffer (atom {}))
 
 (def red-out-chan (chan (sliding-buffer 100)))
 
@@ -273,21 +273,6 @@
 (def blue (take-segments! blue-out-chan 50))
 
 (def green (take-segments! green-out-chan 50))
-
-(def red-expectatations
-  #{{:color "white"}
-    {:color "red"}
-    {:color "orange"}})
-
-(def blue-expectatations
-  #{{:color "white"}
-    {:color "blue"}
-    {:color "orange"}})
-
-(def green-expectatations
-  #{{:color "white"}
-    {:color "green"}
-    {:color "orange"}})
 
 (run-test-fixture :chrome 
                   (fn []
