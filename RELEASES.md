@@ -1,3 +1,29 @@
+[Onyx Dashboard 0.10.0.0-beta10](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.10.0.0-beta10.jar)
+
+[Onyx Dashboard 0.10.0.0-beta9](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.10.0.0-beta9.jar)
+
+[Onyx Dashboard 0.10.0.0-beta8](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.10.0.0-beta8.jar)
+
+[Onyx Dashboard 0.10.0.0-beta7](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.10.0.0-beta7.jar)
+
+[Onyx Dashboard 0.10.0.0-beta6](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.10.0.0-beta6.jar)
+
+[Onyx Dashboard 0.10.0.0-beta5](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.10.0.0-beta5.jar)
+
+[Onyx Dashboard 0.10.0.0-beta4](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.10.0.0-beta4.jar)
+
+[Onyx Dashboard 0.10.0.0-beta3](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.10.0.0-beta3.jar)
+
+[Onyx Dashboard 0.10.0.0-beta2](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.10.0.0-beta2.jar)
+
+[Onyx Dashboard 0.10.0.0-beta1](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.10.0.0-beta1.jar)
+
+[Onyx Dashboard 0.10.0.0-alpha7](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.10.0.0-alpha7.jar)
+
+[Onyx Dashboard 0.10.0.0-alpha6](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.10.0.0-alpha6.jar)
+
+[Onyx Dashboard 0.10.0.0-alpha5](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.10.0.0-alpha5.jar)
+
 [Onyx Dashboard 0.10.0.0-alpha4](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.10.0.0-alpha4.jar)
 
 [Onyx Dashboard 0.9.15.0](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.9.15.0.jar)
