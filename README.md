@@ -80,4 +80,4 @@ Distributed under the Eclipse Public License either version 1.0 or (at your opti
 
 ## Chestnut
 
-Created with [Chestnut](http://plexus.github.io/chestnut/) 0.7.0-SNAPSHOT (ecadc3ce).
+Created with [Chestnut](https://github.com/plexus/chestnut) 0.7.0-SNAPSHOT (ecadc3ce).
