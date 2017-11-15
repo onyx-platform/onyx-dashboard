@@ -1,3 +1,5 @@
+[Onyx Dashboard 0.12.0.0-beta3](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.12.0.0-beta3.jar)
+
 [Onyx Dashboard 0.12.0.0-beta2](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.12.0.0-beta2.jar)
 
 [Onyx Dashboard 0.12.0.0-beta1](https://s3-us-west-1.amazonaws.com/onyx-releases/onyx-dashboard/onyx-dashboard-0.12.0.0-beta1.jar)
