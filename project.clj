@@ -17,8 +17,6 @@
                  [org.clojure/core.async "0.2.374"]
                  [com.stuartsierra/component "0.3.1"]
                  ; taoensso deps
-                 ;[com.taoensso/timbre "4.7.4" ]
-                 ;[com.taoensso/encore "2.67.2"]
                  [com.taoensso/sente  "1.8.1" :exclusions [com.taoensso/timbre com.taoensso/encore]]
 
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
@@ -28,7 +26,7 @@
                  ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
                  [org.onyxplatform/onyx "0.12.0"]
                  [org.onyxplatform/lib-onyx "0.9.10.0" :exclusions [ring-jetty-component org.onyxplatform/onyx]]
-                 [org.onyxplatform/onyx-visualization "0.4.0"]
+                 [org.onyxplatform/onyx-visualization "0.5.0"]
 
                  [timothypratley/patchin "0.3.5"]
                  [com.cognitect/transit-clj "0.8.285"]
@@ -36,9 +34,9 @@
                  [cljsjs/moment "2.9.0-0"]
                  [ring/ring-defaults "0.1.5"]
                  [compojure "1.3.4"]
-                 ;; Fixme, need to pin instaparse for some reason
+                 ;; FIXME, need to pin instaparse for some reason
                  ;; deps :tree says that compojure is bringing a compatible version
-                 ;; in and I can't figure it out
+                 ;; in and I can't figure it ou
                  [instaparse "1.4.1"]
                  [enlive "1.1.5"]
                  [fence "0.2.0"]
@@ -54,7 +52,6 @@
                  [prismatic/om-tools "0.4.0" :exclusions [om]]]
 
   :plugins [[lein-cljsbuild "1.1.3"]
-            ;[lein-version-spec "0.0.4"]
             [lein-environ "1.0.0"]]
 
   :min-lein-version "2.5.0"
