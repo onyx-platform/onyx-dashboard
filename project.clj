@@ -1,4 +1,4 @@
-(defproject org.onyxplatform/onyx-dashboard "0.12.4.1-SNAPSHOT"
+(defproject org.onyxplatform/onyx-dashboard "0.12.5.1-SNAPSHOT"
   :description "Dashboard for the Onyx distributed computation system"
   :url "http://github.com/lbradstreet/onyx-dashboard"
   :license {:name "Eclipse Public License"
@@ -24,7 +24,7 @@
 
                  ; onyx deps
                  ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
-                 [org.onyxplatform/onyx "0.12.6-20180123_073016-ge2c077b"]
+                 [org.onyxplatform/onyx "0.12.5"]
                  [org.onyxplatform/lib-onyx "0.9.10.0" :exclusions [ring-jetty-component org.onyxplatform/onyx]]
                  [org.onyxplatform/onyx-visualization "0.5.0"]
 
