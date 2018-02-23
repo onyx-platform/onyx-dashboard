@@ -120,4 +120,19 @@
                                               :source-map "resources/public/js/app.js.map"
                                               :externs ["src/js/d3_externs.js"]
                                               :optimizations :advanced
-                                              :pretty-print false}}}}}})
+                                              :pretty-print false}}}}}
+             :uberjar-no-kill-button {:source-paths ["env/prod/clj"]
+                                      :hooks [leiningen.cljsbuild]
+                                      :env {:production true}
+                                      :omit-source true
+                                      :aot :all
+                                      :cljsbuild ^:replace 
+                                      {:builds 
+                                       {:uberjar {:source-paths ["src/cljs" "env/prod/cljs"]
+                                                  :compiler {:output-to "resources/public/js/app.js"
+                                                             :output-dir "resources/public/js/advanced"
+                                                             :source-map "resources/public/js/app.js.map"
+                                                             :externs ["src/js/d3_externs.js"]
+                                                             :optimizations :advanced
+                                                             :pretty-print false
+                                                             :closure-defines {onyx-dashboard.components.main/show-job-management false}}}}}}})
