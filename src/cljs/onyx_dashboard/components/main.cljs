@@ -13,6 +13,8 @@
             [cljs.core.async :as async :refer [<! >! put! chan]])
   (:require-macros [cljs.core.async.macros :as asyncm :refer [go-loop]]))
 
+(goog-define ^boolean show-job-management true)
+
 (defcomponent main-component [{:keys [deployment metrics zk-up?] :as app} owner]
   (did-mount [_] 
              (let [api-ch (om/get-shared owner :api-ch)
@@ -54,7 +56,7 @@
                                                          :last-entry (sq/deployment->latest-entry deployment)})
                                               (om/build job-selector deployment {})
                                               (om/build deployment-peers deployment {})
-                                               (if job
+                                              (if (and show-job-management job)
                                                  (om/build job-management
                                                            {:replica (sq/deployment->latest-replica deployment)
                                                             :job-info job}
