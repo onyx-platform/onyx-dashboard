@@ -7,6 +7,7 @@
 
 (defmethod msg-controller :deployment/listing 
   [[_ msg] state]
+  (println "Tenancies: " msg)
   (assoc-in state [:deployments] msg))
 
 (defn is-tracking? [tracking-id state]
@@ -59,7 +60,7 @@
     state))
 
 (defmethod msg-controller :deployment/zk-conn-state [[_ msg] state]
-  (.log js/console "ZK connection" (str msg))
+  (println "ZK connection: " msg)
   (assoc-in state [:zk-up?] (-> msg :zk-up?)))
 
 

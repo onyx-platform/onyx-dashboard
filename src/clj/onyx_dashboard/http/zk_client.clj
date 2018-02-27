@@ -118,7 +118,7 @@
   component/Lifecycle
   (start [{:keys [channels sente] :as component}]
     (println "Starting ZKClient")
-    (let [into-br (-> sente :chsk-send!)
+    (let [into-br (-> sente :into-br!)
 
           ; ZK connection client
           zk-client (connect-1-retry (:zookeeper/address peer-config))

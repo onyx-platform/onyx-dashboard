@@ -20,7 +20,8 @@
   (let [tracking-id (uuid/make-random-uuid)] 
     (chsk-send! [:deployment/track {:deployment-id deployment-id
                                     :tracking-id tracking-id}])
-    (assoc state :deployment (new-deployment-state tracking-id deployment-id))))
+    (assoc state :deployment (new-deployment-state tracking-id deployment-id)
+                 :ui/select-deployment? false)))
 
 (defmethod api-controller :time-travel [[_ message-id] chsk-send! state]
   (assoc-in state [:deployment :time-travel-message-id] (if-not (= message-id (:message-id-max (:deployment state)))
@@ -40,6 +41,21 @@
   (chsk-send! [:job/kill {:deployment-id (:id (:deployment state))
                           :job {:metadata {:job-id job-id}}}])
   state)
+
+(defmethod api-controller :menu-tenancies [[_ job-id] chsk-send! state]
+  (assoc state :ui/curr-page :page/tenancies))
+
+(defmethod api-controller :menu-tenancy [[_ job-id] chsk-send! state]
+  (assoc state :ui/curr-page :page/tenancy))
+
+(defmethod api-controller :menu-job [[_ job-id] chsk-send! state]
+  (assoc state :ui/curr-page :page/job))
+
+(defmethod api-controller :menu-log-entries [[_ job-id] chsk-send! state]
+  (assoc state :ui/curr-page :page/log-entries))
+
+(defmethod api-controller :menu-time-travel [[_ job-id] chsk-send! state]
+  (assoc state :ui/curr-page :page/time-travel))
 
 ; Currently unused
 (defmethod api-controller :track-cancel [[_ deployment-id] chsk-send! state]

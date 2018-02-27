@@ -79,10 +79,11 @@
                                               true (sort-by :message-id)))] 
                   (p/panel {:header (om/build section-header-collapsible 
                                               {:text (str "Raw Cluster Activity" 
-                                                          (if job-filter (str " - Job " job-filter)))}
+                                                          (if job-filter (str " | Job " job-filter)))}
                                               {})
                             ;:collapsible? true
-                            :bs-style "primary"}
+                            ;:bs-style "primary"
+                            }
                            (if (empty? filtered-entries)
                              (dom/div "No log entries found.")
                              (let [max-id (dec (count filtered-entries))
