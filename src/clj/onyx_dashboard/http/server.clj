@@ -1,6 +1,6 @@
 (ns onyx-dashboard.http.server
   (:require [clojure.core.async :refer [chan timeout thread <!! >!! alts!! go-loop <! >! close! go]]
-            [onyx-dashboard.dev :refer [is-dev? inject-devmode-html #_browser-repl start-figwheel]]
+            [onyx-dashboard.dev :refer [is-dev? disable-management? inject-devmode-html #_browser-repl start-figwheel]]
             [org.httpkit.server :as http-kit-server]
             [com.stuartsierra.component :as component]
             [clojure.java.io :as io]
@@ -59,15 +59,18 @@
                                         (println "Send listing into channel:" cmds-deployments-ch)
                                         (go (>! cmds-deployments-ch [:deployment/listing {:user-id user-id}]))
                                         (go (>! notify-zc-ch [:browser-refresh-zk-conn {:user-id user-id}])))
-            :job/kill (tenancy/kill-job peer-config 
-                                        (:deployment-id (:?data event))
-                                        (:job           (:?data event)))
-            :job/start (tenancy/start-job peer-config 
+            :job/kill (when-not disable-management?
+                        (tenancy/kill-job peer-config
                                           (:deployment-id (:?data event))
-                                          (:job           (:?data event)))
-            :job/restart (tenancy/restart-job peer-config 
-                                              (:deployment-id (:?data event))
-                                              (:job           (:?data event)))
+                                          (:job           (:?data event))))
+            :job/start (when-not disable-management?
+                         (tenancy/start-job peer-config
+                                            (:deployment-id (:?data event))
+                                            (:job           (:?data event))))
+            :job/restart (when-not disable-management?
+                           (tenancy/restart-job peer-config
+                                                (:deployment-id (:?data event))
+                                                (:job           (:?data event))))
             :chsk/ws-ping nil
             nil #_(println "Dunno what to do with: " event)))
         (recur)))))

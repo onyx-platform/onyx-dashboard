@@ -6,6 +6,7 @@
             [leiningen.core.main :as lein]))
 
 (def is-dev? (env :is-dev))
+(def disable-management? (= "true" (env :disable-management)))
 
 (def inject-devmode-html
   (comp

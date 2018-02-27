@@ -54,7 +54,7 @@
                                                          :last-entry (sq/deployment->latest-entry deployment)})
                                               (om/build job-selector deployment {})
                                               (om/build deployment-peers deployment {})
-                                               (if job
+                                               (if (and job (:manageable? job))
                                                  (om/build job-management
                                                            {:replica (sq/deployment->latest-replica deployment)
                                                             :job-info job}
