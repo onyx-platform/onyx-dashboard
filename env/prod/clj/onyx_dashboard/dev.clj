@@ -7,6 +7,7 @@
                           "Remove the target/ directory and try again."))))
 
 (def is-dev? false)
+(def disable-management? (= "true" (env :disable-management)))
 (def inject-devmode-html identity)
 (defn browser-repl []
   (throw (Exception. "Browser connected REPL is not available in prod mode")))

@@ -1,6 +1,7 @@
 (ns onyx-dashboard.http.deployments
   (:require [clojure.core.async :refer [close! chan go-loop <!]]
             [com.stuartsierra.component :as component]
+            [onyx-dashboard.dev :refer [disable-management?]]
             [onyx.log.curator           :as zk]
             [onyx.log.zookeeper         :as zk-onyx]))
 
@@ -22,7 +23,8 @@
                                 (partial zk-deployment-entry-stat zk-client)))
                      (map (fn [[child stat]]
                             (vector child
-                                    {:created-at  (java.util.Date. (:ctime stat))
+                                    {:manageable? (not disable-management?)
+                                     :created-at  (java.util.Date. (:ctime stat))
                                      :modified-at (java.util.Date. (:mtime stat))})))
                      (into {})
                      (reset! deployments)
