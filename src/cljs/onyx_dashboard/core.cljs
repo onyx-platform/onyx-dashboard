@@ -18,7 +18,8 @@
 (defonce app-state 
   (atom {:ready? false
          :deployments {}
-         :zk-up? true}))
+         :zk-up? true
+         :enable-job-management nil}))
 
 (def packer (sente-transit/get-flexi-packer :edn))
 
@@ -36,6 +37,7 @@
       (swap! app-state (partial msg-controller msg))
       :chsk/state (when (:first-open? msg)
                     (chsk-send! [:deployment/get-listing])
+                    (chsk-send! [:deployment/enable-job-management])
                     (swap! app-state assoc :ready? true)
                     (println "First opened:" event))
       (println "Unhandled event:" event))))
