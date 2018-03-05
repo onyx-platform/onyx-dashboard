@@ -14,7 +14,7 @@ A description and user guide disguised as a blog post can be found [here](http:/
 
 ## Versioning
 
-Version numbers will kept in sync with [Onyx]
+Version numbers will be kept in sync with [Onyx]
 (https://github.com/onyx-platform/onyx). For example, to use a version
 compatible with Onyx `0.8.1.0-alpha8`, use a version of the dashboard beginning with
 `0.8.1.0-alpha8`. The fourth version number will be reserved for dashboard versioning, in
