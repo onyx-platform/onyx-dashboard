@@ -24,7 +24,7 @@
 
 
 (defn get-system 
-  ([zookeeper-addr]
+  ([zookeeper-addr enable-job-management]
     (let [file-log-lvl   :error  ; set to :trace to see more details
          console-log-lvl :info
          rotor-appender (rotor/rotor-appender {:path "dashboard.log"})
@@ -49,10 +49,11 @@
                                               :onyx.peer/job-scheduler :not-required/for-peer-sub
                                               :onyx.messaging/impl :aeron
                                               ;; Doesn't matter for the dashboard
-                                              :onyx.messaging/bind-addr "localhost"}) 
+                                              :onyx.messaging/bind-addr "localhost"}
+                                             enable-job-management)
                             [:channels :sente :zk :deployments]))))
 
-(defn -main [zookeeper-addr]
-  (component/start (get-system zookeeper-addr))
+(defn -main [zookeeper-addr enable-job-management]
+  (component/start (get-system zookeeper-addr enable-job-management))
   ;; block forever
   (<!! (chan)))

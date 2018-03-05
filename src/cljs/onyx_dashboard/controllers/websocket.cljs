@@ -9,6 +9,11 @@
   [[_ msg] state]
   (assoc-in state [:deployments] msg))
 
+(defmethod msg-controller :deployment/enable-job-management
+  [[_ msg] state]
+  (.log js/console "enable job management" (str msg))
+  (assoc-in state [:enable-job-management] msg))
+
 (defn is-tracking? [tracking-id state]
   (= tracking-id
      (get-in state [:deployment :tracking-id])))

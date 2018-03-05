@@ -30,7 +30,7 @@
 ; WebSockets events send from browser
 ; Responsibilities
 ; - receive events from browser WS and call other components to handle it
-(defn events-from-browser [sente peer-config channels-comp tracking zk-comp]
+(defn events-from-browser [sente peer-config channels-comp tracking zk-comp enable-job-management]
   (future 
      (loop []
       (when-let [event (<!! (:ch-chsk sente))]
@@ -52,27 +52,30 @@
                                                        tracking
                                                        (:?data event)
                                                        user-id
-                                                       zk-client)  
+                                                       zk-client)
+ 
+            :deployment/enable-job-management ((:chsk-send! sente) user-id [:deployment/enable-job-management enable-job-management])
 
             :deployment/get-listing (do 
                                         ;((:chsk-send! sente) user-id [:deployment/listing @deployments])
                                         (println "Send listing into channel:" cmds-deployments-ch)
                                         (go (>! cmds-deployments-ch [:deployment/listing {:user-id user-id}]))
                                         (go (>! notify-zc-ch [:browser-refresh-zk-conn {:user-id user-id}])))
-            :job/kill (tenancy/kill-job peer-config 
-                                        (:deployment-id (:?data event))
-                                        (:job           (:?data event)))
-            :job/start (tenancy/start-job peer-config 
+            (when enable-job-management
+              :job/kill (tenancy/kill-job peer-config 
                                           (:deployment-id (:?data event))
                                           (:job           (:?data event)))
-            :job/restart (tenancy/restart-job peer-config 
-                                              (:deployment-id (:?data event))
-                                              (:job           (:?data event)))
+              :job/start (tenancy/start-job peer-config 
+                                            (:deployment-id (:?data event))
+                                            (:job           (:?data event)))
+              :job/restart (tenancy/restart-job peer-config 
+                                                (:deployment-id (:?data event))
+                                                (:job           (:?data event))))
             :chsk/ws-ping nil
             nil #_(println "Dunno what to do with: " event)))
         (recur)))))
 
-(defrecord HttpServer [peer-config]
+(defrecord HttpServer [peer-config enable-job-management]
   component/Lifecycle
   (start [{:keys [channels sente zk deployments] :as component}]
     (println "Starting HTTP Server")
@@ -95,7 +98,7 @@
             
             zk-client (-> zk :zk-client)
             ; futures
-            events-from-browser (events-from-browser sente peer-config channels tracking zk)
+            events-from-browser (events-from-browser sente peer-config channels tracking zk enable-job-management)
             ]
         (println "Http-kit server is running at" uri)
         (assoc component
@@ -123,5 +126,5 @@
            :deployments         nil 
            :tracking            nil)))
 
-(defn new-http-server [peer-config]
-  (map->HttpServer {:peer-config peer-config}))
+(defn new-http-server [peer-config enable-job-management]
+  (map->HttpServer {:peer-config peer-config :enable-job-management enable-job-management}))
