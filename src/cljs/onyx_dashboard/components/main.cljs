@@ -13,7 +13,7 @@
             [cljs.core.async :as async :refer [<! >! put! chan]])
   (:require-macros [cljs.core.async.macros :as asyncm :refer [go-loop]]))
 
-(defcomponent main-component [{:keys [deployment metrics zk-up?] :as app} owner]
+(defcomponent main-component [{:keys [deployment metrics zk-up? enable-job-management] :as app} owner]
   (did-mount [_] 
              (let [api-ch (om/get-shared owner :api-ch)
                    chsk-send! (om/get-shared owner :chsk-send!)] 
@@ -54,11 +54,13 @@
                                                          :last-entry (sq/deployment->latest-entry deployment)})
                                               (om/build job-selector deployment {})
                                               (om/build deployment-peers deployment {})
-                                               (if job
-                                                 (om/build job-management
-                                                           {:replica (sq/deployment->latest-replica deployment)
-                                                            :job-info job}
-                                                           {:react-key (str "management-" (:id job))}))
+
+                                              (if (and enable-job-management job)
+                                                (om/build job-management
+                                                          {:replica (sq/deployment->latest-replica deployment)
+                                                           :job-info job}
+                                                          {:react-key (str "management-" (:id job))}))
+
                                               (om/build deployment-time-travel deployment)
                                               (om/build deployment-log-dump deployment))))
                                    (g/col {:xs 8 :md 8}
