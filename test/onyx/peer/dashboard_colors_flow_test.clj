@@ -36,7 +36,7 @@
 
 (defn run-test-fixture
   [browser-type f]
-  (let [system (component/start (sys/get-system "127.0.0.1:2188"))]
+  (let [system (component/start (sys/get-system "127.0.0.1:2188" false))]
     (webdriver/set-driver! {:browser browser-type})
     (webdriver/implicit-wait 20000)
     (try
