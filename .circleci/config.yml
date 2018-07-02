@@ -4,6 +4,7 @@ jobs:
   build:
     docker:
       - image: circleci/clojure:lein-2.8.1
+      - image: selenium/standalone-chrome:3.1.0
     working_directory: ~/repo
     steps:
       - checkout
