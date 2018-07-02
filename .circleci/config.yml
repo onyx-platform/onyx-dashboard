@@ -22,6 +22,8 @@ jobs:
           background: true
           sleep: 30
 
+      - run: wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/2.40/chromedriver_linux64.zip && sudo unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/;
+
       - run: 
           name: add lein voom
           command: mkdir ~/.lein && echo '{:user {:plugins [[lein-voom "0.1.0-20180617_140646-g0ba7ec8"]]}}' > ~/.lein/profiles.clj
