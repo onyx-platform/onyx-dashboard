@@ -30,13 +30,17 @@ jobs:
           command: lein test
 
       - run: lein clean && lein with-profile uberjar uberjar
-      - run: cp repo/target/onyx-dashboard.jar $CIRCLE_ARTIFACTS
+      - run: mkdir archive
+      - run: cp repo/target/onyx-dashboard.jar archive
       - run: docker build -t onyx/onyx-dashboard:$(lein pprint :version | sed s/\"//g) . | tee docker-build.log
       - run: docker tag $(tail -1 docker-build.log | cut -d ' ' -f 3) onyx/onyx-dashboard:latest
       - run: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - run: docker push onyx/onyx-dashboard:$(lein pprint :version | sed s/\"//g)
       - run: docker push onyx/onyx-dashboard:latest
         #- run: aws s3 cp target/onyx-dashboard.jar s3://onyx-releases/onyx-dashboard/onyx-dashboard-`lein project-version`.jar
+        #
+      - store_artifacts:
+          path: archive
 
       - save_cache:
           paths:
