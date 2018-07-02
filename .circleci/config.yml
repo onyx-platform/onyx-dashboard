@@ -3,26 +3,13 @@ executorType: docker
 jobs:
   build:
     docker:
-      - image: circleci/clojure:lein-2.8.1
+      - image: circleci/clojure:lein-2.8.1-browsers
     working_directory: ~/repo
     steps:
       - checkout
       - restore_cache:
           keys:
           - v1-dependencies-{{ .Branch }}-{{ .Revision }}
-
-      - run:
-          name: Download Selenium
-          command: |
-            curl -O http://selenium-release.storage.googleapis.com/3.5/selenium-server-standalone-3.5.3.jar
-      - run:
-          name: Start Selenium
-          command: |
-            java -jar selenium-server-standalone-3.5.3.jar -log selenium.log
-          background: true
-          sleep: 30
-
-      - run: wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/2.40/chromedriver_linux64.zip && sudo unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/;
 
       - run: 
           name: add lein voom
