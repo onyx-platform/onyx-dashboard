@@ -43,8 +43,8 @@ jobs:
       - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
       - run: docker push onyx/onyx-dashboard:$(lein pprint :version | sed s/\"//g)
       - run: docker push onyx/onyx-dashboard:latest
-        #- run: aws s3 cp target/onyx-dashboard.jar s3://onyx-releases/onyx-dashboard/onyx-dashboard-`lein project-version`.jar
-        #
+      - run: aws s3 cp target/onyx-dashboard.jar s3://onyx-releases/onyx-dashboard/onyx-dashboard-`lein project-version`.jar
+
       - store_artifacts:
           path: ~/archive
 
