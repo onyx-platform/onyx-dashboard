@@ -3,23 +3,19 @@ executorType: docker
 jobs:
   build:
     docker:
-      - image: circleci/clojure:lein-2.8.1
+      - image: circleci/clojure:lein-2.8.1-browsers
     working_directory: ~/repo
     steps:
+      - setup_remote_docker
       - checkout
       - restore_cache:
           keys:
           - v1-dependencies-{{ .Branch }}-{{ .Revision }}
 
       - run:
-          name: Download Selenium
-          command: |
-            curl -O http://selenium-release.storage.googleapis.com/3.5/selenium-server-standalone-3.5.3.jar
-      - run:
-          name: Start Selenium
-          command: |
-            java -jar selenium-server-standalone-3.5.3.jar -log selenium.log
-          background: true
+          name: Install dependencies
+          working_directory: /
+          command: sudo apt-get update && sudo apt-get install python-pip && sudo pip install awscli==1.14.38
 
       - run: 
           name: add lein voom
@@ -40,13 +36,17 @@ jobs:
           command: lein test
 
       - run: lein clean && lein with-profile uberjar uberjar
-      - run: cp target/onyx-dashboard.jar $CIRCLE_ARTIFACTS
+      - run: mkdir ~/archive
+      - run: cp ~/repo/target/onyx-dashboard.jar ~/archive
       - run: docker build -t onyx/onyx-dashboard:$(lein pprint :version | sed s/\"//g) . | tee docker-build.log
       - run: docker tag $(tail -1 docker-build.log | cut -d ' ' -f 3) onyx/onyx-dashboard:latest
-      - run: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
       - run: docker push onyx/onyx-dashboard:$(lein pprint :version | sed s/\"//g)
       - run: docker push onyx/onyx-dashboard:latest
-        #- run: aws s3 cp target/onyx-dashboard.jar s3://onyx-releases/onyx-dashboard/onyx-dashboard-`lein project-version`.jar
+      - run: aws s3 cp target/onyx-dashboard.jar s3://onyx-releases/onyx-dashboard/onyx-dashboard-`lein project-version`.jar
+
+      - store_artifacts:
+          path: ~/archive
 
       - save_cache:
           paths:
