@@ -1,5 +1,7 @@
 # onyx-dashboard
 
+**UNMAINTAINED**
+
 A dashboard for the [Onyx](https://github.com/onyx-platform/onyx) distributed computation system.
 
 <img src="doc/screenshot.jpg" width="400">
