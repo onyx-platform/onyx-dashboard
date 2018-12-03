@@ -291,8 +291,8 @@
                         (Thread/sleep 25000)
                         (go driver (str "http://localhost:" 3000))
                         (load-last-deployment driver)
-                        (load-job driver)
-                        (check-job-text driver workflow)
+                        ;; (load-job driver)
+                        ;; (check-job-text driver workflow)
 
                         (doseq [v-peer v-peers]
                           (onyx.api/shutdown-peer v-peer))
