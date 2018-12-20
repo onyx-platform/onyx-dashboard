@@ -78,9 +78,9 @@
 
                    :dependencies [[figwheel "0.5.0-6"]
                                   [org.seleniumhq.selenium/selenium-java "2.47.1"]
-                                  [clj-webdriver "0.7.2"]
                                   ; logging from included jars
                                   [com.fzakaria/slf4j-timbre  "0.3.2"]
+                                  [etaoin "0.2.9"]
                                   [org.slf4j/slf4j-api        "1.7.14"]
                                   [org.slf4j/log4j-over-slf4j "1.7.14"]
 
